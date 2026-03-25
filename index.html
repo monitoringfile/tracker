@@ -200,23 +200,23 @@
 
 <div id="modalOverlay">
     <div class="modal-box">
-        <h2 style="margin-top:0; color:var(--brand-primary); text-align: center;">Manual Folder Entry</h2>
+        <h2 style="margin-top:0; color:var(--brand-primary); text-align: center;">Entry Client Loan Application</h2>
         <form id="clientForm">
             <div class="form-grid">
                 <div>
-                    <label style="font-size: 0.75rem; font-weight: 700;">Select Branch</label>
+                    <label style="font-size: 0.75rem; font-weight: 700;">Select Branch...</label>
                     <select id="fBranch" class="form-control" required>
-                        <option value="" disabled selected>Select here</option>
+                        <option value="" disabled selected>Select here...</option>
                     </select>
                     <label style="font-size: 0.75rem; font-weight: 700;">Centre Name</label>
                     <input type="text" id="fCentre" placeholder="e.g. MA Sample" class="form-control" required oninput="validateCentre(this)">
-                    <label style="font-size: 0.75rem; font-weight: 700;">Assigned Meeting Day</label>
+                    <label style="font-size: 0.75rem; font-weight: 700;">Scheduled Meeting Day</label>
                     <input type="text" id="fDay" class="form-control" readonly value="---">
                 </div>
                 <div>
                     <label style="font-size: 0.75rem; font-weight: 700;">Client Name</label>
                     <input type="text" id="fClient" placeholder="Full Name" class="form-control" required>
-                    <label style="font-size: 0.75rem; font-weight: 700;">Trust Staff Name</label>
+                    <label style="font-size: 0.75rem; font-weight: 700;">TS Name</label>
                     <input type="text" id="fOfficer" placeholder="TS Name" class="form-control" required>
                     <label style="font-size: 0.75rem; font-weight: 700;">Application Type</label>
                     <select id="fProduct" class="form-control" required>
@@ -229,7 +229,7 @@
                     </select>
                 </div>
             </div>
-            <button type="submit" class="btn-submit">Submit New Folder</button>
+            <button type="submit" class="btn-submit">Submit Loan Application</button>
             <button type="button" onclick="toggleModal(false)" style="width:100%; border:none; background:none; padding:10px; cursor:pointer; color:gray; font-weight: 600;">Close Form</button>
         </form>
     </div>
