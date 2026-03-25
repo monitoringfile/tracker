@@ -384,7 +384,7 @@
     window.updateStatus = (id, val) => update(ref(db, `client_records/${id}`), { status: val, lastUpdated: serverTimestamp() });
     window.updateField = (id, field, val) => update(ref(db, `client_records/${id}`), { [field]: val });
     window.delRec = (id) => confirm("Delete entry?") && remove(ref(db, `client_records/${id}`));
-    window.secureAction = (type) => prompt("Security PIN:") === "1234" && remove(dbRef);
+    window.secureAction = (type) => prompt("Security PIN:") === "rmf123" && remove(dbRef);
 </script>
 </body>
 </html>
