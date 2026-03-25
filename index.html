@@ -6,197 +6,241 @@
     <title>LR FOLDERS Tracker | Misamis Oriental 2</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
-            --brand-primary: #3b82f6;
-            --brand-secondary: #60a5fa;
-            --sidebar-bg: #1e293b; 
-            --sidebar-hover: #334155;
-            --bg-main: #f1f5f9;
-            --text-main: #0f172a;
-            --text-muted: #94a3b8;
-            --border: #e2e8f0;
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --danger: #ef4444;
-            --success: #22c55e;
+            --brand-primary: #1e3a8a; 
+            --brand-secondary: #172554;
+            --brand-accent: #facc15; 
+            --sidebar-bg: #0f172a;
+            --bg-main: #f8fafc;
+            --text-main: #1e293b;
+            --border-navy: 1px solid #1e3a8a;
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --sidebar-border: 4px solid;
         }
 
         * { box-sizing: border-box; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-main); color: var(--text-main); margin: 0; display: flex; min-height: 100vh; }
 
-        /* --- SIDEBAR --- */
         .sidebar { 
-            width: 320px; background: var(--sidebar-bg); color: #f8fafc; padding: 2rem 1rem; 
-            display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100;
-            border-right: 1px solid rgba(255,255,255,0.05); overflow-y: auto;
+            width: 260px; background: var(--sidebar-bg); color: white; padding: 1.5rem; 
+            display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; overflow-y: auto;
+            border-right: 4px solid #3b82f6;
+            box-shadow: 2px 0 0 0 #facc15; 
         }
-        .sidebar-brand { font-size: 1rem; font-weight: 800; margin-bottom: 1.5rem; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
-        .sidebar-brand span { color: var(--brand-secondary); }
-
-        .nav-link { 
-            padding: 12px; border-radius: 10px; color: #cbd5e1; text-decoration: none; 
-            font-weight: 600; font-size: 0.8rem; transition: all 0.2s; margin-bottom: 8px; 
-            cursor: pointer; display: flex; align-items: center; gap: 10px;
-        }
-        .nav-link:hover { background: var(--sidebar-hover); color: white; }
-        .nav-link.active { background: var(--brand-primary); color: white; }
-
-        .sidebar-stats-container { margin-top: 1.5rem; }
-        .section-label { font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; display: block; }
         
-        .prod-group { margin-bottom: 10px; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); }
-        .prod-header { 
-            padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; 
-            cursor: pointer; font-size: 0.75rem; font-weight: 700; color: #f1f5f9; transition: background 0.2s;
+        .sidebar-brand { font-size: 1rem; font-weight: 800; margin-bottom: 1rem; }
+        .sidebar-brand span { color: #38bdf8; }
+
+        .online-indicator {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .prod-header:hover { background: rgba(255,255,255,0.05); }
-        .prod-header span.count-pill { background: var(--brand-primary); padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; }
-
-        .branch-details { display: none; padding: 8px; background: rgba(0,0,0,0.2); }
-        .branch-details.active { display: block; }
-
-        .nested-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; color: #94a3b8; }
-        .nested-table th { text-align: center; padding: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #64748b; font-weight: 800; }
-        .nested-table td { padding: 6px 2px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.02); }
-        .nested-table .b-name { text-align: left; color: #cbd5e1; font-weight: 600; width: 40%; }
-
-        /* --- SUMMARY TABLE --- */
-        .summary-card { background: white; border-radius: 20px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 2rem; }
-        .sum-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        .sum-table th { background: #f8fafc; padding: 15px 10px; font-size: 0.65rem; font-weight: 800; color: #64748b; border-bottom: 1px solid var(--border); }
-        .sum-table td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; text-align: center; overflow: hidden; }
-        .sum-table td:first-child, .sum-table th:first-child { text-align: left; padding-left: 25px; width: 25%; }
-        .sum-col { width: 10%; }
-
-        /* --- STATUS COLORS --- */
-        .row-for-process { background-color: #ffedd5 !important; }
-        .row-pending-approval { background-color: #c2410c !important; color: white !important; }
-        .row-approved { background-color: #15803d !important; color: white !important; }
-        .row-disbursed { background-color: #1e3a8a !important; color: white !important; }
-        .row-findings { background-color: #ef4444 !important; color: white !important; }
-        .row-claimed { background-color: #fef9c3 !important; }
-
-        .copy-btn { cursor: pointer; opacity: 0.4; transition: opacity 0.2s; font-size: 0.9rem; margin-left: 8px; display: inline-flex; align-items: center; justify-content: center; }
-        .copy-btn:hover { opacity: 1; }
-
-        /* --- MAIN LAYOUT --- */
-        .main-content { flex: 1; margin-left: 320px; padding: 2.5rem; width: calc(100% - 320px); }
-        .data-section { background: white; border-radius: 20px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 2rem; }
-        .master-table { width: 100%; border-collapse: collapse; }
-        .master-table th { background: #f8fafc; padding: 14px; font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; text-align: center; border-bottom: 1px solid var(--border); }
-        .master-table td { padding: 16px 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; text-align: center; }
-
-        /* --- MODAL --- */
-        #modalOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.8); z-index:200; align-items:center; justify-content:center; backdrop-filter: blur(4px); }
-        .modal-box { background:white; padding: 2.5rem; border-radius: 24px; width: 650px; box-shadow: var(--shadow-lg); }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
-        .form-group.full { grid-column: span 2; }
-        .form-group label { display:block; font-size:0.75rem; font-weight:800; color:#64748b; margin-bottom:6px; text-transform: uppercase; }
-        .form-control-lg { width:100%; padding: 12px; border: 2px solid var(--border); border-radius: 10px; outline: none; font-size: 0.95rem; font-family: inherit; }
-        
-        .invalid-input { border-color: var(--danger) !important; background-color: #fff1f2; }
-        .validation-hint { color: var(--danger); font-size: 0.65rem; font-weight: 700; margin-top: 4px; display: none; }
-        .save-btn:disabled { background: #cbd5e1 !important; cursor: not-allowed; }
-
-        .header-stats { display: flex; gap: 10px; }
-        .stat-pill { background: white; padding: 10px 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; }
-        .online-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
+        .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        .status-pill { border: 1px solid rgba(0,0,0,0.1); padding: 6px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; width: 100%; background: rgba(255,255,255,0.9); }
-        .input-inline { border: 1px solid rgba(0,0,0,0.1); padding: 8px; border-radius: 6px; font-size: 0.8rem; width: 100%; background: rgba(255,255,255,0.5); }
+        .nav-link { padding: 10px 12px; border-radius: 8px; color: #94a3b8; text-decoration: none; font-weight: 600; font-size: 0.8rem; transition: 0.3s; margin-bottom: 5px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; }
+
+        .sidebar-stats-container { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sb-table { width: 100%; font-size: 0.7rem; color: #94a3b8; border-collapse: collapse; }
+        .sb-table td { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sb-count { text-align: right; color: white; font-weight: 700; }
+
+        .main-content { flex: 1; margin-left: 260px; padding: 2rem 3rem; width: calc(100% - 260px); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        
+        .summary-card, .data-section { background: white; border-radius: 12px; border: var(--border-navy); box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 2rem; }
+        .summary-table, .master-table { width: 100%; border-collapse: collapse; }
+        .summary-table th, .master-table th { background: #f1f5f9; padding: 12px; font-size: 0.65rem; color: var(--brand-primary); border-bottom: var(--border-navy); text-transform: uppercase; }
+        .summary-table td, .master-table td { padding: 14px 10px; text-align: center; font-size: 0.8rem; border-bottom: var(--border-navy); position: relative; }
+
+        .summary-table td[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: white; padding: 8px; border-radius: 6px;
+            font-size: 0.7rem; white-space: pre; z-index: 500; text-align: left; line-height: 1.4;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); pointer-events: none;
+        }
+
+        .copy-btn { cursor: pointer; color: #38bdf8; margin-left: 8px; font-size: 0.9rem; transition: 0.2s; }
+        .copy-btn:hover { transform: scale(1.2); }
+
+        .filter-controls { padding: 1rem; border-bottom: var(--border-navy); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .filter-input { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 0.8rem; }
+        .filter-input:focus { border-color: var(--brand-primary); }
+
+        /* Row Colors per status */
+        .row-process { background-color: #22c55e !important; color: white; }
+        .row-pending { background-color: #f97316 !important; color: white; }
+        .row-approved { background-color: #facc15 !important; color: #1e293b; }
+        .row-disbursed { background-color: #3b82f6 !important; color: white; }
+        .row-claimed { background-color: #000000 !important; color: white; }
+        .row-findings { background-color: #ef4444 !important; color: white; }
+        
+        .strike-text { text-decoration: line-through; }
+
+        #modalOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; }
+        .modal-box { background:white; padding:2.5rem; border-radius:16px; width:700px; border: 4px solid var(--brand-accent); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; outline: none; font-size: 0.9rem; }
+        .btn-submit { background: var(--brand-primary); color: white; border: none; padding: 14px; border-radius: 8px; width: 100%; font-weight: 700; cursor: pointer; margin-top: 10px; }
+
+        /* UPGRADED IMPORT PROGRESS CSS */
+        #importProgressOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; color: white;
+        }
+        .progress-wrapper {
+            background: rgba(255, 255, 255, 0.05); padding: 2.5rem; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); width: 420px;
+        }
+        #progressText { font-size: 3rem; font-weight: 800; margin-bottom: 0.2rem; color: #facc15; }
+        .progress-subtext { font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+        .progress-container { width: 100%; height: 14px; background: #334155; border-radius: 20px; overflow: hidden; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        #progressBar { width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #38bdf8); border-radius: 20px; transition: width 0.2s ease-out; box-shadow: 0 0 15px rgba(56, 189, 248, 0.5); }
+        
+        /* New Stats Line */
+        .import-stats-row { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.8rem; font-weight: 700; color: #e2e8f0; }
+        .stat-label { color: #94a3b8; font-weight: 400; margin-right: 4px; }
     </style>
 </head>
 <body>
 
+<div id="importProgressOverlay">
+    <div class="progress-wrapper">
+        <h2 id="progressText">0%</h2>
+        <p class="progress-subtext">Syncing Prospects to Firebase</p>
+        <div class="progress-container">
+            <div id="progressBar"></div>
+        </div>
+        <div class="import-stats-row">
+            <div><span class="stat-label">Processed:</span> <span id="importCount">0 / 0</span></div>
+            <div><span class="stat-label">Conv:</span> <span id="importConv" style="color:#facc15">0%</span></div>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="csvFileInput" accept=".xlsx, .xls, .csv" style="display:none;" onchange="processFile(this.files[0])">
+
 <aside class="sidebar">
     <div class="sidebar-brand">MIS ORIENTAL 2 <span>| TRACKER</span></div>
-    <nav style="display: flex; flex-direction: column; flex: 1;">
-        <div class="nav-link active">📊 Dashboard Overview</div>
-        <div class="nav-link" onclick="toggleModal(true)">➕ Register New Folder</div>
+    
+    <div class="online-indicator">
+        <div class="dot"></div>
+        <span>Online Users: <span id="userCount">1</span></span>
+    </div>
+
+    <nav style="flex: 1;">
+        <div class="nav-link active">📊 Dashboard</div>
+        <div class="nav-link" onclick="secureAction('import')">📁 Import Prospects</div>
+        <div class="nav-link" onclick="toggleModal(true)">➕ Manual Data Entry</div>
         <div class="sidebar-stats-container">
-            <span class="section-label">Product Breakdown</span>
-            <div id="sidebarAccordion"></div>
+            <table class="sb-table"><tbody id="sidebarProductBody"></tbody></table>
         </div>
-        <div class="nav-link" style="color: #ef4444; margin-top: auto; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="secureAction('wipe')">🗑️ Clear All Data</div>
+        <div class="nav-link" style="color:#fca5a5; margin-top:20px;" onclick="secureAction('wipe')">🗑️ Wipe Registry</div>
     </nav>
 </aside>
 
 <main class="main-content">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
-        <div><h1 style="margin:0; font-size: 1.5rem; font-weight: 800;">Operational Registry</h1><p style="color: #64748b; margin: 5px 0 0 0; font-size: 0.9rem;">Loan Folders Tracker</p></div>
-        <div class="header-stats">
-            <div class="stat-pill"><div class="online-dot"></div> <span id="onlineCount">1</span> Online</div>
-            <div class="stat-pill" id="live-clock">--:--:--</div>
-        </div>
+    <div class="header-top">
+        <h1 class="area-title" style="color:var(--brand-primary)">Forward Bound: Live Registry</h1>
+        <div id="live-clock" style="font-weight:700; color:var(--brand-primary)"></div>
     </div>
 
     <div class="summary-card">
-        <table class="sum-table">
+        <table class="summary-table">
             <thead>
                 <tr>
-                    <th>BRANCH OFFICE</th>
-                    <th class="sum-col">TOTAL</th><th class="sum-col">PRC</th><th class="sum-col">PND</th><th class="sum-col">APP</th><th class="sum-col">DSB</th><th class="sum-col">CLM</th><th class="sum-col" style="color:#ef4444">FND</th>
+                    <th>Branch</th><th>Prospects</th><th>Approached</th><th>Conv. %</th><th>Proc</th><th>Pend</th><th>Appr</th><th>Disb</th><th>Clmd</th><th>Find</th>
                 </tr>
             </thead>
             <tbody id="summaryBody"></tbody>
+            <tbody id="summaryFooter" style="background:#f1f5f9; font-weight:800; color:var(--brand-primary);"></tbody>
         </table>
     </div>
 
-    <div class="data-section">
-        <div style="padding: 1.2rem; border-bottom: 1px solid var(--border); display: flex; gap: 10px; background: #fff;">
-            <input type="text" id="searchBar" placeholder="Search Branch, Client, or TS..." style="flex: 2; padding: 10px; border-radius: 8px; border: 1px solid var(--border); outline: none;" oninput="renderDashboard()">
-            <select id="dayFilter" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border);" onchange="renderDashboard()">
-                <option value="ALL">All Days</option>
+    <section class="data-section">
+        <div class="filter-controls">
+            <input type="text" id="searchBar" placeholder="Search Client, Branch, TS, or Centre..." oninput="renderDashboard()" class="filter-input" style="width:300px;">
+            <select id="filterDay" onchange="renderDashboard()" class="filter-input">
+                <option value="">All Days</option>
                 <option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option>
             </select>
-            <select id="statusFilter" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border);" onchange="renderDashboard()">
-                <option value="ALL">All Statuses</option>
-                <option value="For Process">For Process</option><option value="Pending Approval">Pending Approval</option><option value="Approved">Approved</option><option value="Disbursed">Disbursed</option><option value="Claimed">Claimed</option><option value="Findings">Findings</option>
+            <select id="filterStatus" onchange="renderDashboard()" class="filter-input">
+                <option value="">All Statuses</option>
+                <option value="Select">No Status</option>
+                <option value="For Process">For Process</option>
+                <option value="Pending Approval">Pending Approval</option>
+                <option value="Approved">Approved</option>
+                <option value="Disbursed">Disbursed</option>
+                <option value="Claimed">Claimed</option>
+                <option value="Findings">Findings</option>
             </select>
         </div>
         <table class="master-table">
             <thead>
-                <tr><th>Branch / Centre</th><th>Day</th><th>Client / TS</th><th>Application Type</th><th>Status</th><th>Updated</th><th>Remarks</th><th></th></tr>
+                <tr>
+                    <th>Branch / Centre</th><th>Client Name</th><th>Product</th><th>Checks</th><th class="col-status">Status</th><th class="col-remarks">Remarks</th><th>Action</th>
+                </tr>
             </thead>
             <tbody id="masterBody"></tbody>
         </table>
-    </div>
+    </section>
 </main>
 
 <div id="modalOverlay">
     <div class="modal-box">
-        <h3 style="margin:0 0 1.2rem 0">New Folder Entry</h3>
+        <h2 style="margin-top:0; color:var(--brand-primary); text-align: center;">Manual Folder Entry</h2>
         <form id="clientForm">
             <div class="form-grid">
-                <div class="form-group full"><label>Branch Office</label><select id="fBranch" class="form-control-lg" required><option value="" selected>Select Branch</option></select></div>
-                <div class="form-group"><label>Centre Name</label><input type="text" id="fCentre" class="form-control-lg" placeholder="e.g. MA Sample" required oninput="validateCentre(this.value)"><div id="centreHint" class="validation-hint">⚠️ Use Valid Prefix (MA, MB, etc)</div></div>
-                <div class="form-group"><label>Meeting Day</label><input type="text" id="fDay" class="form-control-lg" readonly></div>
-                <div class="form-group"><label>Client Name</label><input type="text" id="fClient" class="form-control-lg" required></div>
-                <div class="form-group"><label>Officer (TS)</label><input type="text" id="fOfficer" class="form-control-lg" required></div>
-                <div class="form-group full"><label>Application Type</label>
-                    <select id="fProduct" class="form-control-lg" required>
-                        <option value="" disabled selected>Select Type</option>
-                        <option value="Mauswagon Reloan">Mauswagon Reloan</option><option value="Supplemental Reloan">Supplemental Reloan</option><option value="Newloan">Newloan</option><option value="New Supple">New Supple</option><option value="Saver's">Saver's</option><option value="Balik RMF">Balik RMF</option>
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 700;">Select Branch</label>
+                    <select id="fBranch" class="form-control" required>
+                        <option value="" disabled selected>Select here</option>
+                    </select>
+                    <label style="font-size: 0.75rem; font-weight: 700;">Centre Code</label>
+                    <input type="text" id="fCentre" placeholder="e.g. MA-Gingoog" class="form-control" required oninput="validateCentre(this)">
+                    <label style="font-size: 0.75rem; font-weight: 700;">Assigned Meeting Day</label>
+                    <input type="text" id="fDay" class="form-control" readonly value="---">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 700;">Client Name</label>
+                    <input type="text" id="fClient" placeholder="Full Name" class="form-control" required>
+                    <label style="font-size: 0.75rem; font-weight: 700;">Account Officer (TS)</label>
+                    <input type="text" id="fOfficer" placeholder="TS Name" class="form-control" required>
+                    <label style="font-size: 0.75rem; font-weight: 700;">Loan Product</label>
+                    <select id="fProduct" class="form-control" required>
+                        <option value="Mauswagon Reloan">Mauswagon Reloan</option>
+                        <option value="Supplemental Reloan">Supplemental Reloan</option>
+                        <option value="New Supplemental">New Supplemental</option>
+                        <option value="Newloan">Newloan</option>
+                        <option value="Saver's">Saver's</option>
+                        <option value="Balik RMF">Balik RMF</option>
                     </select>
                 </div>
             </div>
-            <div style="display: flex; gap: 15px; margin-top: 1.5rem;">
-                <button type="button" onclick="toggleModal(false)" style="flex:1; background:#f1f5f9; border:none; padding:14px; border-radius:10px; font-weight:700; cursor:pointer;">Cancel</button>
-                <button type="submit" id="saveBtn" class="save-btn" style="flex:2; background:var(--brand-primary); color:white; border:none; padding:14px; border-radius:10px; font-weight:800; cursor:pointer;">Save to Registry</button>
-            </div>
+            <button type="submit" class="btn-submit">Register New Folder</button>
+            <button type="button" onclick="toggleModal(false)" style="width:100%; border:none; background:none; padding:10px; cursor:pointer; color:gray; font-weight: 600;">Close Form</button>
         </form>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-    import { getDatabase, ref, onValue, update, remove, push, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update, remove, push, set, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCmfUxwaeAyoTTlLvU6qHwT22MGtcLa2aU",
-        authDomain: "mis-tracker-83357.firebaseapp.com",
         databaseURL: "https://mis-tracker-83357-default-rtdb.asia-southeast1.firebasedatabase.app",
         projectId: "mis-tracker-83357"
     };
@@ -205,186 +249,250 @@
     const db = getDatabase(app);
     const dbRef = ref(db, 'client_records');
     const presenceRef = ref(db, 'online_users');
-
-    const userSessionRef = push(presenceRef, true);
-    onDisconnect(userSessionRef).remove();
+    
+    // Presence Logic
+    const myPresenceRef = push(presenceRef);
+    onValue(ref(db, '.info/connected'), (snap) => {
+        if (snap.val() === true) {
+            onDisconnect(myPresenceRef).remove();
+            set(myPresenceRef, true);
+        }
+    });
     onValue(presenceRef, (snap) => {
-        const count = snap.val() ? Object.keys(snap.val()).length : 1;
-        document.getElementById('onlineCount').innerText = count;
+        const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+        document.getElementById('userCount').innerText = count;
     });
 
     const branches = ["Balingasag - Main2", "Balingoan - Main2", "Camiguin - Main2", "Claveria - Main2", "Gingoog - Main2", "Salay - Main"];
-    const products = ["Mauswagon Reloan", "Supplemental Reloan", "Newloan", "New Supple", "Saver's", "Balik RMF"];
+    const products = ["Mauswagon Reloan", "Supplemental Reloan", "New Supplemental", "Newloan", "Saver's", "Balik RMF"];
 
-    const bSelect = document.getElementById('fBranch');
-    branches.forEach(b => bSelect.add(new Option(b, b)));
-
-    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+    const fBranchSelect = document.getElementById('fBranch');
+    branches.forEach(b => fBranchSelect.add(new Option(b, b)));
     
+    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString(); }, 1000);
+
+    window.validateCentre = function(input) {
+        let val = input.value.toUpperCase(); input.value = val;
+        const dayInput = document.getElementById('fDay');
+        if (val.startsWith("MA") || val.startsWith("MB")) dayInput.value = "Monday";
+        else if (val.startsWith("TA") || val.startsWith("TB")) dayInput.value = "Tuesday";
+        else if (val.startsWith("WA") || val.startsWith("WB")) dayInput.value = "Wednesday";
+        else if (val.startsWith("THA") || val.startsWith("THB")) dayInput.value = "Thursday";
+        else dayInput.value = "---";
+    };
+
+    window.copyToClipboard = (text, btn) => {
+        navigator.clipboard.writeText(text).then(() => {
+            const original = btn.innerText; btn.innerText = "✅";
+            setTimeout(() => btn.innerText = original, 1000);
+        });
+    };
+
     let rawData = null;
     onValue(dbRef, (snap) => { rawData = snap.val(); renderDashboard(); });
 
-    window.toggleModal = (show) => { document.getElementById('modalOverlay').style.display = show ? 'flex' : 'none'; };
-
-    window.validateCentre = (val) => {
-        const input = document.getElementById('fCentre');
-        const hint = document.getElementById('centreHint');
-        const saveBtn = document.getElementById('saveBtn');
-        const dField = document.getElementById('fDay');
-        const upVal = val.trim().toUpperCase();
-        const prefixes = { 'MA': 'Monday', 'MB': 'Monday', 'TA': 'Tuesday', 'TB': 'Tuesday', 'WA': 'Wednesday', 'WB': 'Wednesday', 'THA': 'Thursday', 'THB': 'Thursday' };
-        const foundPrefix = Object.keys(prefixes).find(p => upVal.startsWith(p));
-        if (foundPrefix) { input.classList.remove('invalid-input'); hint.style.display = 'none'; saveBtn.disabled = false; dField.value = prefixes[foundPrefix]; }
-        else { input.classList.add('invalid-input'); hint.style.display = 'block'; saveBtn.disabled = true; dField.value = ""; }
-    };
-
-    window.copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text).then(() => {
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "✅";
-            setTimeout(() => { btn.innerText = originalText; }, 1000);
-        });
-    };
+    const fmt = (num) => num === 0 ? "" : num;
+    const getTooltip = (obj) => Object.entries(obj).filter(([k,v]) => v > 0).map(([k,v]) => `${k}: ${v}`).join('\n');
 
     window.renderDashboard = function() {
         const mBody = document.getElementById('masterBody');
         const sBody = document.getElementById('summaryBody');
-        const accordion = document.getElementById('sidebarAccordion');
-        const search = document.getElementById('searchBar').value.toLowerCase();
-        const fDay = document.getElementById('dayFilter').value;
-        const fStatus = document.getElementById('statusFilter').value;
+        const sFoot = document.getElementById('summaryFooter');
+        const pSide = document.getElementById('sidebarProductBody');
+        const query = document.getElementById('searchBar').value.toLowerCase();
+        const selDay = document.getElementById('filterDay').value;
+        const selStatus = document.getElementById('filterStatus').value;
         
-        mBody.innerHTML = ""; sBody.innerHTML = ""; accordion.innerHTML = "";
-        
-        let branchStats = {}; 
-        let productMatrix = {};
-
-        // Reset counters
-        branches.forEach(b => { 
-            branchStats[b] = { total: 0, proc: 0, pend: 0, app: 0, disb: 0, clm: 0, find: 0 }; 
-        });
-        products.forEach(p => { 
-            productMatrix[p] = {}; 
-            branches.forEach(b => { 
-                productMatrix[p][b] = { total:0, proc:0, pend:0, app:0, disb:0, find:0 }; 
-            }); 
+        mBody.innerHTML = ""; sBody.innerHTML = ""; sFoot.innerHTML = ""; pSide.innerHTML = "";
+        let stats = {};
+        let prodGlobal = {}; products.forEach(p => prodGlobal[p] = 0);
+        let area = { prospects: 0, approached: 0, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, find: 0 };
+        let areaDetail = { proc: {}, pend: {}, app: {}, disb: {}, clmd: {}, find: {} };
+        branches.forEach(b => {
+            stats[b] = { prospects: 0, approached: 0, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, find: 0,
+                         detail: { proc: {}, pend: {}, app: {}, disb: {}, clmd: {}, find: {} } };
         });
 
         if (rawData) {
             Object.entries(rawData).reverse().forEach(([id, rec]) => {
-                const status = rec.status || "For Process";
-                const b = rec.branch;
-                const p = rec.productId;
-                const ts = rec.officer || "";
+                const status = rec.status || "Select";
+                const pId = rec.productId;
+                const mDay = rec.meetingDay || "";
+                const branch = rec.branch || "";
+                const client = rec.clientName || "";
+                const officer = rec.officer || "";
+                const centre = rec.centre || "";
 
-                // Count for Summary & Sidebar Logic
-                if (branchStats[b]) {
-                    branchStats[b].total++;
-                    if (status === 'For Process') branchStats[b].proc++;
-                    if (status === 'Pending Approval') branchStats[b].pend++;
-                    if (status === 'Approved') branchStats[b].app++;
-                    if (status === 'Disbursed') branchStats[b].disb++;
-                    if (status === 'Claimed') branchStats[b].clm++;
-                    if (status === 'Findings') branchStats[b].find++;
+                if (prodGlobal[pId] !== undefined) prodGlobal[pId]++;
+                if (stats[branch]) {
+                    const s = stats[branch];
+                    if (rec.source === 'import') {
+                        s.prospects++; area.prospects++;
+                        const a = rec.approaches || {};
+                        if (a.a1 || a.a2 || a.a3 || a.a4) { s.approached++; area.approached++; }
+                    }
+                    const map = { 'For Process':'proc', 'Pending Approval':'pend', 'Approved':'app', 'Disbursed':'disb', 'Claimed':'clmd', 'Findings':'find' };
+                    const key = map[status];
+                    if (key) {
+                        s[key]++; area[key]++;
+                        s.detail[key][pId] = (s.detail[key][pId] || 0) + 1;
+                        areaDetail[key][pId] = (areaDetail[key][pId] || 0) + 1;
+                    }
                 }
 
-                if (productMatrix[p] && productMatrix[p][b]) {
-                    productMatrix[p][b].total++;
-                    if (status === 'For Process') productMatrix[p][b].proc++;
-                    if (status === 'Pending Approval') productMatrix[p][b].pend++;
-                    if (status === 'Approved') productMatrix[p][b].app++;
-                    if (status === 'Disbursed') productMatrix[p][b].disb++;
-                    if (status === 'Findings') productMatrix[p][b].find++;
-                }
+                const matchUniversal = branch.toLowerCase().includes(query) || client.toLowerCase().includes(query) || officer.toLowerCase().includes(query) || centre.toLowerCase().includes(query);
+                const matchDay = selDay === "" || mDay === selDay;
+                const matchStatus = selStatus === "" || (selStatus === "Select" ? status.includes("Select") : status === selStatus);
 
-                // Filtering for the Main Master Table
-                const searchString = (b + rec.clientName + ts).toLowerCase();
-                if (searchString.includes(search) && (fDay === "ALL" || rec.meetingDay === fDay) && (fStatus === "ALL" || status === fStatus)) {
-                    const slug = status.toLowerCase().replace(/\s+/g, "-");
+                if (matchUniversal && matchDay && matchStatus) {
+                    let rowClass = "";
+                    let nameClass = "";
+                    if (status === 'Findings') rowClass = 'row-findings';
+                    else if (status === 'For Process') rowClass = 'row-process';
+                    else if (status === 'Pending Approval') rowClass = 'row-pending';
+                    else if (status === 'Approved') rowClass = 'row-approved';
+                    else if (status === 'Disbursed') rowClass = 'row-disbursed';
+                    else if (status === 'Claimed') { rowClass = 'row-claimed'; nameClass = 'strike-text'; }
+
                     mBody.insertAdjacentHTML('beforeend', `
-                        <tr class="row-${slug}">
-                            <td style="text-align:left; padding-left:20px;"><strong>${b}</strong><br><small>${rec.centre}</small></td>
-                            <td>${rec.meetingDay}</td>
-                            <td><strong>${rec.clientName}</strong><span class="copy-btn" onclick="copyToClipboard('${rec.clientName}')">📋</span><br><small>TS: ${ts}</small></td>
-                            <td><code>${p}</code></td>
+                        <tr class="${rowClass}">
+                            <td>${branch}<br><small>${centre || ''} (${mDay})</small></td>
+                            <td><strong class="${nameClass}">${client}</strong><span class="copy-btn" onclick="copyToClipboard('${client}', this)">📋</span><br><small>${officer}</small></td>
+                            <td><code style="font-size:0.65rem">${pId}</code></td>
                             <td>
-                                <select class="status-pill" onchange="updateStatus('${id}', this.value)">
-                                    <option value="For Process" ${status === 'For Process' ? 'selected' : ''}>For Process</option>
-                                    <option value="Pending Approval" ${status === 'Pending Approval' ? 'selected' : ''}>Pending Approval</option>
-                                    <option value="Approved" ${status === 'Approved' ? 'selected' : ''}>Approved</option>
-                                    <option value="Disbursed" ${status === 'Disbursed' ? 'selected' : ''}>Disbursed</option>
-                                    <option value="Claimed" ${status === 'Claimed' ? 'selected' : ''}>Claimed</option>
-                                    <option value="Findings" ${status === 'Findings' ? 'selected' : ''}>Findings</option>
-                                </select>
+                                <input type="checkbox" ${rec.approaches?.a1 ? 'checked' : ''} ${rec.source !== 'import' ? 'disabled' : ''} onchange="updateAppr('${id}',1,this.checked)">
+                                <input type="checkbox" ${rec.approaches?.a2 ? 'checked' : ''} ${rec.source !== 'import' ? 'disabled' : ''} onchange="updateAppr('${id}',2,this.checked)">
+                                <input type="checkbox" ${rec.approaches?.a3 ? 'checked' : ''} ${rec.source !== 'import' ? 'disabled' : ''} onchange="updateAppr('${id}',3,this.checked)">
+                                <input type="checkbox" ${rec.approaches?.a4 ? 'checked' : ''} ${rec.source !== 'import' ? 'disabled' : ''} onchange="updateAppr('${id}',4,this.checked)">
                             </td>
-                            <td style="font-size: 0.65rem;">${rec.lastUpdated ? new Date(rec.lastUpdated).toLocaleDateString() : '---'}</td>
-                            <td><input type="text" class="input-inline" value="${rec.remarks || ''}" onchange="updateField('${id}','remarks',this.value)"></td>
-                            <td><button onclick="delRec('${id}')" style="border:none; background:none; cursor:pointer">🗑️</button></td>
+                            <td><select onchange="updateStatus('${id}', this.value)" style="width:100%; font-size:0.7rem;">
+                                <option value="Select" ${status.includes('Select') ? 'selected' : ''}>Status...</option>
+                                <option value="For Process" ${status === 'For Process' ? 'selected' : ''}>For Process</option>
+                                <option value="Pending Approval" ${status === 'Pending Approval' ? 'selected' : ''}>Pending Approval</option>
+                                <option value="Approved" ${status === 'Approved' ? 'selected' : ''}>Approved</option>
+                                <option value="Disbursed" ${status === 'Disbursed' ? 'selected' : ''}>Disbursed</option>
+                                <option value="Claimed" ${status === 'Claimed' ? 'selected' : ''}>Claimed</option>
+                                <option value="Findings" ${status === 'Findings' ? 'selected' : ''}>Findings</option>
+                            </select></td>
+                            <td><input type="text" value="${rec.remarks || ''}" placeholder="..." onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; border-bottom:1px solid #ddd; font-size:0.75rem; background:transparent; color:inherit;"></td>
+                            <td><button onclick="delRec('${id}')" style="border:none; background:none; cursor:pointer; color:inherit;">🗑️</button></td>
                         </tr>
                     `);
                 }
             });
         }
 
-        // --- REBUILD SIDEBAR ACCORDION ---
-        products.forEach((p, idx) => {
-            let pTotal = Object.values(productMatrix[p] || {}).reduce((a, b) => a + (b.total || 0), 0);
-            if (pTotal === 0) return;
-            
-            let bRows = "";
-            branches.forEach(b => {
-                const s = productMatrix[p][b];
-                if (s && s.total > 0) {
-                    bRows += `<tr><td class="b-name">${b.split(' - ')[0]}</td><td>${s.proc || ''}</td><td>${s.pend || ''}</td><td>${s.app || ''}</td><td>${s.disb || ''}</td><td style="color:#ef4444">${s.find || ''}</td></tr>`;
-                }
-            });
-
-            accordion.insertAdjacentHTML('beforeend', `
-                <div class="prod-group">
-                    <div class="prod-header" onclick="document.getElementById('p-det-${idx}').classList.toggle('active')">
-                        ${p} <span class="count-pill">${pTotal}</span>
-                    </div>
-                    <div class="branch-details" id="p-det-${idx}">
-                        <table class="nested-table">
-                            <thead><tr><th>Branch</th><th>Prc</th><th>Pnd</th><th>App</th><th>Dsb</th><th>Fnd</th></tr></thead>
-                            <tbody>${bRows}</tbody>
-                        </table>
-                    </div>
-                </div>
-            `);
-        });
-
-        // --- REBUILD MAIN SUMMARY ---
         branches.forEach(b => {
-            if(branchStats[b].total > 0) {
-                sBody.insertAdjacentHTML('beforeend', `
-                    <tr>
-                        <td><strong>${b}</strong></td>
-                        <td style="font-weight:800; color:var(--brand-primary);">${branchStats[b].total}</td>
-                        <td>${branchStats[b].proc || ''}</td>
-                        <td>${branchStats[b].pend || ''}</td>
-                        <td>${branchStats[b].app || ''}</td>
-                        <td>${branchStats[b].disb || ''}</td>
-                        <td>${branchStats[b].clm || ''}</td>
-                        <td style="color:#ef4444; font-weight:700;">${branchStats[b].find || ''}</td>
-                    </tr>
-                `);
-            }
+            const s = stats[b];
+            const convPct = s.approached > 0 ? Math.round((s.clmd / s.approached) * 100) : 0;
+            sBody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:left; font-weight:700;">${b}</td><td>${fmt(s.prospects)}</td><td>${fmt(s.approached)}</td><td style="font-weight:800; color:${convPct < 80 ? '#ef4444' : '#22c55e'}">${convPct > 0 ? convPct + '%' : ''}</td><td data-tooltip="${getTooltip(s.detail.proc)}">${fmt(s.proc)}</td><td data-tooltip="${getTooltip(s.detail.pend)}">${fmt(s.pend)}</td><td data-tooltip="${getTooltip(s.detail.app)}">${fmt(s.app)}</td><td data-tooltip="${getTooltip(s.detail.disb)}">${fmt(s.disb)}</td><td data-tooltip="${getTooltip(s.detail.clmd)}">${fmt(s.clmd)}</td><td data-tooltip="${getTooltip(s.detail.find)}">${fmt(s.find)}</td></tr>`);
         });
-    };
+        const areaConvPct = area.approached > 0 ? Math.round((area.clmd / area.approached) * 100) : 0;
+        sFoot.insertAdjacentHTML('beforeend', `<tr><td style="text-align:left">TOTAL AREA</td><td>${fmt(area.prospects)}</td><td>${fmt(area.approached)}</td><td>${areaConvPct}%</td><td data-tooltip="${getTooltip(areaDetail.proc)}">${fmt(area.proc)}</td><td data-tooltip="${getTooltip(areaDetail.pend)}">${fmt(area.pend)}</td><td data-tooltip="${getTooltip(areaDetail.app)}">${fmt(area.app)}</td><td data-tooltip="${getTooltip(areaDetail.disb)}">${fmt(area.disb)}</td><td data-tooltip="${getTooltip(areaDetail.clmd)}">${fmt(area.clmd)}</td><td data-tooltip="${getTooltip(areaDetail.find)}">${fmt(area.find)}</td></tr>`);
+        Object.entries(prodGlobal).forEach(([p, count]) => { if (count > 0) pSide.insertAdjacentHTML('beforeend', `<tr><td>${p}</td><td class="sb-count">${count}</td></tr>`); });
+    }
 
+    window.toggleModal = (show) => { document.getElementById('modalOverlay').style.display = show ? 'flex' : 'none'; };
+    
     document.getElementById('clientForm').onsubmit = (e) => {
         e.preventDefault();
-        const branchVal = document.getElementById('fBranch').value;
-        if (!branchVal) { alert("Please select a Branch!"); return; }
-        push(dbRef, { branch: branchVal, centre: document.getElementById('fCentre').value.trim().toUpperCase(), meetingDay: document.getElementById('fDay').value, clientName: document.getElementById('fClient').value, officer: document.getElementById('fOfficer').value, productId: document.getElementById('fProduct').value, status: "For Process", lastUpdated: serverTimestamp() }).then(() => { toggleModal(false); e.target.reset(); document.getElementById('saveBtn').disabled = true; });
+        const dayVal = document.getElementById('fDay').value;
+        if (dayVal === "---") { alert("Invalid Centre Code!"); return; }
+        push(dbRef, {
+            branch: document.getElementById('fBranch').value,
+            centre: document.getElementById('fCentre').value,
+            meetingDay: dayVal,
+            clientName: document.getElementById('fClient').value,
+            officer: document.getElementById('fOfficer').value,
+            productId: document.getElementById('fProduct').value,
+            status: "Select",
+            source: "manual",
+            lastUpdated: serverTimestamp()
+        }).then(() => { toggleModal(false); e.target.reset(); });
     };
 
     window.updateStatus = (id, val) => update(ref(db, `client_records/${id}`), { status: val, lastUpdated: serverTimestamp() });
-    window.updateField = (id, field, val) => update(ref(db, `client_records/${id}`), { [field]: val });
-    window.delRec = (id) => confirm("Delete entry?") && remove(ref(db, `client_records/${id}`));
-    window.secureAction = (type) => prompt("Security PIN:") === "4321" && remove(dbRef);
+    window.updateRemarks = (id, val) => update(ref(db, `client_records/${id}`), { remarks: val });
+    window.updateAppr = (id, n, val) => set(ref(db, `client_records/${id}/approaches/a${n}`), val);
+    window.delRec = (id) => confirm("Delete?") && remove(ref(db, `client_records/${id}`));
+
+    window.secureAction = (type) => {
+        const pin = prompt("Enter PIN:");
+        if (pin === "1234") {
+            if (type === 'wipe') remove(dbRef);
+            else if (type === 'import') document.getElementById('csvFileInput').click();
+        }
+    };
+
+    window.processFile = function(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        const overlay = document.getElementById('importProgressOverlay');
+        const bar = document.getElementById('progressBar');
+        const txt = document.getElementById('progressText');
+        const countTxt = document.getElementById('importCount');
+        const convTxt = document.getElementById('importConv');
+        
+        reader.onload = async function(e) {
+            const workbook = XLSX.read(e.target.result, { type: 'binary' });
+            const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            if (json.length === 0) return;
+            
+            overlay.style.display = 'flex';
+            let approachedCount = 0;
+            let claimedCount = 0;
+
+            const findValue = (row, keywords) => {
+                const header = Object.keys(row).find(h => keywords.some(k => h.toLowerCase().includes(k)));
+                return header ? row[header] : null;
+            };
+            
+            for (let i = 0; i < json.length; i++) {
+                const row = json[i];
+                const status = findValue(row, ['status']) || "Select";
+                
+                // Track Approached (Checks) & Claimed for Live Stats during import
+                const a1 = findValue(row, ['a1']) || false;
+                const a2 = findValue(row, ['a2']) || false;
+                const a3 = findValue(row, ['a3']) || false;
+                const a4 = findValue(row, ['a4']) || false;
+
+                if (a1 || a2 || a3 || a4) approachedCount++;
+                if (status === 'Claimed') claimedCount++;
+
+                await push(dbRef, {
+                    branch: findValue(row, ['branch', 'office']) || "Unspecified",
+                    clientName: findValue(row, ['client', 'name']) || "N/A",
+                    officer: findValue(row, ['officer', 'ts']) || "N/A",
+                    productId: findValue(row, ['product', 'loan']) || "Newloan",
+                    centre: findValue(row, ['centre', 'center']) || "",
+                    meetingDay: findValue(row, ['day', 'meeting']) || "Monday",
+                    status: status,
+                    approaches: { a1, a2, a3, a4 },
+                    source: "import",
+                    lastUpdated: serverTimestamp()
+                });
+                
+                const percent = Math.round(((i + 1) / json.length) * 100);
+                const convPct = approachedCount > 0 ? Math.round((claimedCount / approachedCount) * 100) : 0;
+                
+                bar.style.width = percent + "%";
+                txt.innerText = percent + "%";
+                countTxt.innerText = `${i + 1} / ${json.length}`;
+                convTxt.innerText = `${convPct}%`;
+            }
+            
+            setTimeout(() => {
+                overlay.style.display = 'none'; 
+                alert("Import Successful!");
+                bar.style.width = "0%";
+                txt.innerText = "0%";
+                countTxt.innerText = "0 / 0";
+                convTxt.innerText = "0%";
+            }, 700);
+        };
+        reader.readAsBinaryString(file);
+    };
 </script>
 </body>
 </html>
