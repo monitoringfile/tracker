@@ -190,7 +190,7 @@
         <table class="master-table">
             <thead>
                 <tr>
-                    <th>Branch / Centre</th><th>Client Name / TS Name</th><th>Application Type</th><th>Approaches</th><th class="col-status">Status</th><th class="col-remarks">Remarks</th><th>Action</th>
+                    <th>Branch / Centre / Day</th><th>Client Name / TS Name</th><th>Application Type</th><th>Approaches</th><th class="col-status">Status</th><th class="col-remarks">Remarks</th><th>Action</th>
                 </tr>
             </thead>
             <tbody id="masterBody"></tbody>
@@ -208,17 +208,17 @@
                     <select id="fBranch" class="form-control" required>
                         <option value="" disabled selected>Select here</option>
                     </select>
-                    <label style="font-size: 0.75rem; font-weight: 700;">Centre Code</label>
-                    <input type="text" id="fCentre" placeholder="e.g. MA-Gingoog" class="form-control" required oninput="validateCentre(this)">
+                    <label style="font-size: 0.75rem; font-weight: 700;">Centre Name</label>
+                    <input type="text" id="fCentre" placeholder="e.g. MA Sample" class="form-control" required oninput="validateCentre(this)">
                     <label style="font-size: 0.75rem; font-weight: 700;">Assigned Meeting Day</label>
                     <input type="text" id="fDay" class="form-control" readonly value="---">
                 </div>
                 <div>
                     <label style="font-size: 0.75rem; font-weight: 700;">Client Name</label>
                     <input type="text" id="fClient" placeholder="Full Name" class="form-control" required>
-                    <label style="font-size: 0.75rem; font-weight: 700;">Account Officer (TS)</label>
+                    <label style="font-size: 0.75rem; font-weight: 700;">Trust Staff Name</label>
                     <input type="text" id="fOfficer" placeholder="TS Name" class="form-control" required>
-                    <label style="font-size: 0.75rem; font-weight: 700;">Loan Product</label>
+                    <label style="font-size: 0.75rem; font-weight: 700;">Application Type</label>
                     <select id="fProduct" class="form-control" required>
                         <option value="Mauswagon Reloan">Mauswagon Reloan</option>
                         <option value="Supplemental Reloan">Supplemental Reloan</option>
@@ -229,7 +229,7 @@
                     </select>
                 </div>
             </div>
-            <button type="submit" class="btn-submit">Register New Folder</button>
+            <button type="submit" class="btn-submit">Submit New Folder</button>
             <button type="button" onclick="toggleModal(false)" style="width:100%; border:none; background:none; padding:10px; cursor:pointer; color:gray; font-weight: 600;">Close Form</button>
         </form>
     </div>
