@@ -119,7 +119,7 @@
             <span class="section-label">Product Breakdown</span>
             <div id="sidebarAccordion"></div>
         </div>
-        <div class="nav-link" style="color: #ef4444; margin-top: auto; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="secureAction('wipe')">🗑️ Clear All</div>
+        <div class="nav-link" style="color: #ef4444; margin-top: auto; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="secureAction('wipe')">🗑️ Clear All Data</div>
     </nav>
 </aside>
 
@@ -384,7 +384,7 @@
     window.updateStatus = (id, val) => update(ref(db, `client_records/${id}`), { status: val, lastUpdated: serverTimestamp() });
     window.updateField = (id, field, val) => update(ref(db, `client_records/${id}`), { [field]: val });
     window.delRec = (id) => confirm("Delete entry?") && remove(ref(db, `client_records/${id}`));
-    window.secureAction = (type) => prompt("Security PIN:") === "rmf123" && remove(dbRef);
+    window.secureAction = (type) => prompt("Security PIN:") === "4321" && remove(dbRef);
 </script>
 </body>
 </html>
