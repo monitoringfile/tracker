@@ -365,8 +365,8 @@
                                 <input type="checkbox" ${rec.approaches?.a3 ? 'checked' : ''} ${rec.source !== 'import' ? 'disabled' : ''} onchange="updateAppr('${id}',3,this.checked)">
                                 <input type="checkbox" ${rec.approaches?.a4 ? 'checked' : ''} ${rec.source !== 'import' ? 'disabled' : ''} onchange="updateAppr('${id}',4,this.checked)">
                             </td>
-                            <td><select onchange="updateStatus('${id}', this.value)" style="width:100%; font-size:0.7rem;">
-                                <option value="Select" ${status.includes('Select') ? 'selected' : ''}>Status...</option>
+                            <td><select onchange="updateStatus('${id}', this.value)" style="width:100%; font-size:1rem;">
+                                <option value="Select" ${status.includes('Select') ? 'selected' : ''}>Change Status here...</option>
                                 <option value="For Process" ${status === 'For Process' ? 'selected' : ''}>For Process</option>
                                 <option value="Pending Approval" ${status === 'Pending Approval' ? 'selected' : ''}>Pending Approval</option>
                                 <option value="Approved" ${status === 'Approved' ? 'selected' : ''}>Approved</option>
