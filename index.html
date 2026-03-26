@@ -68,19 +68,17 @@
         .captured-input { width: 100%; border: none; text-align: center; font-weight: 800; padding: 10px 0; background: transparent; color: #1e3a8a; }
         .captured-input:focus { background: #F5F502; outline: none; }
 
-        /* MANUAL ENTRY MODAL - YELLOW BORDER */
+        /* MANUAL ENTRY MODAL */
         #modalOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:200; align-items:center; justify-content:center; }
         .modal-box { background: white; padding: 25px; border-radius: 12px; width: 450px; border: 3px solid var(--brand-accent); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); }
         .form-label { display: block; font-weight: 800; font-size: 0.75rem; color: #64748b; margin-bottom: 5px; margin-top: 10px; }
         .form-control { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
         .btn-submit { background: var(--brand-primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-weight: 800; margin-top: 20px; cursor: pointer; }
 
-        /* PROGRESS */
         #importProgressOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
         .progress-wrapper { width: 350px; text-align: center; }
         #progressBar { width: 0%; height: 10px; background: var(--brand-accent); border-radius: 10px; transition: width 0.3s; }
 
-        /* COPY ICON STYLE */
         .copy-icon { cursor: pointer; margin-left: 5px; font-size: 0.7rem; vertical-align: middle; opacity: 0.7; transition: 0.2s; }
         .copy-icon:hover { opacity: 1; transform: scale(1.2); }
     </style>
@@ -176,9 +174,7 @@
         <h3 style="margin-top:0; color:var(--brand-primary); text-align:center;">APPLICATION LOAN ENTRY</h3>
         <form id="clientForm">
             <label class="form-label">BRANCH</label>
-            <select id="fBranch" class="form-control" required>
-            <option value="" disabled selected>Select here...</option>
-            </select>
+            <select id="fBranch" class="form-control" required><option value="" disabled selected>Select here...</option></select>
             <label class="form-label">CENTER NAME</label>
             <input type="text" id="fCentre" class="form-control" placeholder="e.g MA Sample" required oninput="validateCentre(this)">
             <label class="form-label">MEETING DAY</label>
@@ -189,7 +185,7 @@
             <input type="text" id="fOfficer" class="form-control" placeholder="First Name Only" required>
             <label class="form-label">Application Type</label>
             <select id="fProduct" class="form-control" required>
-              <option value="" disabled selected>Select here...</option>
+                <option value="" disabled selected>Select here...</option>
                 <option value="Mauswagon Reloan">Mauswagon Reloan</option><option value="Supplemental Reloan">Supplemental Reloan</option>
                 <option value="New Supplemental">New Supplemental</option><option value="Newloan">Newloan</option>
                 <option value="Saver's">Saver's</option><option value="Balik RMF">Balik RMF</option>
@@ -232,11 +228,8 @@
     const fmt = (n) => n === 0 ? "" : n;
     const getTooltipText = (o) => Object.entries(o).filter(([k,v]) => v > 0).map(([k,v]) => `${k}: ${v}`).join('\n');
 
-    // COPY FUNCTION
     window.copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Copied: " + text);
-        });
+        navigator.clipboard.writeText(text).then(() => { alert("Copied: " + text); });
     };
 
     window.renderDashboard = function() {
@@ -259,7 +252,6 @@
                 const status = rec.status || "Select";
                 const pId = rec.productId;
                 const matchQuery = (rec.clientName?.toLowerCase().includes(query) || rec.branch?.toLowerCase().includes(query) || rec.officer?.toLowerCase().includes(query));
-                
                 if (prodGlobal[pId] !== undefined) prodGlobal[pId]++;
                 if (stats[rec.branch]) {
                     const s = stats[rec.branch];
@@ -269,33 +261,19 @@
                     }
                     const map = { 'For Process':'proc','Pending Approval':'pend','Approved':'app','Disbursed':'disb','Claimed':'clmd','Findings':'find' };
                     const key = map[status];
-                    if (key) { 
-                        s[key]++; area[key]++;
-                        s.detail[key][pId] = (s.detail[key][pId] || 0) + 1;
-                        areaDetail[key][pId] = (areaDetail[key][pId] || 0) + 1;
-                    }
+                    if (key) { s[key]++; area[key]++; s.detail[key][pId] = (s.detail[key][pId] || 0) + 1; areaDetail[key][pId] = (areaDetail[key][pId] || 0) + 1; }
                 }
-
                 if (matchQuery && (selDay === "" || rec.meetingDay === selDay) && (selStatus === "" || status === selStatus)) {
                     let rCls = ""; if (status === 'Findings') rCls = 'row-findings'; else if (status === 'For Process') rCls = 'row-process'; else if (status === 'Pending Approval') rCls = 'row-pending'; else if (status === 'Approved') rCls = 'row-approved'; else if (status === 'Disbursed') rCls = 'row-disbursed'; else if (status === 'Claimed') rCls = 'row-claimed';
-                    
-                    let approachDisplay = (rec.source === 'import') ? 
-                        `<input type="checkbox" ${rec.approaches?.a1?'checked':''} onchange="upAppr('${id}',1,this.checked)">
-                         <input type="checkbox" ${rec.approaches?.a2?'checked':''} onchange="upAppr('${id}',2,this.checked)">
-                         <input type="checkbox" ${rec.approaches?.a3?'checked':''} onchange="upAppr('${id}',3,this.checked)">
-                         <input type="checkbox" ${rec.approaches?.a4?'checked':''} onchange="upAppr('${id}',4,this.checked)">` : 
-                        `<small style="color:#94a3b8"><i>Direct Entry</i></small>`;
-
-                    mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br><small>${rec.centre || ''} (${rec.meetingDay || ''})</small></td><td><strong>${rec.clientName}</strong> <span class="copy-icon" title="Copy Name" onclick="copyToClipboard('${rec.clientName}')">📋</span><br><small>${rec.officer}</small></td><td>${rec.productId}</td><td>${approachDisplay}</td><td><select onchange="updateStatus('${id}', this.value)" style="width:100%"><option value="Select" ${status==='Select'?'selected':''}>Select...</option><option value="For Process" ${status==='For Process'?'selected':''}>For Process</option><option value="Pending Approval" ${status==='Pending Approval'?'selected':''}>Pending Approval</option><option value="Approved" ${status==='Approved'?'selected':''}>Approved</option><option value="Disbursed" ${status==='Disbursed'?'selected':''}>Disbursed</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option><option value="Findings" ${status==='Findings'?'selected':''}>Findings</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent"></td><td><button onclick="delRec('${id}')" style="border:none; background:none; cursor:pointer">🗑️</button></td></tr>`);
+                    let approachDisplay = (rec.source === 'import') ? `<input type="checkbox" ${rec.approaches?.a1?'checked':''} onchange="upAppr('${id}',1,this.checked)"><input type="checkbox" ${rec.approaches?.a2?'checked':''} onchange="upAppr('${id}',2,this.checked)"><input type="checkbox" ${rec.approaches?.a3?'checked':''} onchange="upAppr('${id}',3,this.checked)"><input type="checkbox" ${rec.approaches?.a4?'checked':''} onchange="upAppr('${id}',4,this.checked)">` : `<small style="color:#94a3b8"><i>Direct Entry</i></small>`;
+                    mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br><small>${rec.centre || ''} (${rec.meetingDay || ''})</small></td><td><strong>${rec.clientName}</strong> <span class="copy-icon" onclick="copyToClipboard('${rec.clientName}')">📋</span><br><small>${rec.officer}</small></td><td>${rec.productId}</td><td>${approachDisplay}</td><td><select onchange="updateStatus('${id}', this.value)"><option value="Select" ${status==='Select'?'selected':''}>Select...</option><option value="For Process" ${status==='For Process'?'selected':''}>For Process</option><option value="Pending Approval" ${status==='Pending Approval'?'selected':''}>Pending Approval</option><option value="Approved" ${status==='Approved'?'selected':''}>Approved</option><option value="Disbursed" ${status==='Disbursed'?'selected':''}>Disbursed</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option><option value="Findings" ${status==='Findings'?'selected':''}>Findings</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent"></td><td><button onclick="delRec('${id}')" style="border:none; background:none;">🗑️</button></td></tr>`);
                 }
             });
         }
-
         branches.forEach(b => {
             const s = stats[b]; const c = s.approached > 0 ? Math.round((s.clmd / s.approached) * 100) : 0;
             sBody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:left; font-weight:700">${b}</td><td>${fmt(s.prospects)}</td><td>${fmt(s.approached)}</td><td style="font-weight:800; color:${c<80?'red':'green'}">${c?c+'%':''}</td><td data-tooltip="${getTooltipText(s.detail.proc)}">${fmt(s.proc)}</td><td data-tooltip="${getTooltipText(s.detail.pend)}">${fmt(s.pend)}</td><td data-tooltip="${getTooltipText(s.detail.app)}">${fmt(s.app)}</td><td data-tooltip="${getTooltipText(s.detail.disb)}">${fmt(s.disb)}</td><td data-tooltip="${getTooltipText(s.detail.clmd)}">${fmt(s.clmd)}</td><td data-tooltip="${getTooltipText(s.detail.find)}">${fmt(s.find)}</td></tr>`);
         });
-
         const aC = area.approached > 0 ? Math.round((area.clmd / area.approached) * 100) : 0;
         sFoot.insertAdjacentHTML('beforeend', `<tr style="background:#1e293b; color:#F5F502"><td style="text-align:left">TOTAL AREA</td><td>${fmt(area.prospects)}</td><td>${fmt(area.approached)}</td><td>${aC}%</td><td data-tooltip="${getTooltipText(areaDetail.proc)}">${fmt(area.proc)}</td><td data-tooltip="${getTooltipText(areaDetail.pend)}">${fmt(area.pend)}</td><td data-tooltip="${getTooltipText(areaDetail.app)}">${fmt(area.app)}</td><td data-tooltip="${getTooltipText(areaDetail.disb)}">${fmt(area.disb)}</td><td data-tooltip="${getTooltipText(areaDetail.clmd)}">${fmt(area.clmd)}</td><td data-tooltip="${getTooltipText(areaDetail.find)}">${fmt(area.find)}</td></tr>`);
         Object.entries(prodGlobal).forEach(([p, count]) => { if (count > 0) pSide.insertAdjacentHTML('beforeend', `<tr><td>${p}</td><td class="sb-count">${count}</td></tr>`); });
@@ -303,23 +281,16 @@
 
     window.processFile = function(file) {
         if (!file) return;
-        const reader = new FileReader();
-        const overlay = document.getElementById('importProgressOverlay');
-        const bar = document.getElementById('progressBar');
+        const reader = new FileReader(); const overlay = document.getElementById('importProgressOverlay'); const bar = document.getElementById('progressBar');
         reader.onload = async function(e) {
-            const workbook = XLSX.read(e.target.result, { type: 'binary' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-            const headers = rows[0].map(h => String(h).toLowerCase().trim());
-            const dataRows = rows.slice(1);
+            const workbook = XLSX.read(e.target.result, { type: 'binary' }); const sheet = workbook.Sheets[workbook.SheetNames[0]]; const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }); const headers = rows[0].map(h => String(h).toLowerCase().trim()); const dataRows = rows.slice(1);
             const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
             const idx = { branch: findIdx(['branch','br','office']), client: findIdx(['client','name']), officer: findIdx(['officer','ts','staff']), product: findIdx(['product','loan','type']), centre: findIdx(['centre','center','group']), day: findIdx(['day','schedule','meeting']) };
             overlay.style.display = 'flex';
             for (let i = 0; i < dataRows.length; i++) {
                 const r = dataRows[i]; if (!r) continue;
                 await push(dbRef, { branch: idx.branch!==-1?r[idx.branch]:"Unspecified", clientName: idx.client!==-1?r[idx.client]:"N/A", officer: idx.officer!==-1?r[idx.officer]:"N/A", productId: idx.product!==-1?r[idx.product]:"Newloan", centre: idx.centre!==-1?r[idx.centre]:"", meetingDay: idx.day!==-1?r[idx.day]:"Monday", status: "Select", source: "import", lastUpdated: serverTimestamp() });
-                const p = Math.round(((i + 1) / dataRows.length) * 100);
-                bar.style.width = p + "%"; document.getElementById('progressText').innerText = p + "%"; document.getElementById('importCount').innerText = `${i+1}/${dataRows.length}`;
+                const p = Math.round(((i + 1) / dataRows.length) * 100); bar.style.width = p + "%"; document.getElementById('progressText').innerText = p + "%"; document.getElementById('importCount').innerText = `${i+1}/${dataRows.length}`;
             }
             overlay.style.display = 'none';
         };
@@ -335,6 +306,7 @@
         const foot = document.getElementById('capturedSummary');
         const cats = ["Reloan", "Newloan", "C/P Leaders", "Oriented"];
         head.innerHTML = `<tr><th class="captured-row-title" style="top:0; background:#334155; color:#F5F502; z-index:51">BRANCH / CAT</th>${Array.from({length:31}, (_,i)=>`<th>D${i+1}</th>`).join('')}</tr>`;
+        
         onValue(capRef, (snap) => {
             const data = snap.val() || {}; body.innerHTML = "";
             let areaCatTotals = { "Reloan": Array(32).fill(0), "Newloan": Array(32).fill(0), "C/P Leaders": Array(32).fill(0), "Oriented": Array(32).fill(0) };
@@ -342,9 +314,12 @@
                 cats.forEach((cat, idx) => {
                     let row = `<tr><td class="captured-row-title">${idx === 0 ? b : ''} <br><small style="color:#64748b">${cat}</small></td>`;
                     for(let d=1; d<=31; d++) {
-                        const val = parseInt(data[`${b}_${cat}_${d}`] || 0);
-                        areaCatTotals[cat][d] += val;
-                        row += `<td class="cap-td"><input type="number" value="${val || ''}" class="captured-input" onblur="updateCaptured('${b}','${cat}',${d},this.value)"></td>`;
+                        // Fix: Sanitize path by replacing slash for C/P Leaders mapping
+                        const safeCat = cat.replace('/', '_');
+                        const dbPath = `${b}_${safeCat}_${d}`;
+                        const val = data[dbPath] || 0;
+                        areaCatTotals[cat][d] += parseInt(val);
+                        row += `<td class="cap-td"><input type="number" value="${val > 0 ? val : ''}" class="captured-input" onblur="updateCaptured('${b}','${cat}',${d},this.value)"></td>`;
                     }
                     body.insertAdjacentHTML('beforeend', row + "</tr>");
                 });
@@ -355,20 +330,20 @@
                 for(let d=1; d<=31; d++) sRow += `<td>${areaCatTotals[cat][d] || 0}</td>`;
                 return sRow + "</tr>";
             }).join('');
-        });
+        }, { onlyOnce: false });
     };
 
-    window.updateCaptured = (b, cat, d, val) => { if(val === "" || val == 0) remove(ref(db, `captured_folders/${b}_${cat}_${d}`)); else set(ref(db, `captured_folders/${b}_${cat}_${d}`), val); };
+    window.updateCaptured = (b, cat, d, val) => { 
+        // Fix: Sanitize category for Firebase path (replace / with _)
+        const safeCat = cat.replace('/', '_');
+        const path = `${b}_${safeCat}_${d}`;
+        if(val === "" || val == 0) remove(ref(db, `captured_folders/${path}`)); 
+        else set(ref(db, `captured_folders/${path}`), parseInt(val)); 
+    };
+
     window.validateCentre = function(input) { let v = input.value.toUpperCase(); input.value = v; const d = document.getElementById('fDay'); if (v.startsWith("MA") || v.startsWith("MB")) d.value = "Monday"; else if (v.startsWith("TA") || v.startsWith("TB")) d.value = "Tuesday"; else if (v.startsWith("WA") || v.startsWith("WB")) d.value = "Wednesday"; else if (v.startsWith("TH")) d.value = "Thursday"; else d.value = "---"; };
     window.toggleModal = (s) => document.getElementById('modalOverlay').style.display = s ? 'flex' : 'none';
-
-    // AUTO-CLEAN REMARKS LOGIC
-    window.updateStatus = (id, v) => {
-        let updates = { status: v, lastUpdated: serverTimestamp() };
-        if (v === "Approved" || v === "Disbursed") { updates.remarks = ""; }
-        update(ref(db, `client_records/${id}`), updates);
-    };
-
+    window.updateStatus = (id, v) => { let updates = { status: v, lastUpdated: serverTimestamp() }; if (v === "Approved" || v === "Disbursed") { updates.remarks = ""; } update(ref(db, `client_records/${id}`), updates); };
     window.updateRemarks = (id, v) => update(ref(db, `client_records/${id}`), { remarks: v });
     window.upAppr = (id, n, v) => set(ref(db, `client_records/${id}/approaches/a${n}`), v);
     window.delRec = (id) => confirm("Delete?") && remove(ref(db, `client_records/${id}`));
