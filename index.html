@@ -216,6 +216,10 @@
     const capRef = ref(db, 'captured_folders');
     const presenceRef = ref(db, 'online_users');
 
+    // State trackers to prevent flickering
+    let rawData = null;
+    let capturedData = {};
+
     const myPresenceRef = push(presenceRef);
     onValue(ref(db, '.info/connected'), (snap) => { if (snap.val()) { onDisconnect(myPresenceRef).remove(); set(myPresenceRef, true); } });
     onValue(presenceRef, (snap) => { document.getElementById('userCount').innerText = snap.exists() ? Object.keys(snap.val()).length : 0; });
@@ -226,8 +230,20 @@
     branches.forEach(b => document.getElementById('fBranch').add(new Option(b, b)));
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString(); }, 1000);
 
-    let rawData = null;
-    onValue(dbRef, (snap) => { rawData = snap.val(); renderDashboard(); });
+    // Sync Data and trigger render ONLY when data actually changes
+    onValue(dbRef, (snap) => { 
+        rawData = snap.val(); 
+        renderDashboard(); 
+    });
+
+    onValue(capRef, (snap) => { 
+        capturedData = snap.val() || {}; 
+        renderDashboard();
+        // Prevent mischievous jumping if modal is closed
+        if(document.getElementById('capturedModalOverlay').style.display === 'flex') {
+            renderCapturedGrid();
+        }
+    });
 
     const fmt = (n) => n === 0 ? "" : n;
     const getTooltipText = (o) => Object.entries(o).filter(([k,v]) => v > 0).map(([k,v]) => `${k}: ${v}`).join('\n');
@@ -247,68 +263,61 @@
         
         mBody.innerHTML = ""; sBody.innerHTML = ""; sFoot.innerHTML = ""; pSide.innerHTML = "";
 
-        onValue(capRef, (snap) => {
-            const capData = snap.val() || {};
-            let stats = {}; 
-            let prodGlobal = {}; 
-            products.forEach(p => prodGlobal[p] = 0);
-            
-            let area = { prospects: 0, approached: 0, captured: 0, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, find: 0 };
-            let areaDetail = { proc: {}, pend: {}, app: {}, disb: {}, clmd: {}, find: {} };
+        let stats = {}; 
+        let prodGlobal = {}; 
+        products.forEach(p => prodGlobal[p] = 0);
+        
+        let area = { prospects: 0, approached: 0, captured: 0, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, find: 0 };
+        let areaDetail = { proc: {}, pend: {}, app: {}, disb: {}, clmd: {}, find: {} };
 
-            branches.forEach(b => {
-                let bCapTotal = 0;
-                for(let d=1; d<=31; d++) {
-                    bCapTotal += parseInt(capData[`${b}_Reloan_${d}`] || 0);
-                    bCapTotal += parseInt(capData[`${b}_Newloan_${d}`] || 0);
-                }
-                stats[b] = { prospects: 0, approached: 0, captured: bCapTotal, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, find: 0, detail: { proc: {}, pend: {}, app: {}, disb: {}, clmd: {}, find: {} } };
-                area.captured += bCapTotal;
-            });
-
-            if (rawData) {
-                Object.entries(rawData).reverse().forEach(([id, rec]) => {
-                    const status = rec.status || "Select";
-                    const pId = rec.productId;
-                    const matchQuery = (rec.clientName?.toLowerCase().includes(query) || rec.branch?.toLowerCase().includes(query) || rec.officer?.toLowerCase().includes(query));
-                    if (prodGlobal[pId] !== undefined) prodGlobal[pId]++;
-                    if (stats[rec.branch]) {
-                        const s = stats[rec.branch];
-                        if (rec.source === 'import') {
-                            s.prospects++; area.prospects++;
-                            if (rec.approaches?.a1 || rec.approaches?.a2 || rec.approaches?.a3 || rec.approaches?.a4) { s.approached++; area.approached++; }
-                        }
-                        const map = { 'For Process':'proc','Pending Approval':'pend','Approved':'app','Disbursed':'disb','Claimed':'clmd','Findings':'find' };
-                        const key = map[status];
-                        if (key) { s[key]++; area[key]++; s.detail[key][pId] = (s.detail[key][pId] || 0) + 1; areaDetail[key][pId] = (areaDetail[key][pId] || 0) + 1; }
-                    }
-                    if (matchQuery && (selDay === "" || rec.meetingDay === selDay) && (selStatus === "" || status === selStatus)) {
-                        let rCls = ""; if (status === 'Findings') rCls = 'row-findings'; else if (status === 'For Process') rCls = 'row-process'; else if (status === 'Pending Approval') rCls = 'row-pending'; else if (status === 'Approved') rCls = 'row-approved'; else if (status === 'Disbursed') rCls = 'row-disbursed'; else if (status === 'Claimed') rCls = 'row-claimed';
-                        let approachDisplay = (rec.source === 'import') ? `<input type="checkbox" ${rec.approaches?.a1?'checked':''} onchange="upAppr('${id}',1,this.checked)"><input type="checkbox" ${rec.approaches?.a2?'checked':''} onchange="upAppr('${id}',2,this.checked)"><input type="checkbox" ${rec.approaches?.a3?'checked':''} onchange="upAppr('${id}',3,this.checked)"><input type="checkbox" ${rec.approaches?.a4?'checked':''} onchange="upAppr('${id}',4,this.checked)">` : `<small style="color:#94a3b8"><i>Direct Entry</i></small>`;
-                        mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br><small>${rec.centre || ''} (${rec.meetingDay || ''})</small></td><td><strong>${rec.clientName}</strong> <span class="copy-icon" onclick="copyToClipboard('${rec.clientName}')">📋</span><br><small>${rec.officer}</small></td><td>${rec.productId}</td><td>${approachDisplay}</td><td><select onchange="updateStatus('${id}', this.value)"><option value="Select" ${status==='Select'?'selected':''}>Select...</option><option value="For Process" ${status==='For Process'?'selected':''}>For Process</option><option value="Pending Approval" ${status==='Pending Approval'?'selected':''}>Pending Approval</option><option value="Approved" ${status==='Approved'?'selected':''}>Approved</option><option value="Disbursed" ${status==='Disbursed'?'selected':''}>Disbursed</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option><option value="Findings" ${status==='Findings'?'selected':''}>Findings</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent"></td><td><button onclick="delRec('${id}')" style="border:none; background:none;">🗑️</button></td></tr>`);
-                    }
-                });
+        branches.forEach(b => {
+            let bCapTotal = 0;
+            for(let d=1; d<=31; d++) {
+                bCapTotal += parseInt(capturedData[`${b}_Reloan_${d}`] || 0);
+                bCapTotal += parseInt(capturedData[`${b}_Newloan_${d}`] || 0);
             }
+            stats[b] = { prospects: 0, approached: 0, captured: bCapTotal, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, find: 0, detail: { proc: {}, pend: {}, app: {}, disb: {}, clmd: {}, find: {} } };
+            area.captured += bCapTotal;
+        });
 
-            sBody.innerHTML = "";
-            branches.forEach(b => {
-                const s = stats[b]; 
-                // CONV RATE 1: Claimed / Approached
-                const conv = s.approached > 0 ? Math.round((s.clmd / s.approached) * 100) : 0;
-                // CONV RATE 2: Claimed / Captured
-                const capConv = s.captured > 0 ? Math.round((s.clmd / s.captured) * 100) : 0;
-                
-                sBody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:left; font-weight:700">${b}</td><td>${fmt(s.prospects)}</td><td>${fmt(s.approached)}</td><td style="font-weight:800; color:${conv<80?'red':'green'}">${conv?conv+'%':''}</td><td style="background:#fefce8; font-weight:800;">${fmt(s.captured)}</td><td style="background:#f8fafc; font-weight:800; color:${capConv<90?'#f59e0b':'#10b981'}">${capConv?capConv+'%':''}</td><td data-tooltip="${getTooltipText(s.detail.proc)}">${fmt(s.proc)}</td><td data-tooltip="${getTooltipText(s.detail.pend)}">${fmt(s.pend)}</td><td data-tooltip="${getTooltipText(s.detail.app)}">${fmt(s.app)}</td><td data-tooltip="${getTooltipText(s.detail.disb)}">${fmt(s.disb)}</td><td data-tooltip="${getTooltipText(s.detail.clmd)}">${fmt(s.clmd)}</td><td data-tooltip="${getTooltipText(s.detail.find)}">${fmt(s.find)}</td></tr>`);
+        if (rawData) {
+            Object.entries(rawData).reverse().forEach(([id, rec]) => {
+                const status = rec.status || "Select";
+                const pId = rec.productId;
+                const matchQuery = (rec.clientName?.toLowerCase().includes(query) || rec.branch?.toLowerCase().includes(query) || rec.officer?.toLowerCase().includes(query));
+                if (prodGlobal[pId] !== undefined) prodGlobal[pId]++;
+                if (stats[rec.branch]) {
+                    const s = stats[rec.branch];
+                    if (rec.source === 'import') {
+                        s.prospects++; area.prospects++;
+                        if (rec.approaches?.a1 || rec.approaches?.a2 || rec.approaches?.a3 || rec.approaches?.a4) { s.approached++; area.approached++; }
+                    }
+                    const map = { 'For Process':'proc','Pending Approval':'pend','Approved':'app','Disbursed':'disb','Claimed':'clmd','Findings':'find' };
+                    const key = map[status];
+                    if (key) { s[key]++; area[key]++; s.detail[key][pId] = (s.detail[key][pId] || 0) + 1; areaDetail[key][pId] = (areaDetail[key][pId] || 0) + 1; }
+                }
+                if (matchQuery && (selDay === "" || rec.meetingDay === selDay) && (selStatus === "" || status === selStatus)) {
+                    let rCls = ""; if (status === 'Findings') rCls = 'row-findings'; else if (status === 'For Process') rCls = 'row-process'; else if (status === 'Pending Approval') rCls = 'row-pending'; else if (status === 'Approved') rCls = 'row-approved'; else if (status === 'Disbursed') rCls = 'row-disbursed'; else if (status === 'Claimed') rCls = 'row-claimed';
+                    let approachDisplay = (rec.source === 'import') ? `<input type="checkbox" ${rec.approaches?.a1?'checked':''} onchange="upAppr('${id}',1,this.checked)"><input type="checkbox" ${rec.approaches?.a2?'checked':''} onchange="upAppr('${id}',2,this.checked)"><input type="checkbox" ${rec.approaches?.a3?'checked':''} onchange="upAppr('${id}',3,this.checked)"><input type="checkbox" ${rec.approaches?.a4?'checked':''} onchange="upAppr('${id}',4,this.checked)">` : `<small style="color:#94a3b8"><i>Direct Entry</i></small>`;
+                    mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br><small>${rec.centre || ''} (${rec.meetingDay || ''})</small></td><td><strong>${rec.clientName}</strong> <span class="copy-icon" onclick="copyToClipboard('${rec.clientName}')">📋</span><br><small>${rec.officer}</small></td><td>${rec.productId}</td><td>${approachDisplay}</td><td><select onchange="updateStatus('${id}', this.value)"><option value="Select" ${status==='Select'?'selected':''}>Select...</option><option value="For Process" ${status==='For Process'?'selected':''}>For Process</option><option value="Pending Approval" ${status==='Pending Approval'?'selected':''}>Pending Approval</option><option value="Approved" ${status==='Approved'?'selected':''}>Approved</option><option value="Disbursed" ${status==='Disbursed'?'selected':''}>Disbursed</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option><option value="Findings" ${status==='Findings'?'selected':''}>Findings</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent"></td><td><button onclick="delRec('${id}')" style="border:none; background:none;">🗑️</button></td></tr>`);
+                }
             });
+        }
 
-            const aConv = area.approached > 0 ? Math.round((area.clmd / area.approached) * 100) : 0;
-            const aCapConv = area.captured > 0 ? Math.round((area.clmd / area.captured) * 100) : 0;
-            
-            sFoot.innerHTML = `<tr style="background:#1e293b; color:#F5F502"><td style="text-align:left">TOTAL AREA</td><td>${fmt(area.prospects)}</td><td>${fmt(area.approached)}</td><td>${aConv}%</td><td>${fmt(area.captured)}</td><td>${aCapConv}%</td><td data-tooltip="${getTooltipText(areaDetail.proc)}">${fmt(area.proc)}</td><td data-tooltip="${getTooltipText(areaDetail.pend)}">${fmt(area.pend)}</td><td data-tooltip="${getTooltipText(areaDetail.app)}">${fmt(area.app)}</td><td data-tooltip="${getTooltipText(areaDetail.disb)}">${fmt(area.disb)}</td><td data-tooltip="${getTooltipText(areaDetail.clmd)}">${fmt(area.clmd)}</td><td data-tooltip="${getTooltipText(areaDetail.find)}">${fmt(area.find)}</td></tr>`;
-            
-            pSide.innerHTML = "";
-            Object.entries(prodGlobal).forEach(([p, count]) => { if (count > 0) pSide.insertAdjacentHTML('beforeend', `<tr><td>${p}</td><td class="sb-count">${count}</td></tr>`); });
-        }, { onlyOnce: true });
+        branches.forEach(b => {
+            const s = stats[b]; 
+            const conv = s.approached > 0 ? Math.round((s.clmd / s.approached) * 100) : 0;
+            const capConv = s.captured > 0 ? Math.round((s.clmd / s.captured) * 100) : 0;
+            sBody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:left; font-weight:700">${b}</td><td>${fmt(s.prospects)}</td><td>${fmt(s.approached)}</td><td style="font-weight:800; color:${conv<80?'red':'green'}">${conv?conv+'%':''}</td><td style="background:#fefce8; font-weight:800;">${fmt(s.captured)}</td><td style="background:#f8fafc; font-weight:800; color:${capConv<90?'#f59e0b':'#10b981'}">${capConv?capConv+'%':''}</td><td data-tooltip="${getTooltipText(s.detail.proc)}">${fmt(s.proc)}</td><td data-tooltip="${getTooltipText(s.detail.pend)}">${fmt(s.pend)}</td><td data-tooltip="${getTooltipText(s.detail.app)}">${fmt(s.app)}</td><td data-tooltip="${getTooltipText(s.detail.disb)}">${fmt(s.disb)}</td><td data-tooltip="${getTooltipText(s.detail.clmd)}">${fmt(s.clmd)}</td><td data-tooltip="${getTooltipText(s.detail.find)}">${fmt(s.find)}</td></tr>`);
+        });
+
+        const aConv = area.approached > 0 ? Math.round((area.clmd / area.approached) * 100) : 0;
+        const aCapConv = area.captured > 0 ? Math.round((area.clmd / area.captured) * 100) : 0;
+        
+        sFoot.innerHTML = `<tr style="background:#1e293b; color:#F5F502"><td style="text-align:left">TOTAL AREA</td><td>${fmt(area.prospects)}</td><td>${fmt(area.approached)}</td><td>${aConv}%</td><td>${fmt(area.captured)}</td><td>${aCapConv}%</td><td data-tooltip="${getTooltipText(areaDetail.proc)}">${fmt(area.proc)}</td><td data-tooltip="${getTooltipText(areaDetail.pend)}">${fmt(area.pend)}</td><td data-tooltip="${getTooltipText(areaDetail.app)}">${fmt(area.app)}</td><td data-tooltip="${getTooltipText(areaDetail.disb)}">${fmt(area.disb)}</td><td data-tooltip="${getTooltipText(areaDetail.clmd)}">${fmt(area.clmd)}</td><td data-tooltip="${getTooltipText(areaDetail.find)}">${fmt(area.find)}</td></tr>`;
+        
+        pSide.innerHTML = "";
+        Object.entries(prodGlobal).forEach(([p, count]) => { if (count > 0) pSide.insertAdjacentHTML('beforeend', `<tr><td>${p}</td><td class="sb-count">${count}</td></tr>`); });
     };
 
     window.processFile = function(file) {
@@ -339,29 +348,27 @@
         const cats = ["Reloan", "Newloan", "C/P Leaders", "Oriented"];
         head.innerHTML = `<tr><th class="captured-row-title" style="top:0; background:#334155; color:#F5F502; z-index:51">BRANCH / CAT</th>${Array.from({length:31}, (_,i)=>`<th>D${i+1}</th>`).join('')}</tr>`;
         
-        onValue(capRef, (snap) => {
-            const data = snap.val() || {}; body.innerHTML = "";
-            let areaCatTotals = { "Reloan": Array(32).fill(0), "Newloan": Array(32).fill(0), "C/P Leaders": Array(32).fill(0), "Oriented": Array(32).fill(0) };
-            branches.forEach(b => {
-                cats.forEach((cat, idx) => {
-                    let row = `<tr><td class="captured-row-title">${idx === 0 ? b : ''} <br><small style="color:#64748b">${cat}</small></td>`;
-                    for(let d=1; d<=31; d++) {
-                        const safeCat = cat.replace('/', '_');
-                        const dbPath = `${b}_${safeCat}_${d}`;
-                        const val = data[dbPath] || 0;
-                        areaCatTotals[cat][d] += parseInt(val);
-                        row += `<td class="cap-td"><input type="number" value="${val > 0 ? val : ''}" class="captured-input" onblur="updateCaptured('${b}','${cat}',${d},this.value)"></td>`;
-                    }
-                    body.insertAdjacentHTML('beforeend', row + "</tr>");
-                });
-                body.insertAdjacentHTML('beforeend', `<tr style="background:#cbd5e1; height:3px;"><td colspan="32"></td></tr>`);
+        body.innerHTML = "";
+        let areaCatTotals = { "Reloan": Array(32).fill(0), "Newloan": Array(32).fill(0), "C/P Leaders": Array(32).fill(0), "Oriented": Array(32).fill(0) };
+        branches.forEach(b => {
+            cats.forEach((cat, idx) => {
+                let row = `<tr><td class="captured-row-title">${idx === 0 ? b : ''} <br><small style="color:#64748b">${cat}</small></td>`;
+                for(let d=1; d<=31; d++) {
+                    const safeCat = cat.replace('/', '_');
+                    const dbPath = `${b}_${safeCat}_${d}`;
+                    const val = capturedData[dbPath] || 0;
+                    areaCatTotals[cat][d] += parseInt(val);
+                    row += `<td class="cap-td"><input type="number" value="${val > 0 ? val : ''}" class="captured-input" onblur="updateCaptured('${b}','${cat}',${d},this.value)"></td>`;
+                }
+                body.insertAdjacentHTML('beforeend', row + "</tr>");
             });
-            foot.innerHTML = cats.map(cat => {
-                let sRow = `<tr style="background:#1e293b; color:#F5F502"><td class="captured-row-title" style="background:#1e293b; color:#F5F502">TOTAL: ${cat}</td>`;
-                for(let d=1; d<=31; d++) sRow += `<td>${areaCatTotals[cat][d] || 0}</td>`;
-                return sRow + "</tr>";
-            }).join('');
-        }, { onlyOnce: false });
+            body.insertAdjacentHTML('beforeend', `<tr style="background:#cbd5e1; height:3px;"><td colspan="32"></td></tr>`);
+        });
+        foot.innerHTML = cats.map(cat => {
+            let sRow = `<tr style="background:#1e293b; color:#F5F502"><td class="captured-row-title" style="background:#1e293b; color:#F5F502">TOTAL: ${cat}</td>`;
+            for(let d=1; d<=31; d++) sRow += `<td>${areaCatTotals[cat][d] || 0}</td>`;
+            return sRow + "</tr>";
+        }).join('');
     };
 
     window.updateCaptured = (b, cat, d, val) => { 
@@ -369,7 +376,7 @@
         const path = `${b}_${safeCat}_${d}`;
         if(val === "" || val == 0) remove(ref(db, `captured_folders/${path}`)); 
         else set(ref(db, `captured_folders/${path}`), parseInt(val));
-        renderDashboard(); 
+        // Note: Global listener onValue(capRef) will handle UI updates automatically
     };
 
     window.validateCentre = function(input) { let v = input.value.toUpperCase(); input.value = v; const d = document.getElementById('fDay'); if (v.startsWith("MA") || v.startsWith("MB")) d.value = "Monday"; else if (v.startsWith("TA") || v.startsWith("TB")) d.value = "Tuesday"; else if (v.startsWith("WA") || v.startsWith("WB")) d.value = "Wednesday"; else if (v.startsWith("TH")) d.value = "Thursday"; else d.value = "---"; };
