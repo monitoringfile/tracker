@@ -79,6 +79,10 @@
         #importProgressOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
         .progress-wrapper { width: 350px; text-align: center; }
         #progressBar { width: 0%; height: 10px; background: var(--brand-accent); border-radius: 10px; transition: width 0.3s; }
+
+        /* COPY ICON STYLE */
+        .copy-icon { cursor: pointer; margin-left: 5px; font-size: 0.7rem; vertical-align: middle; opacity: 0.7; transition: 0.2s; }
+        .copy-icon:hover { opacity: 1; transform: scale(1.2); }
     </style>
 </head>
 <body>
@@ -228,6 +232,13 @@
     const fmt = (n) => n === 0 ? "" : n;
     const getTooltipText = (o) => Object.entries(o).filter(([k,v]) => v > 0).map(([k,v]) => `${k}: ${v}`).join('\n');
 
+    // COPY FUNCTION
+    window.copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Copied: " + text);
+        });
+    };
+
     window.renderDashboard = function() {
         const mBody = document.getElementById('masterBody');
         const sBody = document.getElementById('summaryBody');
@@ -275,7 +286,7 @@
                          <input type="checkbox" ${rec.approaches?.a4?'checked':''} onchange="upAppr('${id}',4,this.checked)">` : 
                         `<small style="color:#94a3b8"><i>Direct Entry</i></small>`;
 
-                    mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br><small>${rec.centre || ''} (${rec.meetingDay || ''})</small></td><td><strong>${rec.clientName}</strong><br><small>${rec.officer}</small></td><td>${rec.productId}</td><td>${approachDisplay}</td><td><select onchange="updateStatus('${id}', this.value)" style="width:100%"><option value="Select" ${status==='Select'?'selected':''}>Select...</option><option value="For Process" ${status==='For Process'?'selected':''}>For Process</option><option value="Pending Approval" ${status==='Pending Approval'?'selected':''}>Pending Approval</option><option value="Approved" ${status==='Approved'?'selected':''}>Approved</option><option value="Disbursed" ${status==='Disbursed'?'selected':''}>Disbursed</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option><option value="Findings" ${status==='Findings'?'selected':''}>Findings</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent"></td><td><button onclick="delRec('${id}')" style="border:none; background:none; cursor:pointer">🗑️</button></td></tr>`);
+                    mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br><small>${rec.centre || ''} (${rec.meetingDay || ''})</small></td><td><strong>${rec.clientName}</strong> <span class="copy-icon" title="Copy Name" onclick="copyToClipboard('${rec.clientName}')">📋</span><br><small>${rec.officer}</small></td><td>${rec.productId}</td><td>${approachDisplay}</td><td><select onchange="updateStatus('${id}', this.value)" style="width:100%"><option value="Select" ${status==='Select'?'selected':''}>Select...</option><option value="For Process" ${status==='For Process'?'selected':''}>For Process</option><option value="Pending Approval" ${status==='Pending Approval'?'selected':''}>Pending Approval</option><option value="Approved" ${status==='Approved'?'selected':''}>Approved</option><option value="Disbursed" ${status==='Disbursed'?'selected':''}>Disbursed</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option><option value="Findings" ${status==='Findings'?'selected':''}>Findings</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent"></td><td><button onclick="delRec('${id}')" style="border:none; background:none; cursor:pointer">🗑️</button></td></tr>`);
                 }
             });
         }
