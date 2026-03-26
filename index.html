@@ -146,7 +146,7 @@
             </select>
         </div>
         <table class="master-table">
-            <thead><tr><th>Branch / Day</th><th>Client / Officer</th><th>Type</th><th>Approaches</th><th>Status</th><th>Remarks</th><th>Del</th></tr></thead>
+            <thead><tr><th>Branch / Center / Day</th><th>Client / TS</th><th>Application Type</th><th>Approaches</th><th>Status Update</th><th>Remarks</th><th>Del</th></tr></thead>
             <tbody id="masterBody"></tbody>
         </table>
     </div>
@@ -155,7 +155,7 @@
 <div id="capturedModalOverlay">
     <div class="captured-modal-box">
         <div class="captured-header">
-            <h3 style="margin:0;">AREA CAPTURED FOLDERS MONITORING</h3>
+            <h3 style="margin:0;">BRANCHES CAPTURED FOLDERS MONITORING</h3>
             <div style="display:flex; gap:10px;">
                 <button onclick="secureAction('wipeCaptured')" style="background:#ef4444; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;">Reset For The Month</button>
                 <button onclick="closeCapturedModal()" style="background:#fff; color:#1e293b; border:none; padding:8px 20px; border-radius:6px; cursor:pointer;">Close</button>
@@ -175,11 +175,11 @@
     <div class="modal-box">
         <h3 style="margin-top:0; color:var(--brand-primary); text-align:center;">APPLICATION LOAN ENTRY</h3>
         <form id="clientForm">
-            <label class="form-label">SELECT BRANCH</label>
+            <label class="form-label">BRANCH</label>
             <select id="fBranch" class="form-control" required>
             <option value="" disabled selected>Select here...</option>
             </select>
-            <label class="form-label">CENTRE NAME</label>
+            <label class="form-label">CENTER NAME</label>
             <input type="text" id="fCentre" class="form-control" placeholder="e.g MA Sample" required oninput="validateCentre(this)">
             <label class="form-label">MEETING DAY</label>
             <input type="text" id="fDay" class="form-control" readonly style="background:#f1f5f9;">
@@ -187,14 +187,14 @@
             <input type="text" id="fClient" class="form-control" placeholder="From Instafin Name" required>
             <label class="form-label">TS Name</label>
             <input type="text" id="fOfficer" class="form-control" placeholder="First Name Only" required>
-            <label class="form-label">LOAN PRODUCT</label>
+            <label class="form-label">Application Type</label>
             <select id="fProduct" class="form-control" required>
               <option value="" disabled selected>Select here...</option>
                 <option value="Mauswagon Reloan">Mauswagon Reloan</option><option value="Supplemental Reloan">Supplemental Reloan</option>
                 <option value="New Supplemental">New Supplemental</option><option value="Newloan">Newloan</option>
                 <option value="Saver's">Saver's</option><option value="Balik RMF">Balik RMF</option>
             </select>
-            <button type="submit" class="btn-submit">SAVE TO DATABASE</button>
+            <button type="submit" class="btn-submit">SUBMIT APPLICATION</button>
             <button type="button" onclick="toggleModal(false)" style="width:100%; border:none; background:none; color:#94a3b8; margin-top:10px; cursor:pointer;">Cancel</button>
         </form>
     </div>
