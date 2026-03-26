@@ -42,11 +42,11 @@
         .summary-table th, .master-table th { background: #1e293b; padding: 12px; font-size: 0.65rem; color: #F5F502; border-bottom: 2px solid var(--brand-accent); text-transform: uppercase; }
         .summary-table td, .master-table td { padding: 12px 10px; text-align: center; font-size: 0.8rem; border-bottom: 1px solid #e2e8f0; position: relative; }
         
-        /* TOOLTIP LOGIC: Updated for visibility on right-side columns */
+        /* UPDATED TOOLTIP LOGIC: Flip based on row position */
         .summary-table td[data-tooltip]:hover::after {
             content: attr(data-tooltip); 
             position: absolute; 
-            top: 100%; 
+            top: 110%; /* Default: show below for top rows */
             left: 50%; 
             transform: translateX(-50%);
             background: #0f172a; 
@@ -60,7 +60,14 @@
             pointer-events: none;
         }
 
-        /* SHIFT TOOLTIP LEFT for the last column (Findings) so it doesn't go off-screen */
+        /* SMART ADJUSTMENT: For Salay (Last Data Row) and Total Area (Footer), show tooltip ABOVE the number */
+        .summary-table tbody#summaryBody tr:last-child td[data-tooltip]:hover::after,
+        .summary-table tbody#summaryFooter tr td[data-tooltip]:hover::after {
+            top: auto;
+            bottom: 110%;
+        }
+
+        /* PREVENT RIGHT-EDGE CUT OFF: Shift Findings column tooltip to the left */
         .summary-table td[data-tooltip]:last-child:hover::after {
             left: auto;
             right: 0;
