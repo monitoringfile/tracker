@@ -42,9 +42,34 @@
         .summary-table th, .master-table th { background: #1e293b; padding: 12px; font-size: 0.65rem; color: #F5F502; border-bottom: 2px solid var(--brand-accent); text-transform: uppercase; }
         .summary-table td, .master-table td { padding: 12px 10px; text-align: center; font-size: 0.8rem; border-bottom: 1px solid #e2e8f0; position: relative; }
         
+        /* TOOLTIP LOGIC: Updated for visibility on right-side columns */
         .summary-table td[data-tooltip]:hover::after {
-            content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-            background: #0f172a; color: white; padding: 8px; border-radius: 6px; font-size: 0.7rem; white-space: pre; z-index: 500;
+            content: attr(data-tooltip); 
+            position: absolute; 
+            top: 100%; 
+            left: 50%; 
+            transform: translateX(-50%);
+            background: #0f172a; 
+            color: white; 
+            padding: 8px; 
+            border-radius: 6px; 
+            font-size: 0.7rem; 
+            white-space: pre; 
+            z-index: 500;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+
+        /* SHIFT TOOLTIP LEFT for the last column (Findings) so it doesn't go off-screen */
+        .summary-table td[data-tooltip]:last-child:hover::after {
+            left: auto;
+            right: 0;
+            transform: translateX(0);
+        }
+
+        .summary-find-alert {
+            color: #ef4444 !important;
+            font-weight: 800;
         }
 
         .row-process { background-color: #029937 !important; color: white; }
@@ -216,7 +241,6 @@
     const capRef = ref(db, 'captured_folders');
     const presenceRef = ref(db, 'online_users');
 
-    // State trackers to prevent flickering
     let rawData = null;
     let capturedData = {};
 
@@ -230,19 +254,11 @@
     branches.forEach(b => document.getElementById('fBranch').add(new Option(b, b)));
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString(); }, 1000);
 
-    // Sync Data and trigger render ONLY when data actually changes
-    onValue(dbRef, (snap) => { 
-        rawData = snap.val(); 
-        renderDashboard(); 
-    });
-
+    onValue(dbRef, (snap) => { rawData = snap.val(); renderDashboard(); });
     onValue(capRef, (snap) => { 
         capturedData = snap.val() || {}; 
         renderDashboard();
-        // Prevent mischievous jumping if modal is closed
-        if(document.getElementById('capturedModalOverlay').style.display === 'flex') {
-            renderCapturedGrid();
-        }
+        if(document.getElementById('capturedModalOverlay').style.display === 'flex') renderCapturedGrid();
     });
 
     const fmt = (n) => n === 0 ? "" : n;
@@ -308,13 +324,16 @@
             const s = stats[b]; 
             const conv = s.approached > 0 ? Math.round((s.clmd / s.approached) * 100) : 0;
             const capConv = s.captured > 0 ? Math.round((s.clmd / s.captured) * 100) : 0;
-            sBody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:left; font-weight:700">${b}</td><td>${fmt(s.prospects)}</td><td>${fmt(s.approached)}</td><td style="font-weight:800; color:${conv<80?'red':'green'}">${conv?conv+'%':''}</td><td style="background:#fefce8; font-weight:800;">${fmt(s.captured)}</td><td style="background:#f8fafc; font-weight:800; color:${capConv<90?'#f59e0b':'#10b981'}">${capConv?capConv+'%':''}</td><td data-tooltip="${getTooltipText(s.detail.proc)}">${fmt(s.proc)}</td><td data-tooltip="${getTooltipText(s.detail.pend)}">${fmt(s.pend)}</td><td data-tooltip="${getTooltipText(s.detail.app)}">${fmt(s.app)}</td><td data-tooltip="${getTooltipText(s.detail.disb)}">${fmt(s.disb)}</td><td data-tooltip="${getTooltipText(s.detail.clmd)}">${fmt(s.clmd)}</td><td data-tooltip="${getTooltipText(s.detail.find)}">${fmt(s.find)}</td></tr>`);
+            const findClass = s.find > 0 ? 'class="summary-find-alert"' : '';
+
+            sBody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:left; font-weight:700">${b}</td><td>${fmt(s.prospects)}</td><td>${fmt(s.approached)}</td><td style="font-weight:800; color:${conv<80?'red':'green'}">${conv?conv+'%':''}</td><td style="background:#fefce8; font-weight:800;">${fmt(s.captured)}</td><td style="background:#f8fafc; font-weight:800; color:${capConv<90?'#f59e0b':'#10b981'}">${capConv?capConv+'%':''}</td><td data-tooltip="${getTooltipText(s.detail.proc)}">${fmt(s.proc)}</td><td data-tooltip="${getTooltipText(s.detail.pend)}">${fmt(s.pend)}</td><td data-tooltip="${getTooltipText(s.detail.app)}">${fmt(s.app)}</td><td data-tooltip="${getTooltipText(s.detail.disb)}">${fmt(s.disb)}</td><td data-tooltip="${getTooltipText(s.detail.clmd)}">${fmt(s.clmd)}</td><td ${findClass} data-tooltip="${getTooltipText(s.detail.find)}">${fmt(s.find)}</td></tr>`);
         });
 
         const aConv = area.approached > 0 ? Math.round((area.clmd / area.approached) * 100) : 0;
         const aCapConv = area.captured > 0 ? Math.round((area.clmd / area.captured) * 100) : 0;
+        const areaFindClass = area.find > 0 ? 'class="summary-find-alert"' : '';
         
-        sFoot.innerHTML = `<tr style="background:#1e293b; color:#F5F502"><td style="text-align:left">TOTAL AREA</td><td>${fmt(area.prospects)}</td><td>${fmt(area.approached)}</td><td>${aConv}%</td><td>${fmt(area.captured)}</td><td>${aCapConv}%</td><td data-tooltip="${getTooltipText(areaDetail.proc)}">${fmt(area.proc)}</td><td data-tooltip="${getTooltipText(areaDetail.pend)}">${fmt(area.pend)}</td><td data-tooltip="${getTooltipText(areaDetail.app)}">${fmt(area.app)}</td><td data-tooltip="${getTooltipText(areaDetail.disb)}">${fmt(area.disb)}</td><td data-tooltip="${getTooltipText(areaDetail.clmd)}">${fmt(area.clmd)}</td><td data-tooltip="${getTooltipText(areaDetail.find)}">${fmt(area.find)}</td></tr>`;
+        sFoot.innerHTML = `<tr style="background:#1e293b; color:#F5F502"><td style="text-align:left">TOTAL AREA</td><td>${fmt(area.prospects)}</td><td>${fmt(area.approached)}</td><td>${aConv}%</td><td>${fmt(area.captured)}</td><td>${aCapConv}%</td><td data-tooltip="${getTooltipText(areaDetail.proc)}">${fmt(area.proc)}</td><td data-tooltip="${getTooltipText(areaDetail.pend)}">${fmt(area.pend)}</td><td data-tooltip="${getTooltipText(areaDetail.app)}">${fmt(area.app)}</td><td data-tooltip="${getTooltipText(areaDetail.disb)}">${fmt(area.disb)}</td><td data-tooltip="${getTooltipText(areaDetail.clmd)}">${fmt(area.clmd)}</td><td ${areaFindClass} data-tooltip="${getTooltipText(areaDetail.find)}">${fmt(area.find)}</td></tr>`;
         
         pSide.innerHTML = "";
         Object.entries(prodGlobal).forEach(([p, count]) => { if (count > 0) pSide.insertAdjacentHTML('beforeend', `<tr><td>${p}</td><td class="sb-count">${count}</td></tr>`); });
@@ -376,7 +395,6 @@
         const path = `${b}_${safeCat}_${d}`;
         if(val === "" || val == 0) remove(ref(db, `captured_folders/${path}`)); 
         else set(ref(db, `captured_folders/${path}`), parseInt(val));
-        // Note: Global listener onValue(capRef) will handle UI updates automatically
     };
 
     window.validateCentre = function(input) { let v = input.value.toUpperCase(); input.value = v; const d = document.getElementById('fDay'); if (v.startsWith("MA") || v.startsWith("MB")) d.value = "Monday"; else if (v.startsWith("TA") || v.startsWith("TB")) d.value = "Tuesday"; else if (v.startsWith("WA") || v.startsWith("WB")) d.value = "Wednesday"; else if (v.startsWith("TH")) d.value = "Thursday"; else d.value = "---"; };
