@@ -42,43 +42,39 @@
         .summary-table th, .master-table th { background: #1e293b; padding: 12px; font-size: 0.65rem; color: #F5F502; border-bottom: 2px solid var(--brand-accent); text-transform: uppercase; }
         .summary-table td, .master-table td { padding: 12px 10px; text-align: center; font-size: 0.8rem; border-bottom: 1px solid #e2e8f0; position: relative; }
         
-        /* UPDATED TOOLTIP LOGIC: Flip based on row position */
+        /* TOOLTIP LOGIC */
         .summary-table td[data-tooltip]:hover::after {
             content: attr(data-tooltip); 
             position: absolute; 
-            top: 110%; /* Default: show below for top rows */
+            top: 110%; 
             left: 50%; 
             transform: translateX(-50%);
             background: #0f172a; 
             color: white; 
-            padding: 8px; 
+            padding: 10px; 
             border-radius: 6px; 
             font-size: 0.7rem; 
             white-space: pre; 
             z-index: 500;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             pointer-events: none;
+            text-align: left;
+            line-height: 1.4;
         }
 
-        /* SMART ADJUSTMENT: For Salay (Last Data Row) and Total Area (Footer), show tooltip ABOVE the number */
         .summary-table tbody#summaryBody tr:last-child td[data-tooltip]:hover::after,
         .summary-table tbody#summaryFooter tr td[data-tooltip]:hover::after {
             top: auto;
             bottom: 110%;
         }
 
-        /* PREVENT RIGHT-EDGE CUT OFF: Shift Findings column tooltip to the left */
         .summary-table td[data-tooltip]:last-child:hover::after {
             left: auto;
             right: 0;
             transform: translateX(0);
         }
 
-        .summary-find-alert {
-            color: #ef4444 !important;
-            font-weight: 800;
-        }
-
+        .summary-find-alert { color: #ef4444 !important; font-weight: 800; }
         .row-process { background-color: #029937 !important; color: white; }
         .row-pending { background-color: #25D1F7 !important; color: black; }
         .row-approved { background-color: #7706A1 !important; color: Yellow; }
@@ -290,17 +286,17 @@
         let prodGlobal = {}; 
         products.forEach(p => prodGlobal[p] = 0);
         
-        let area = { prospects: 0, approached: 0, captured: 0, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, find: 0 };
+        let area = { prospects: 0, approached: 0, captured: 0, capR: 0, capN: 0, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, clmdP: 0, clmdUnappr: 0, find: 0, clmdR: 0, clmdN: 0, appStatus: { proc:0, pend:0, app:0, disb:0, clmd:0, find:0, none:0 }, prosDetail: {} };
         let areaDetail = { proc: {}, pend: {}, app: {}, disb: {}, clmd: {}, find: {} };
 
         branches.forEach(b => {
-            let bCapTotal = 0;
+            let bCapR = 0, bCapN = 0;
             for(let d=1; d<=31; d++) {
-                bCapTotal += parseInt(capturedData[`${b}_Reloan_${d}`] || 0);
-                bCapTotal += parseInt(capturedData[`${b}_Newloan_${d}`] || 0);
+                bCapR += parseInt(capturedData[`${b}_Reloan_${d}`] || 0);
+                bCapN += parseInt(capturedData[`${b}_Newloan_${d}`] || 0);
             }
-            stats[b] = { prospects: 0, approached: 0, captured: bCapTotal, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, find: 0, detail: { proc: {}, pend: {}, app: {}, disb: {}, clmd: {}, find: {} } };
-            area.captured += bCapTotal;
+            stats[b] = { prospects: 0, approached: 0, captured: (bCapR + bCapN), capR: bCapR, capN: bCapN, proc: 0, pend: 0, app: 0, disb: 0, clmd: 0, clmdP: 0, clmdUnappr: 0, clmdR: 0, clmdN: 0, find: 0, appStatus: { proc:0, pend:0, app:0, disb:0, clmd:0, find:0, none:0 }, prosDetail: {}, detail: { proc: {}, pend: {}, app: {}, disb: {}, clmd: {}, find: {} } };
+            area.captured += (bCapR + bCapN); area.capR += bCapR; area.capN += bCapN;
         });
 
         if (rawData) {
@@ -311,13 +307,34 @@
                 if (prodGlobal[pId] !== undefined) prodGlobal[pId]++;
                 if (stats[rec.branch]) {
                     const s = stats[rec.branch];
-                    if (rec.source === 'import') {
-                        s.prospects++; area.prospects++;
-                        if (rec.approaches?.a1 || rec.approaches?.a2 || rec.approaches?.a3 || rec.approaches?.a4) { s.approached++; area.approached++; }
-                    }
                     const map = { 'For Process':'proc','Pending Approval':'pend','Approved':'app','Disbursed':'disb','Claimed':'clmd','Findings':'find' };
                     const key = map[status];
-                    if (key) { s[key]++; area[key]++; s.detail[key][pId] = (s.detail[key][pId] || 0) + 1; areaDetail[key][pId] = (areaDetail[key][pId] || 0) + 1; }
+                    const isApproached = (rec.approaches?.a1 || rec.approaches?.a2 || rec.approaches?.a3 || rec.approaches?.a4);
+
+                    if (rec.source === 'import') {
+                        s.prospects++; area.prospects++;
+                        s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
+                        area.prosDetail[pId] = (area.prosDetail[pId] || 0) + 1;
+
+                        if (isApproached) { 
+                            s.approached++; area.approached++; 
+                            if(key) { s.appStatus[key]++; area.appStatus[key]++; }
+                            else { s.appStatus.none++; area.appStatus.none++; }
+                        }
+                    }
+                    
+                    if (key) { 
+                        s[key]++; area[key]++; s.detail[key][pId] = (s.detail[key][pId] || 0) + 1; areaDetail[key][pId] = (areaDetail[key][pId] || 0) + 1; 
+                        
+                        if(status === 'Claimed') {
+                            if(rec.source === 'import') { 
+                                if(isApproached) { s.clmdP++; area.clmdP++; }
+                                else { s.clmdUnappr++; area.clmdUnappr++; }
+                            }
+                            if(pId.toLowerCase().includes('reloan')) { s.clmdR++; area.clmdR++; }
+                            else { s.clmdN++; area.clmdN++; }
+                        }
+                    }
                 }
                 if (matchQuery && (selDay === "" || rec.meetingDay === selDay) && (selStatus === "" || status === selStatus)) {
                     let rCls = ""; if (status === 'Findings') rCls = 'row-findings'; else if (status === 'For Process') rCls = 'row-process'; else if (status === 'Pending Approval') rCls = 'row-pending'; else if (status === 'Approved') rCls = 'row-approved'; else if (status === 'Disbursed') rCls = 'row-disbursed'; else if (status === 'Claimed') rCls = 'row-claimed';
@@ -329,18 +346,50 @@
 
         branches.forEach(b => {
             const s = stats[b]; 
-            const conv = s.approached > 0 ? Math.round((s.clmd / s.approached) * 100) : 0;
+            const conv = s.approached > 0 ? Math.round((s.clmdP / s.approached) * 100) : 0;
             const capConv = s.captured > 0 ? Math.round((s.clmd / s.captured) * 100) : 0;
             const findClass = s.find > 0 ? 'class="summary-find-alert"' : '';
+            
+            // NEW: Prospect by Product Tooltip
+            const prosProductTip = `PROSPECTS BY PRODUCT:\n-------------------\n${getTooltipText(s.prosDetail)}`;
 
-            sBody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:left; font-weight:700">${b}</td><td>${fmt(s.prospects)}</td><td>${fmt(s.approached)}</td><td style="font-weight:800; color:${conv<80?'red':'green'}">${conv?conv+'%':''}</td><td style="background:#fefce8; font-weight:800;">${fmt(s.captured)}</td><td style="background:#f8fafc; font-weight:800; color:${capConv<90?'#f59e0b':'#10b981'}">${capConv?capConv+'%':''}</td><td data-tooltip="${getTooltipText(s.detail.proc)}">${fmt(s.proc)}</td><td data-tooltip="${getTooltipText(s.detail.pend)}">${fmt(s.pend)}</td><td data-tooltip="${getTooltipText(s.detail.app)}">${fmt(s.app)}</td><td data-tooltip="${getTooltipText(s.detail.disb)}">${fmt(s.disb)}</td><td data-tooltip="${getTooltipText(s.detail.clmd)}">${fmt(s.clmd)}</td><td ${findClass} data-tooltip="${getTooltipText(s.detail.find)}">${fmt(s.find)}</td></tr>`);
+            // Approached Status Summary Tooltip
+            let appSummaryTip = `APPROACHED STATUS SUMMARY:\n-------------------\nProc: ${s.appStatus.proc}\nPend: ${s.appStatus.pend}\nAppr: ${s.appStatus.app}\nDisb: ${s.appStatus.disb}\nClmd: ${s.appStatus.clmd}\nFind: ${s.appStatus.find}`;
+            if(s.appStatus.none > 0) appSummaryTip += `\nNo Status: ${s.appStatus.none} (Action Required!!)`;
+            else appSummaryTip += `\nNo Status: 0`;
+
+            const capTip = `Reloan: ${s.capR}\nNewloan: ${s.capN}`;
+            const notConverted = Math.max(0, s.approached - s.clmdP);
+            // NEW: Conversion Summary including Unapproached but Claimed
+            const prosTip = `Converted From Approached: ${s.clmdP}\nNot Converted (Approached): ${notConverted}\n-------------------\nClaimed w/o Approach: ${s.clmdUnappr} (Direct Claimed)`;
+
+            const notR = Math.max(0, s.capR - s.clmdR);
+            const notN = Math.max(0, s.capN - s.clmdN);
+            const convTip = `Converted Reloan: ${s.clmdR}\nConverted Newloan: ${s.clmdN}\n-------------------\nNot Converted R: ${notR}\nNot Converted N: ${notN}`;
+
+            sBody.insertAdjacentHTML('beforeend', `<tr><td style="text-align:left; font-weight:700">${b}</td><td data-tooltip="${prosProductTip}" style="cursor:help">${fmt(s.prospects)}</td><td data-tooltip="${appSummaryTip}" style="cursor:help; font-weight:700;">${fmt(s.approached)}</td><td style="font-weight:800; color:${conv<80?'red':'green'}" data-tooltip="${prosTip}">${conv?conv+'%':''}</td><td style="background:#fefce8; font-weight:800;" data-tooltip="${capTip}">${fmt(s.captured)}</td><td style="background:#f8fafc; font-weight:800; color:${capConv<90?'#f59e0b':'#10b981'}" data-tooltip="${convTip}">${capConv?capConv+'%':''}</td><td data-tooltip="${getTooltipText(s.detail.proc)}">${fmt(s.proc)}</td><td data-tooltip="${getTooltipText(s.detail.pend)}">${fmt(s.pend)}</td><td data-tooltip="${getTooltipText(s.detail.app)}">${fmt(s.app)}</td><td data-tooltip="${getTooltipText(s.detail.disb)}">${fmt(s.disb)}</td><td data-tooltip="${getTooltipText(s.detail.clmd)}">${fmt(s.clmd)}</td><td ${findClass} data-tooltip="${getTooltipText(s.detail.find)}">${fmt(s.find)}</td></tr>`);
         });
 
-        const aConv = area.approached > 0 ? Math.round((area.clmd / area.approached) * 100) : 0;
+        const aConv = area.approached > 0 ? Math.round((area.clmdP / area.approached) * 100) : 0;
         const aCapConv = area.captured > 0 ? Math.round((area.clmd / area.captured) * 100) : 0;
         const areaFindClass = area.find > 0 ? 'class="summary-find-alert"' : '';
+        const aCapTip = `Reloan: ${area.capR}\nNewloan: ${area.capN}`;
         
-        sFoot.innerHTML = `<tr style="background:#1e293b; color:#F5F502"><td style="text-align:left">TOTAL AREA</td><td>${fmt(area.prospects)}</td><td>${fmt(area.approached)}</td><td>${aConv}%</td><td>${fmt(area.captured)}</td><td>${aCapConv}%</td><td data-tooltip="${getTooltipText(areaDetail.proc)}">${fmt(area.proc)}</td><td data-tooltip="${getTooltipText(areaDetail.pend)}">${fmt(area.pend)}</td><td data-tooltip="${getTooltipText(areaDetail.app)}">${fmt(area.app)}</td><td data-tooltip="${getTooltipText(areaDetail.disb)}">${fmt(area.disb)}</td><td data-tooltip="${getTooltipText(areaDetail.clmd)}">${fmt(area.clmd)}</td><td ${areaFindClass} data-tooltip="${getTooltipText(areaDetail.find)}">${fmt(area.find)}</td></tr>`;
+        // Area Tooltips
+        const aProsProductTip = `AREA PROSPECTS BY PRODUCT:\n-------------------\n${getTooltipText(area.prosDetail)}`;
+        
+        let areaAppSummaryTip = `AREA APPROACHED STATUS:\n-------------------\nProc: ${area.appStatus.proc}\nPend: ${area.appStatus.pend}\nAppr: ${area.appStatus.app}\nDisb: ${area.appStatus.disb}\nClmd: ${area.appStatus.clmd}\nFind: ${area.appStatus.find}`;
+        if(area.appStatus.none > 0) areaAppSummaryTip += `\nNo Status: ${area.appStatus.none} (Action Required!!)`;
+        else areaAppSummaryTip += `\nNo Status: 0`;
+
+        const aNotConverted = Math.max(0, area.approached - area.clmdP);
+        const aProsTip = `Converted From Approached: ${area.clmdP}\nNot Converted (Approached): ${aNotConverted}\n-------------------\nClaimed w/o Approach: ${area.clmdUnappr} (Direct Claimed)`;
+
+        const aNotR = Math.max(0, area.capR - area.clmdR);
+        const aNotN = Math.max(0, area.capN - area.clmdN);
+        const aConvTip = `Converted Reloan: ${area.clmdR}\nConverted Newloan: ${area.clmdN}\n-------------------\nNot Converted R: ${aNotR}\nNot Converted N: ${aNotN}`;
+        
+        sFoot.innerHTML = `<tr style="background:#1e293b; color:#F5F502"><td style="text-align:left">TOTAL AREA</td><td data-tooltip="${aProsProductTip}" style="cursor:help">${fmt(area.prospects)}</td><td data-tooltip="${areaAppSummaryTip}" style="cursor:help; font-weight:700;">${fmt(area.approached)}</td><td data-tooltip="${aProsTip}">${aConv}%</td><td data-tooltip="${aCapTip}">${fmt(area.captured)}</td><td data-tooltip="${aConvTip}">${aCapConv}%</td><td data-tooltip="${getTooltipText(areaDetail.proc)}">${fmt(area.proc)}</td><td data-tooltip="${getTooltipText(areaDetail.pend)}">${fmt(area.pend)}</td><td data-tooltip="${getTooltipText(areaDetail.app)}">${fmt(area.app)}</td><td data-tooltip="${getTooltipText(areaDetail.disb)}">${fmt(area.disb)}</td><td data-tooltip="${getTooltipText(areaDetail.clmd)}">${fmt(area.clmd)}</td><td ${areaFindClass} data-tooltip="${getTooltipText(areaDetail.find)}">${fmt(area.find)}</td></tr>`;
         
         pSide.innerHTML = "";
         Object.entries(prodGlobal).forEach(([p, count]) => { if (count > 0) pSide.insertAdjacentHTML('beforeend', `<tr><td>${p}</td><td class="sb-count">${count}</td></tr>`); });
@@ -407,7 +456,7 @@
     window.validateCentre = function(input) { let v = input.value.toUpperCase(); input.value = v; const d = document.getElementById('fDay'); if (v.startsWith("MA") || v.startsWith("MB")) d.value = "Monday"; else if (v.startsWith("TA") || v.startsWith("TB")) d.value = "Tuesday"; else if (v.startsWith("WA") || v.startsWith("WB")) d.value = "Wednesday"; else if (v.startsWith("TH")) d.value = "Thursday"; else d.value = "---"; };
     window.toggleModal = (s) => document.getElementById('modalOverlay').style.display = s ? 'flex' : 'none';
     window.updateStatus = (id, v) => { let updates = { status: v, lastUpdated: serverTimestamp() }; if (v === "Approved" || v === "Disbursed") { updates.remarks = ""; } update(ref(db, `client_records/${id}`), updates); };
-    window.updateRemarks = (id, v) => update(ref(db, `client_records/${id}`), { remarks: v });
+    window.updateRemarks = (id, v) => update(ref(db, `client_records/${id}/remarks`), v);
     window.upAppr = (id, n, v) => set(ref(db, `client_records/${id}/approaches/a${n}`), v);
     window.delRec = (id) => confirm("Delete?") && remove(ref(db, `client_records/${id}`));
     document.getElementById('clientForm').onsubmit = (e) => { e.preventDefault(); push(dbRef, { branch: document.getElementById('fBranch').value, centre: document.getElementById('fCentre').value, meetingDay: document.getElementById('fDay').value, clientName: document.getElementById('fClient').value, officer: document.getElementById('fOfficer').value, productId: document.getElementById('fProduct').value, status: "Select", source: "manual", lastUpdated: serverTimestamp() }).then(() => { toggleModal(false); e.target.reset(); }); };
