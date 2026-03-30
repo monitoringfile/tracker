@@ -34,23 +34,39 @@
 
         .main-content { flex: 1; margin-left: 260px; padding: 2rem; width: calc(100% - 260px); }
 
-        .summary-card, .data-section { background: white; border-radius: 12px; border: var(--border-navy); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 2rem; }
+        .summary-card, .data-section { background: white; border-radius: 12px; border: var(--border-navy); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: visible !important; margin-bottom: 2rem; }
         .summary-table, .master-table { width: 100%; border-collapse: collapse; }
         .summary-table th, .master-table th { background: #1e293b; padding: 12px; font-size: 0.65rem; color: #F5F502; border-bottom: 2px solid var(--brand-accent); text-transform: uppercase; }
         .summary-table td, .master-table td { padding: 12px 10px; text-align: center; font-size: 0.8rem; border-bottom: 1px solid #e2e8f0; position: relative; }
         
-        /* TOOLTIP STYLE */
-        .summary-table td[data-tooltip]:hover::after {
-            content: attr(data-tooltip); position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
-            background: #0f172a; color: white; padding: 12px; border-radius: 8px; font-size: 0.75rem; 
-            white-space: pre; z-index: 999; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4); text-align: left; line-height: 1.5; border: 1px solid var(--brand-accent);
+        /* TOOLTIP LOGIC */
+        [data-tooltip] { position: relative; cursor: pointer; }
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.98); color: white; padding: 12px; border-radius: 8px; font-size: 0.75rem; 
+            white-space: pre; z-index: 10000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); text-align: left; line-height: 1.5; border: 1px solid var(--brand-accent);
+            pointer-events: none; width: max-content; max-width: 250px;
         }
+
+        /* Adjustments for the Bottom Row (Total Area) specifically */
+        #summaryFooter tr td[data-tooltip]:hover::after {
+            bottom: 125% !important; /* Force it to stay above */
+            top: auto !important;
+        }
+
+        /* Adjustments for First Row to show below */
+        #summaryBody tr:first-child td[data-tooltip]:hover::after {
+            bottom: auto; top: 125%;
+        }
+
+        .summary-table td.claimed-tooltip[data-tooltip]:hover::after { background: rgba(23, 40, 138, 0.98); color: #F5F502; border-color: #F5F502; }
+        .summary-table td.findings-tooltip[data-tooltip]:hover::after { border-color: #ef4444; color: #fca5a5; background: rgba(69, 10, 10, 0.98); }
 
         .row-process { background-color: #029937 !important; color: white; }
         .row-pending { background-color: #25D1F7 !important; color: black; }
         .row-approved { background-color: #7706A1 !important; color: Yellow; }
         .row-disbursed { background-color: #2E4387 !important; color: white; }
-        .row-claimed { background-color: #D8FC08 !important; color: black; }
+        .row-claimed { background-color: #F5F502 !important; color: #000 !important; }
         .row-findings { background-color: #ef4444 !important; color: white; }
 
         #capturedModalOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.8); z-index:300; align-items:center; justify-content:center; backdrop-filter: blur(8px); }
@@ -294,51 +310,38 @@
             const conv = s.approached > 0 ? Math.round((s.clmdP / s.approached) * 100) : 0;
             const capConv = s.captured > 0 ? Math.round((s.clmd / s.captured) * 100) : 0;
             
-            const prosProductTip = `PROSPECTS BY PRODUCT:\n-------------------\n${getTooltipText(s.prosDetail)}`;
-            const appSummaryTip = `APPROACHED STATUS SUMMARY:\n-------------------\nProc: ${s.appStatus.proc}\nPend: ${s.appStatus.pend}\nAppr: ${s.appStatus.app}\nDisb: ${s.appStatus.disb}\nClmd: ${s.appStatus.clmd}\nFind: ${s.appStatus.find}`;
-            const convTip = `CONVERSION SUMMARY:\n-------------------\nApproached: ${s.approached}\nConverted (Claimed): ${s.clmdP}\nNot Converted: ${s.approached - s.clmdP}\nClaimed w/out Approach: ${s.clmdUnappr}`;
-            const capTip = `TOTAL CAPTURED:\n-------------------\nReloan: ${s.capR}\nNewloan: ${s.capN}`;
-            const capConvTip = `CAPTURE CONVERSION:\n-------------------\nConverted Reloan: ${s.clmdR}\nConverted Newloan: ${s.clmdN}\nNot Converted R: ${s.capR - s.clmdR}\nNot Converted N: ${s.capN - s.clmdN}`;
-
             sBody.insertAdjacentHTML('beforeend', `<tr>
                 <td style="text-align:left; font-weight:700">${b}</td>
-                <td data-tooltip="${prosProductTip}">${fmt(s.prospects)}</td>
-                <td data-tooltip="${appSummaryTip}">${fmt(s.approached)}</td>
-                <td data-tooltip="${convTip}" style="font-weight:800; color:${conv<80?'red':'green'}">${conv?conv+'%':''}</td>
-                <td data-tooltip="${capTip}" style="background:#fefce8; font-weight:800;">${fmt(s.captured)}</td>
-                <td data-tooltip="${capConvTip}" style="background:#f8fafc; font-weight:800; color:${capConv<90?'#10b981':'#f59e0b'}">${capConv?capConv+'%':''}</td>
-                <td data-tooltip="${getTooltipText(s.detail.proc)}">${fmt(s.proc)}</td>
-                <td data-tooltip="${getTooltipText(s.detail.pend)}">${fmt(s.pend)}</td>
-                <td data-tooltip="${getTooltipText(s.detail.app)}">${fmt(s.app)}</td>
-                <td data-tooltip="${getTooltipText(s.detail.disb)}">${fmt(s.disb)}</td>
-                <td data-tooltip="${getTooltipText(s.detail.clmd)}">${fmt(s.clmd)}</td>
-                <td data-tooltip="${getTooltipText(s.detail.find)}">${fmt(s.find)}</td>
+                <td data-tooltip="BRANCH PROSPECTS:\n-------------------\n${getTooltipText(s.prosDetail)}">${fmt(s.prospects)}</td>
+                <td data-tooltip="APPROACHED STATUS SUMMARY:\n-------------------\nProc: ${s.appStatus.proc}\nPend: ${s.appStatus.pend}\nAppr: ${s.appStatus.app}\nDisb: ${s.appStatus.disb}\nClmd: ${s.appStatus.clmd}\nFind: ${s.appStatus.find}">${fmt(s.approached)}</td>
+                <td data-tooltip="CONVERSION SUMMARY:\n-------------------\nApproached: ${s.approached}\nConverted (Claimed): ${s.clmdP}\nNot Converted: ${s.approached - s.clmdP}\nClaimed w/out Approach: ${s.clmdUnappr}" style="font-weight:800; color:${conv<80?'red':'green'}">${conv?conv+'%':''}</td>
+                <td data-tooltip="TOTAL CAPTURED:\n-------------------\nReloan: ${s.capR}\nNewloan: ${s.capN}" style="background:#fefce8; font-weight:800;">${fmt(s.captured)}</td>
+                <td data-tooltip="CAPTURE CONVERSION:\n-------------------\nConverted Reloan: ${s.clmdR}\nConverted Newloan: ${s.clmdN}\nNot Converted R: ${s.capR - s.clmdR}\nNot Converted N: ${s.capN - s.clmdN}" style="background:#f8fafc; font-weight:800; color:${capConv<90?'#f59e0b':'#10b981'}">${capConv?capConv+'%':''}</td>
+                <td data-tooltip="FOR PROCESS:\n${getTooltipText(s.detail.proc)}">${fmt(s.proc)}</td>
+                <td data-tooltip="PENDING:\n${getTooltipText(s.detail.pend)}">${fmt(s.pend)}</td>
+                <td data-tooltip="APPROVED:\n${getTooltipText(s.detail.app)}">${fmt(s.app)}</td>
+                <td data-tooltip="DISBURSED:\n${getTooltipText(s.detail.disb)}">${fmt(s.disb)}</td>
+                <td class="claimed-tooltip" data-tooltip="CLAIMED:\n${getTooltipText(s.detail.clmd)}">${fmt(s.clmd)}</td>
+                <td class="findings-tooltip" data-tooltip="FINDINGS:\n${getTooltipText(s.detail.find)}">${fmt(s.find)}</td>
             </tr>`);
         });
 
-        // TOTAL AREA FOOTER WITH PERMANENT TOOLTIPS
         const areaConv = area.approached ? Math.round((area.clmdP/area.approached)*100) : 0;
         const areaCapConv = area.captured ? Math.round((area.clmd/area.captured)*100) : 0;
 
-        const areaProsTip = `AREA PROSPECTS:\n-------------------\n${getTooltipText(area.prosDetail)}`;
-        const areaAppTip = `AREA APPROACHED SUMMARY:\n-------------------\nProc: ${area.appStatus.proc}\nPend: ${area.appStatus.pend}\nAppr: ${area.appStatus.app}\nDisb: ${area.appStatus.disb}\nClmd: ${area.appStatus.clmd}\nFind: ${area.appStatus.find}`;
-        const areaConvTip = `AREA CONVERSION:\n-------------------\nApproached: ${area.approached}\nConverted: ${area.clmdP}\nNot Converted: ${area.approached - area.clmdP}\nClaimed w/out Approach: ${area.clmdUnappr}`;
-        const areaCapTip = `AREA TOTAL CAPTURED:\n-------------------\nReloan: ${area.capR}\nNewloan: ${area.capN}`;
-        const areaCapConvTip = `AREA CAPTURE CONVERSION:\n-------------------\nConverted R: ${area.clmdR}\nConverted N: ${area.clmdN}\nNot Converted R: ${area.capR - area.clmdR}\nNot Converted N: ${area.capN - area.clmdN}`;
-
         sFoot.innerHTML = `<tr style="background:#1e293b; color:#F5F502; border-top: 3px solid var(--brand-accent);">
-            <td style="text-align:left; font-weight:800;">TOTAL AREA </td>
-            <td data-tooltip="${areaProsTip}">${fmt(area.prospects)}</td>
-            <td data-tooltip="${areaAppTip}">${fmt(area.approached)}</td>
-            <td data-tooltip="${areaConvTip}" style="font-weight:900;">${areaConv?areaConv+'%':''}</td>
-            <td data-tooltip="${areaCapTip}">${fmt(area.captured)}</td>
-            <td data-tooltip="${areaCapConvTip}" style="font-weight:900;">${areaCapConv?areaCapConv+'%':''}</td>
-            <td data-tooltip="${getTooltipText(areaDetail.proc)}">${fmt(area.proc)}</td>
-            <td data-tooltip="${getTooltipText(areaDetail.pend)}">${fmt(area.pend)}</td>
-            <td data-tooltip="${getTooltipText(areaDetail.app)}">${fmt(area.app)}</td>
-            <td data-tooltip="${getTooltipText(areaDetail.disb)}">${fmt(area.disb)}</td>
-            <td data-tooltip="${getTooltipText(areaDetail.clmd)}">${fmt(area.clmd)}</td>
-            <td data-tooltip="${getTooltipText(areaDetail.find)}">${fmt(area.find)}</td>
+            <td style="text-align:left; font-weight:800;">TOTAL AREA</td>
+            <td data-tooltip="AREA PROSPECTS:\n-------------------\n${getTooltipText(area.prosDetail)}">${fmt(area.prospects)}</td>
+            <td data-tooltip="AREA TOTAL APPROACHED:\n-------------------\nProc: ${area.appStatus.proc}\nPend: ${area.appStatus.pend}\nAppr: ${area.appStatus.app}\nDisb: ${area.appStatus.disb}\nClmd: ${area.appStatus.clmd}\nFind: ${area.appStatus.find}">${fmt(area.approached)}</td>
+            <td data-tooltip="AREA TOTAL CONVERSION:\n-------------------\nApproached: ${area.approached}\nConverted (Claimed): ${area.clmdP}\nNot Converted: ${area.approached - area.clmdP}\nClaimed w/out Approach: ${area.clmdUnappr}" style="font-weight:900;">${areaConv?areaConv+'%':''}</td>
+            <td data-tooltip="AREA TOTAL CAPTURED (R/N):\n-------------------\nReloan: ${area.capR}\nNewloan: ${area.capN}">${fmt(area.captured)}</td>
+            <td data-tooltip="AREA CAPTURE CONVERSION:\n-------------------\nConverted R: ${area.clmdR}\nConverted N: ${area.clmdN}\nNot Converted R: ${area.capR - area.clmdR}\nNot Converted N: ${area.capN - area.clmdN}" style="font-weight:900;">${areaCapConv?areaCapConv+'%':''}</td>
+            <td data-tooltip="AREA FOR PROCESS:\n${getTooltipText(areaDetail.proc)}">${fmt(area.proc)}</td>
+            <td data-tooltip="AREA PENDING:\n${getTooltipText(areaDetail.pend)}">${fmt(area.pend)}</td>
+            <td data-tooltip="AREA APPROVED:\n${getTooltipText(areaDetail.app)}">${fmt(area.app)}</td>
+            <td data-tooltip="AREA DISBURSED:\n${getTooltipText(areaDetail.disb)}">${fmt(area.disb)}</td>
+            <td class="claimed-tooltip" data-tooltip="AREA CLAIMED:\n${getTooltipText(areaDetail.clmd)}">${fmt(area.clmd)}</td>
+            <td class="findings-tooltip" data-tooltip="AREA FINDINGS:\n${getTooltipText(areaDetail.find)}">${fmt(area.find)}</td>
         </tr>`;
         
         pSide.innerHTML = "";
@@ -365,21 +368,30 @@
 
     window.openCapturedModal = () => { document.getElementById('capturedModalOverlay').style.display = 'flex'; renderCapturedGrid(); };
     window.closeCapturedModal = () => { document.getElementById('capturedModalOverlay').style.display = 'none'; };
+    
     window.renderCapturedGrid = function() {
         const head = document.getElementById('capturedHead'); const body = document.getElementById('capturedBody'); const foot = document.getElementById('capturedSummary'); const cats = ["Reloan", "Newloan", "C/P Leaders", "Oriented"];
         head.innerHTML = `<tr><th class="captured-row-title" style="top:0; background:#334155; color:#F5F502; z-index:51">BRANCH / CAT</th>${Array.from({length:31}, (_,i)=>`<th>D${i+1}</th>`).join('')}</tr>`;
         body.innerHTML = "";
         let areaCatTotals = { "Reloan": Array(32).fill(0), "Newloan": Array(32).fill(0), "C/P Leaders": Array(32).fill(0), "Oriented": Array(32).fill(0) };
+        
         branches.forEach(b => {
             cats.forEach((cat, idx) => {
                 let row = `<tr><td class="captured-row-title">${idx === 0 ? b : ''} <br><small style="color:#64748b">${cat}</small></td>`;
                 for(let d=1; d<=31; d++) {
-                    const val = capturedData[`${b}_${cat.replace('/', '_')}_${d}`] || 0; areaCatTotals[cat][d] += parseInt(val);
+                    const safeCat = cat.replace('/', '_'); const val = capturedData[`${b}_${safeCat}_${d}`] || 0; areaCatTotals[cat][d] += parseInt(val);
                     row += `<td class="cap-td"><input type="number" value="${val > 0 ? val : ''}" class="captured-input" onblur="updateCaptured('${b}','${cat}',${d},this.value)"></td>`;
                 }
                 body.insertAdjacentHTML('beforeend', row + "</tr>");
             });
+            body.insertAdjacentHTML('beforeend', `<tr style="background:#cbd5e1; height:3px;"><td colspan="32"></td></tr>`);
         });
+
+        foot.innerHTML = cats.map(cat => {
+            let sRow = `<tr style="background:#1e293b; color:#F5F502"><td class="captured-row-title" style="background:#1e293b; color:#F5F502">TOTAL AREA: ${cat}</td>`;
+            for(let d=1; d<=31; d++) { sRow += `<td>${areaCatTotals[cat][d] || 0}</td>`; }
+            return sRow + "</tr>";
+        }).join('');
     };
 
     window.updateCaptured = (b, cat, d, val) => { const path = `${b}_${cat.replace('/', '_')}_${d}`; if(val === "" || val == 0) remove(ref(db, `captured_folders/${path}`)); else set(ref(db, `captured_folders/${path}`), parseInt(val)); };
