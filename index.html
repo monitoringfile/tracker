@@ -442,9 +442,9 @@
     window.closeCapturedModal = () => { document.getElementById('capturedModalOverlay').style.display = 'none'; };
     
     window.renderCapturedGrid = function() {
-        const head = document.getElementById('capturedHead'); const body = document.getElementById('capturedBody'); const foot = document.getElementById('capturedSummary'); const cats = ["Reloan", "Newloan", "C/P Leaders Approached", "Oriented Center"];
+        const head = document.getElementById('capturedHead'); const body = document.getElementById('capturedBody'); const foot = document.getElementById('capturedSummary'); const cats = ["Reloan", "Newloan", "C/P Leaders Approached", "Oriented Centers"];
         head.innerHTML = `<tr><th class="frozen-intersection">BRANCH PERFORMANCE</th>${Array.from({length:31}, (_,i)=>`<th>${i+1}</th>`).join('')}</tr>`;
-        body.innerHTML = ""; let areaCatTotals = { "Reloan": Array(32).fill(0), "Newloan": Array(32).fill(0), "C/P Leaders Approached": Array(32).fill(0), "Oriented Center": Array(32).fill(0) };
+        body.innerHTML = ""; let areaCatTotals = { "Reloan": Array(32).fill(0), "Newloan": Array(32).fill(0), "C/P Leaders Approached": Array(32).fill(0), "Oriented Centers": Array(32).fill(0) };
         branches.forEach(b => {
             cats.forEach((cat, idx) => {
                 let row = `<tr class="${idx === 3 ? 'branch-divider' : ''}"><td class="captured-row-title">${idx === 0 ? `<span style="color:var(--brand-accent)">${b}</span>` : ''}<br><small>${cat}</small></td>`;
