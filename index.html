@@ -175,7 +175,7 @@
     <div class="search-container">
         <input type="text" id="searchBar" class="input-styled" placeholder="Search Branch, Client, Center, or TS..." oninput="renderDashboard()" style="flex:2;">
         <select id="filterDay" class="input-styled" onchange="renderDashboard()" style="flex:1"><option value="">All Days</option><option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option></select>
-        <select id="filterStatus" class="input-styled" onchange="renderDashboard()" style="flex:1"><option value="">All Status</option><option value="For Process" >For Process</option><option value="Pending Approval">Pending Approval</option><option value="Approved">Done Approved</option><option value="Disbursed">Done Disbursed</option><option value="Claimed">Claimed / Released to Client</option><option value="Findings">Findings</option></select>
+        <select id="filterStatus" class="input-styled" onchange="renderDashboard()" style="flex:1"><option value="">All Status</option><option value="For Process" >For Process</option><option value="Pending Approval">Pending Approval</option><option value="Approved">Approved</option><option value="Disbursed">Disbursed</option><option value="Claimed">Claimed</option><option value="Findings">Findings</option></select>
     </div>
 
     <div class="data-section">
@@ -218,7 +218,7 @@
                 </div>
                 <div>
                     <label>Center Name</label>
-                    <input type="text" id="fCentre" class="input-styled" placeholder="e.g. MA Sample" oninput="validateCentre(this)" required>
+                    <input type="text" id="fCentre" class="input-styled" placeholder="e.g. WB Sample" oninput="validateCentre(this)" required>
                 </div>
                 <div>
                     <label>Meeting Day (Auto-detected)</label>
