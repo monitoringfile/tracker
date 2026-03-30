@@ -327,7 +327,7 @@
         const areaCapConvTip = `AREA CAPTURE CONVERSION:\n-------------------\nConverted R: ${area.clmdR}\nConverted N: ${area.clmdN}\nNot Converted R: ${area.capR - area.clmdR}\nNot Converted N: ${area.capN - area.clmdN}`;
 
         sFoot.innerHTML = `<tr style="background:#1e293b; color:#F5F502; border-top: 3px solid var(--brand-accent);">
-            <td style="text-align:left; font-weight:800;">TOTAL AREA ⚠️</td>
+            <td style="text-align:left; font-weight:800;">TOTAL AREA </td>
             <td data-tooltip="${areaProsTip}">${fmt(area.prospects)}</td>
             <td data-tooltip="${areaAppTip}">${fmt(area.approached)}</td>
             <td data-tooltip="${areaConvTip}" style="font-weight:900;">${areaConv?areaConv+'%':''}</td>
