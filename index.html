@@ -48,16 +48,8 @@
             pointer-events: none; width: max-content; max-width: 250px;
         }
 
-        /* Adjustments for the Bottom Row (Total Area) specifically */
-        #summaryFooter tr td[data-tooltip]:hover::after {
-            bottom: 125% !important; /* Force it to stay above */
-            top: auto !important;
-        }
-
-        /* Adjustments for First Row to show below */
-        #summaryBody tr:first-child td[data-tooltip]:hover::after {
-            bottom: auto; top: 125%;
-        }
+        #summaryFooter tr td[data-tooltip]:hover::after { bottom: 125% !important; top: auto !important; }
+        #summaryBody tr:first-child td[data-tooltip]:hover::after { bottom: auto; top: 125%; }
 
         .summary-table td.claimed-tooltip[data-tooltip]:hover::after { background: rgba(23, 40, 138, 0.98); color: #F5F502; border-color: #F5F502; }
         .summary-table td.findings-tooltip[data-tooltip]:hover::after { border-color: #ef4444; color: #fca5a5; background: rgba(69, 10, 10, 0.98); }
@@ -68,6 +60,9 @@
         .row-disbursed { background-color: #2E4387 !important; color: white; }
         .row-claimed { background-color: #F5F502 !important; color: #000 !important; }
         .row-findings { background-color: #ef4444 !important; color: white; }
+
+        .copy-btn { cursor: pointer; opacity: 0.6; transition: 0.2s; margin-left: 5px; font-size: 0.85rem; vertical-align: middle; }
+        .copy-btn:hover { opacity: 1; transform: scale(1.2); }
 
         #capturedModalOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.8); z-index:300; align-items:center; justify-content:center; backdrop-filter: blur(8px); }
         .captured-modal-box { background:#fff; width:98%; height:90%; border-radius:12px; display: flex; flex-direction: column; overflow: hidden; border: 2px solid #334155; }
@@ -247,6 +242,8 @@
         return entries.length > 0 ? entries.map(([k,v]) => `${k}: ${v}`).join('\n') : "No data recorded";
     };
 
+    window.copyText = function(text) { navigator.clipboard.writeText(text); alert("Copied: " + text); };
+
     window.renderDashboard = function() {
         const mBody = document.getElementById('masterBody');
         const sBody = document.getElementById('summaryBody');
@@ -300,7 +297,7 @@
                 if (matchQuery && (selDay === "" || rec.meetingDay === selDay) && (selStatus === "" || status === selStatus)) {
                     let rCls = ""; if (status === 'Findings') rCls = 'row-findings'; else if (status === 'For Process') rCls = 'row-process'; else if (status === 'Pending Approval') rCls = 'row-pending'; else if (status === 'Approved') rCls = 'row-approved'; else if (status === 'Disbursed') rCls = 'row-disbursed'; else if (status === 'Claimed') rCls = 'row-claimed';
                     let approachDisplay = (rec.source === 'import') ? `<input type="checkbox" ${rec.approaches?.a1?'checked':''} onchange="upAppr('${id}',1,this.checked)"><input type="checkbox" ${rec.approaches?.a2?'checked':''} onchange="upAppr('${id}',2,this.checked)"><input type="checkbox" ${rec.approaches?.a3?'checked':''} onchange="upAppr('${id}',3,this.checked)"><input type="checkbox" ${rec.approaches?.a4?'checked':''} onchange="upAppr('${id}',4,this.checked)">` : `<small style="color:#94a3b8"><i>Direct Entry</i></small>`;
-                    mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br><small>${rec.centre || ''} (${rec.meetingDay || ''})</small></td><td><strong>${rec.clientName}</strong><br><small>${rec.officer}</small></td><td>${rec.productId}</td><td>${approachDisplay}</td><td><strong>${rec.isDefault || ''}</strong></td><td><select onchange="updateStatus('${id}', this.value)"><option value="Select" ${status==='Select'?'selected':''}>Select...</option><option value="For Process" ${status==='For Process'?'selected':''}>For Process</option><option value="Pending Approval" ${status==='Pending Approval'?'selected':''}>Pending Approval</option><option value="Approved" ${status==='Approved'?'selected':''}>Approved</option><option value="Disbursed" ${status==='Disbursed'?'selected':''}>Disbursed</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option><option value="Findings" ${status==='Findings'?'selected':''}>Findings</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent"></td><td><button onclick="delRec('${id}')" style="border:none; background:none;">🗑️</button></td></tr>`);
+                    mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br><small>${rec.centre || ''} (${rec.meetingDay || ''})</small></td><td><strong>${rec.clientName}</strong> <span class="copy-btn" onclick="copyText('${rec.clientName}')">📋</span><br><small>${rec.officer}</small></td><td>${rec.productId}</td><td>${approachDisplay}</td><td><strong>${rec.isDefault || ''}</strong></td><td><select onchange="updateStatus('${id}', this.value)"><option value="Select" ${status==='Select'?'selected':''}>Select...</option><option value="For Process" ${status==='For Process'?'selected':''}>For Process</option><option value="Pending Approval" ${status==='Pending Approval'?'selected':''}>Pending Approval</option><option value="Approved" ${status==='Approved'?'selected':''}>Approved</option><option value="Disbursed" ${status==='Disbursed'?'selected':''}>Disbursed</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option><option value="Findings" ${status==='Findings'?'selected':''}>Findings</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent"></td><td><button onclick="delRec('${id}')" style="border:none; background:none;">🗑️</button></td></tr>`);
                 }
             });
         }
