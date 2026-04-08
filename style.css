@@ -1,0 +1,138 @@
+:root {
+    --brand-primary: #2d55cc; 
+    --brand-accent: #FACC15; 
+    --bg-dark: #0f172a;
+    --bg-card: #1e293b; 
+    --text-main: #f1f5f9; 
+    --text-dim: #94a3b8; 
+    --border-glass: rgba(255, 255, 255, 0.1);
+    --sidebar-width: 280px; 
+    --success-green: #22c55e;
+}
+
+* { box-sizing: border-box; }
+
+body { 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    background-color: var(--bg-dark); 
+    color: var(--text-main); 
+    margin: 0; 
+    display: flex; 
+    min-height: 100vh; 
+    overflow-x: hidden; 
+}
+
+/* LOGIN & AUTH STYLES */
+#login-overlay { 
+    position: fixed; inset: 0; background: var(--bg-dark); z-index: 5000; 
+    display: flex; align-items: center; justify-content: center; 
+}
+.auth-box { 
+    background: var(--bg-card); padding: 40px; border-radius: 20px; 
+    border: 1px solid var(--border-glass); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); 
+    width: 100%; max-width: 400px; text-align: center; 
+}
+.auth-input { 
+    width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px; 
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); 
+    color: #fff; font-size: 1rem; 
+}
+.auth-btn { 
+    width: 100%; padding: 15px; background: var(--brand-accent); color: #000; 
+    border: none; border-radius: 10px; font-weight: 800; cursor: pointer; 
+}
+
+/* SIDEBAR STYLES */
+.sidebar { 
+    width: var(--sidebar-width); background: var(--bg-card); border-right: 1px solid var(--border-glass); 
+    display: flex; flex-direction: column; position: fixed; height: 100vh; 
+}
+.sidebar-brand { padding: 30px; border-bottom: 1px solid var(--border-glass); }
+.nav-menu { padding: 20px; flex-grow: 1; }
+.nav-item { 
+    display: flex; align-items: center; gap: 12px; padding: 12px 15px; 
+    border-radius: 10px; color: var(--text-dim); text-decoration: none; margin-bottom: 8px; 
+    transition: all 0.2s; cursor: pointer; border: none; background: transparent; width: 100%; 
+}
+.nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.05); color: #fff; }
+
+/* MAIN CONTENT */
+main { margin-left: var(--sidebar-width); flex-grow: 1; padding: 30px; max-width: calc(100vw - var(--sidebar-width)); }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+
+/* DASHBOARD STATS */
+.summary-grid { overflow-x: auto; border-radius: 15px; background: var(--bg-card); border: 1px solid var(--border-glass); margin-bottom: 30px; }
+.summary-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.summary-table th, .summary-table td { padding: 12px 15px; text-align: center; border-bottom: 1px solid var(--border-glass); }
+.summary-table th { background: rgba(255,255,255,0.02); font-weight: 700; color: var(--brand-accent); }
+
+/* MASTER TRACKER TABLE */
+.tracker-container { background: var(--bg-card); border-radius: 15px; border: 1px solid var(--border-glass); overflow: hidden; }
+.master-table { width: 100%; border-collapse: collapse; }
+.master-table th { background: rgba(0,0,0,0.2); padding: 15px; text-align: left; font-size: 0.8rem; letter-spacing: 1px; }
+.master-table td { padding: 12px 15px; border-bottom: 1px solid var(--border-glass); font-size: 0.9rem; }
+
+/* TOOLTIP STYLES */
+[data-tooltip] { position: relative; cursor: help; }
+[data-tooltip]::after {
+    content: attr(data-tooltip); position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
+    background: #000; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.75rem;
+    white-space: pre; visibility: hidden; opacity: 0; transition: 0.2s; z-index: 100; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    border: 1px solid var(--brand-accent); width: max-content; pointer-events: none;
+}
+[data-tooltip]:hover::after { visibility: visible; opacity: 1; }
+.tooltip-edge::after { left: auto; right: 0; transform: none; }
+
+/* MODALS */
+.modal-overlay { 
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); 
+    display: none; align-items: center; justify-content: center; z-index: 2000; 
+}
+.modal-content { background: var(--bg-card); padding: 30px; border-radius: 20px; border: 1px solid var(--border-glass); width: 90%; max-width: 600px; }
+
+/* CAPTURED FOLDERS MODAL */
+.captured-modal { width: 95vw; height: 90vh; max-width: none; display: flex; flex-direction: column; overflow: hidden; }
+.captured-scroll-area { flex-grow: 1; overflow: auto; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(0,0,0,0.2); }
+.captured-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.8rem; }
+.captured-table th, .captured-table td { padding: 8px; border: 1px solid var(--border-glass); text-align: center; min-width: 45px; }
+
+/* Frozen First Column Logic */
+.frozen-intersection { position: sticky; left: 0; top: 0; z-index: 10; background: #0f172a !important; color: var(--brand-accent); font-weight: 800; min-width: 200px !important; }
+.captured-row-title { position: sticky; left: 0; background: #1e293b; z-index: 5; min-width: 200px !important; text-align: left !important; font-weight: 700; }
+.captured-table tr:hover { background: rgba(250, 204, 21, 0.05); }
+.branch-divider td { border-bottom: 3px solid var(--brand-accent) !important; }
+
+.captured-input { background: rgba(0,0,0,0.2); border: 1px solid transparent; color: #fff; width: 40px; text-align: center; font-weight: 600; border-radius: 4px; padding: 4px 0; transition: all 0.2s; }
+.captured-input:focus { background: #000; border-color: var(--brand-accent); outline: none; box-shadow: 0 0 5px var(--brand-accent); }
+
+/* STATUS ROW COLORS */
+.row-default { background-color: rgba(0, 255, 0, 0.1) !important; color: #09ffff !important; }
+.row-default td { color: #00ffff !important; }
+.row-process { background-color: rgba(89, 89, 172, 0.4) !important; }
+.row-claimed { background-color: rgba(145, 145, 0, 0.4) !important; }
+.row-disbursed { background-color: rgba(0, 128, 64, 0.4) !important; }
+.row-findings { background-color: rgba(185, 37, 0, 0.4) !important; }
+.row-approved { background-color: rgba(0, 255, 255, 0.1) !important; }
+.row-pending { background-color: rgba(255, 255, 255, 0.05) !important; }
+
+/* MISC UTILS */
+#toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success-green); color: #000; padding: 12px 30px; border-radius: 50px; font-weight: 800; z-index: 9999; display: none; box-shadow: 0 10px 30px rgba(34,197,94,0.4); }
+.input-styled { background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: #fff; padding: 10px; border-radius: 8px; width: 100%; }
+.user-pill { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+.status-dot { width: 8px; height: 8px; background: var(--success-green); border-radius: 50%; box-shadow: 0 0 10px var(--success-green); }
+
+/* =========================================
+   NEW: TOOLTIP VISIBILITY FIX FOR TOP ROWS
+   ========================================= */
+
+/* For top rows (Balingasag/Balingoan), show tooltip BELOW the cell */
+.tooltip-top[data-tooltip]:hover::after {
+    bottom: auto !important;
+    top: 125% !important;
+}
+
+/* Ensure tooltips in the Area Total (bottom) still show UPWARDS */
+#summaryFooter [data-tooltip]:hover::after {
+    bottom: 125% !important;
+    top: auto !important;
+}
