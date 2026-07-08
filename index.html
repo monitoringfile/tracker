@@ -31,7 +31,6 @@
         <nav style="display: flex; flex-direction: column; gap: 4px;">
             <div class="nav-link active" onclick="location.reload()">📊 MO2 Area Dashboard</div>
             <div class="nav-link" onclick="secureAction('import')">📁 Import Prospects (.xlsx)</div>
-            <div class="nav-link" onclick="openCapturedModal()">📅 Captured Folders Entry</div>
             <div class="nav-link" onclick="toggleModal(true)">➕ Client Loan Application</div>
         </nav>
         
@@ -69,9 +68,11 @@
                 <thead>
                     <tr>
                         <th style="text-align: left;">Branch</th>
-                        <th>Prospects</th><th>Appr</th><th> AppConv%</th>
-                        <th style="background:#1e3a8a">Captured</th><th style="background:#1e3a8a">CapConv%</th>
-                        <th>Applied</th><th>Claimed</th>
+                        <th>Prospects</th>
+                        <th>Appr</th>
+                        <th>AppConv%</th>
+                        <th>Applied</th>
+                        <th>Claimed</th>
                     </tr>
                 </thead>
                 <tbody id="summaryBody"></tbody>
