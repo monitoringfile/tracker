@@ -108,16 +108,17 @@ window.renderDashboard = function() {
     const mBody = document.getElementById('masterBody'); 
     const sBody = document.getElementById('summaryBody');
     const sFoot = document.getElementById('summaryFooter'); 
-    const pSide = document.getElementById('sidebarProductBody');
     const query = document.getElementById('searchBar').value.toLowerCase();
     const selBranch = document.getElementById('filterBranch').value;
     const selDay = document.getElementById('filterDay').value;
     const selStatus = document.getElementById('filterStatus').value;
     
-    mBody.innerHTML = ""; sBody.innerHTML = ""; sFoot.innerHTML = ""; pSide.innerHTML = "";
+    // Fallback capturing for the Set Filter Dropdown if it exists in your HTML layout
+    const filterSetEl = document.getElementById('filterSet');
+    const selSet = filterSetEl ? filterSetEl.value.trim().toUpperCase() : "";
     
-    // Object structure to compile individual Credit Officer summaries
-    let officerStats = {};
+    mBody.innerHTML = ""; sBody.innerHTML = ""; sFoot.innerHTML = "";
+    
     let stats = {};
     let area = { 
         prospects: 0, approached: 0, captured: 0, applied: 0, claimed: 0, clmdP: 0,
@@ -152,12 +153,13 @@ window.renderDashboard = function() {
             const status = rec.status || "Select"; 
             const pId = rec.productId;
             const isReloan = pId?.includes("Reloan");
+            const recordSet = rec.setNum ? String(rec.setNum).trim().toUpperCase() : "";
             
-            // Initialization for credit officer compilation tracking
-            const officerName = rec.officer ? rec.officer.trim().toUpperCase() : "UNASSIGNED";
-            if (!officerStats[officerName]) {
-                officerStats[officerName] = { prospects: 0, approached: 0, claimed: 0 };
-            }
+            // Check if record matches dropdown criteria before compiling stats
+            const matchBranch = (selBranch === "" || rec.branch === selBranch);
+            const matchDay = (selDay === "" || rec.meetingDay === selDay);
+            const matchStatus = (selStatus === "" || status === selStatus);
+            const matchSet = (selSet === "" || recordSet === selSet || recordSet.includes(selSet));
 
             if (stats[rec.branch]) {
                 const s = stats[rec.branch];
@@ -167,13 +169,11 @@ window.renderDashboard = function() {
 
                 if (rec.source === 'import') {
                     s.prospects++; area.prospects++;
-                    officerStats[officerName].prospects++; 
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
                     area.prosDetail[pId] = (area.prosDetail[pId] || 0) + 1;
                     
                     if (isAppr) {
                         s.approached++; area.approached++;
-                        officerStats[officerName].approached++; 
                         
                         if (rec.approaches?.a1) { s.apprCounts.a1++; area.apprCounts.a1++; }
                         if (rec.approaches?.a2) { s.apprCounts.a2++; area.apprCounts.a2++; }
@@ -198,7 +198,6 @@ window.renderDashboard = function() {
                     area[key + 'Detail'][pId] = (area[key + 'Detail'][pId] || 0) + 1;
 
                     if (status === 'Claimed') {
-                        officerStats[officerName].claimed++; 
                         if (isReloan) { s.capConvDetail.rClmd++; area.capConvDetail.rClmd++; }
                         else { s.capConvDetail.nClmd++; area.capConvDetail.nClmd++; }
                     }
@@ -206,7 +205,9 @@ window.renderDashboard = function() {
             }
 
             const matchSearch = (rec.clientName?.toLowerCase().includes(query) || rec.officer?.toLowerCase().includes(query) || rec.branch?.toLowerCase().includes(query) || rec.centre?.toLowerCase().includes(query) || rec.setNum?.toLowerCase().includes(query) || rec.contactNum?.toLowerCase().includes(query));
-            if (matchSearch && (selBranch === "" || rec.branch === selBranch) && (selDay === "" || rec.meetingDay === selDay) && (selStatus === "" || status === selStatus)) {
+            
+            // Render rows that pass all dashboard dynamic filters (including the Set condition)
+            if (matchSearch && matchBranch && matchDay && matchStatus && matchSet) {
                 let rCls = ""; 
                 if (rec.isDefault === "1" || rec.isDefault?.toLowerCase() === "df" || rec.isDefault?.toLowerCase() === "yes") rCls = 'row-default';
                 else if (status === 'Claimed') rCls = 'row-claimed'; 
@@ -272,19 +273,6 @@ window.renderDashboard = function() {
             <td data-tooltip="${getTooltipText(area.claimedDetail)}">${area.claimed}</td>
             <td class="tooltip-edge" style="color:#10b981;">${areaAppliedToClaimedConv ? areaAppliedToClaimedConv + '%' : ''}</td>
         </tr>`;
-        
-    // Dynamic execution to render Credit Officer Summary Rows sorted by top prospects
-    Object.entries(officerStats).sort((a, b) => b[1].prospects - a[1].prospects).forEach(([offName, data]) => {
-        if (data.prospects > 0 || data.approached > 0 || data.claimed > 0) {
-            pSide.insertAdjacentHTML('beforeend', `
-                <tr style="border-bottom: 1px solid #1e293b;">
-                    <td style="padding: 6px 0; max-width: 105px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight:600; color:#f8fafc;" title="${offName}">${offName}</td>
-                    <td style="text-align:right; color:#94a3b8; font-weight:700;">${data.prospects || ''}</td>
-                    <td style="text-align:right; color:var(--brand-accent); font-weight:700;">${data.approached || ''}</td>
-                    <td style="text-align:right; color:#10b981; font-weight:700;">${data.claimed || ''}</td>
-                </tr>`);
-        }
-    });
 };
 
 window.processFile = function(file) {
