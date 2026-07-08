@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MO2 - Forward Bound</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -66,17 +66,17 @@
         <div class="summary-card">
             <table class="summary-table">
                <thead>
-    <tr>
-        <th>Branch</th>
-        <th>Prospects</th>
-        <th>Approached</th>
-        <th>Conversion</th>
-        <th>Prospects Applied</th> <!-- Renamed for clarity -->
-        <th>Manual Applied</th>    <!-- New Column Header Here -->
-        <th>Claimed</th>
-        <th>Applied to Claimed %</th>
-    </tr>
-</thead>
+                    <tr>
+                        <th>Branch (Click to view Officers)</th>
+                        <th>Prospects</th>
+                        <th>Approached</th>
+                        <th>Conversion</th>
+                        <th>Prospects Applied</th>
+                        <th>Manual Applied</th>
+                        <th>Claimed</th>
+                        <th>Applied to Claimed %</th>
+                    </tr>
+                </thead>
                 <tbody id="summaryBody"></tbody>
                 <tbody id="summaryFooter"></tbody>
             </table>
@@ -108,7 +108,6 @@
                 <option value="Claimed">Claimed</option>
             </select>
 
-            <!-- Added: Dropdown Select Filter for Set Operational Allocation -->
             <select id="filterSet" class="input-styled" onchange="renderDashboard()" style="flex:1">
                 <option value="">All Sets</option>
                 <option value="A">Set A</option>
