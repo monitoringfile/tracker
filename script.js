@@ -67,7 +67,6 @@ document.getElementById('loginBtn').addEventListener('click', () => {
 
 document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
 
-// Manage online presence status
 function managePresence(uid, name) {
     const userStatusRef = ref(db, `online_users/${uid}`);
     const connectedRef = ref(db, ".info/connected");
@@ -79,7 +78,6 @@ function managePresence(uid, name) {
     });
 }
 
-// Listen for online users
 function listenForUsers() {
     const listContainer = document.getElementById('active-users-list');
     onValue(ref(db, 'online_users'), (snapshot) => {
@@ -197,7 +195,7 @@ window.renderDashboard = function() {
                 }
             }
 
-            const matchSearch = (rec.clientName?.toLowerCase().includes(query) || rec.officer?.toLowerCase().includes(query) || rec.branch?.toLowerCase().includes(query) || rec.centre?.toLowerCase().includes(query));
+            const matchSearch = (rec.clientName?.toLowerCase().includes(query) || rec.officer?.toLowerCase().includes(query) || rec.branch?.toLowerCase().includes(query) || rec.centre?.toLowerCase().includes(query) || rec.setNum?.toLowerCase().includes(query) || rec.contactNum?.toLowerCase().includes(query));
             if (matchSearch && (selBranch === "" || rec.branch === selBranch) && (selDay === "" || rec.meetingDay === selDay) && (selStatus === "" || status === selStatus)) {
                 let rCls = ""; 
                 if (rec.isDefault === "1" || rec.isDefault?.toLowerCase() === "df" || rec.isDefault?.toLowerCase() === "yes") rCls = 'row-default';
@@ -210,7 +208,11 @@ window.renderDashboard = function() {
                      <input type="checkbox" ${rec.approaches?.a3?'checked':''} onchange="upAppr('${id}',3,this.checked)">
                      <input type="checkbox" ${rec.approaches?.a4?'checked':''} onchange="upAppr('${id}',4,this.checked)">` : `<small>From Manual Entry</small>`;
                 
-                mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br>${rec.meetingDay || ''} / ${rec.centre || ''}</td><td><strong>${rec.clientName}</strong> <span onclick="navigator.clipboard.writeText('${rec.clientName}')" style="cursor:pointer">📋</span><br><small>${rec.officer}</small></td><td>${rec.productId}</td><td>${apprDisp}</td><td>${rec.isDefault||''}</td><td><select onchange="updateStatus('${id}', this.value)" class="input-styled"><option value="Select">...</option><option value="Applied" ${status==='Applied'?'selected':''}>Applied</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent; color:inherit;"></td><td><button onclick="delRec('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button></td></tr>`);
+                // Formatted display strings for Set and Contact fields
+                let setDisplay = rec.setNum ? ` / Set: ${rec.setNum}` : '';
+                let contactDisplay = rec.contactNum ? `<br><small style="color: #94a3b8;">📞 ${rec.contactNum}</small>` : '';
+
+                mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br>${rec.meetingDay || ''} / ${rec.centre || ''}${setDisplay}</td><td><strong>${rec.clientName}</strong> <span onclick="navigator.clipboard.writeText('${rec.clientName}')" style="cursor:pointer">📋</span><br><small>${rec.officer}</small>${contactDisplay}</td><td>${rec.productId}</td><td>${apprDisp}</td><td>${rec.isDefault||''}</td><td><select onchange="updateStatus('${id}', this.value)" class="input-styled"><option value="Select">...</option><option value="Applied" ${status==='Applied'?'selected':''}>Applied</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent; color:inherit;"></td><td><button onclick="delRec('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button></td></tr>`);
             }
         });
     }
@@ -218,8 +220,6 @@ window.renderDashboard = function() {
     branches.forEach(b => {
         const s = stats[b];
         const conv = s.approached > 0 ? Math.round((s.clmdP / s.approached) * 100) : 0;
-        
-        // Calculate Applied to Claimed Conversion Percentage
         const appliedToClaimedConv = s.applied > 0 ? Math.round((s.claimed / s.applied) * 100) : 0;
 
         const p1 = s.prospects > 0 ? Math.round((s.apprCounts.a1 / s.prospects) * 100) : 0;
@@ -244,8 +244,6 @@ window.renderDashboard = function() {
     });
 
     const areaConv = area.approached > 0 ? Math.round((area.clmdP / area.approached) * 100) : 0;
-    
-    // Area Total calculation for Applied to Claimed Percentage
     const areaAppliedToClaimedConv = area.applied > 0 ? Math.round((area.claimed / area.applied) * 100) : 0;
 
     const ap1 = area.prospects > 0 ? Math.round((area.apprCounts.a1 / area.prospects) * 100) : 0;
@@ -274,10 +272,36 @@ window.processFile = function(file) {
     reader.onload = async function(e) {
         const workbook = XLSX.read(e.target.result, { type: 'binary' }); const sheet = workbook.Sheets[workbook.SheetNames[0]]; const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }); const headers = rows[0].map(h => String(h).toLowerCase().trim()); const dataRows = rows.slice(1);
         const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
-        const idx = { branch: findIdx(['br','office']), client: findIdx(['clie','name']), officer: findIdx(['ts','officer']), product: findIdx(['prod','loan']), centre: findIdx(['cent','group']), day: findIdx(['day','sch']), def: findIdx(['def','df']) };
+        
+        // Extended mapping layout parameters to find Set and Contact Number columns in Excel
+        const idx = { 
+            branch: findIdx(['br','office']), 
+            client: findIdx(['clie','name']), 
+            officer: findIdx(['ts','officer']), 
+            product: findIdx(['prod','loan']), 
+            centre: findIdx(['cent','group']), 
+            day: findIdx(['day','sch']), 
+            def: findIdx(['def','df']),
+            setNum: findIdx(['set']), 
+            contactNum: findIdx(['contact','phone','number','cell']) 
+        };
+        
         for (let i = 0; i < dataRows.length; i++) {
             const r = dataRows[i]; if (!r) continue;
-            await push(dbRef, { branch: idx.branch!==-1?r[idx.branch]:"Unspecified", clientName: idx.client!==-1?r[idx.client]:"N/A", officer: idx.officer!==-1?r[idx.officer]:"N/A", productId: idx.product!==-1?r[idx.product]:"Newloan", centre: idx.centre!==-1?r[idx.centre]:"", meetingDay: idx.day!==-1?r[idx.day]:"Monday", isDefault: (idx.def!==-1 && r[idx.def]!=null)?String(r[idx.def]):"", status: "Select", source: "import", lastUpdated: serverTimestamp() });
+            await push(dbRef, { 
+                branch: idx.branch!==-1?r[idx.branch]:"Unspecified", 
+                clientName: idx.client!==-1?r[idx.client]:"N/A", 
+                officer: idx.officer!==-1?r[idx.officer]:"N/A", 
+                productId: idx.product!==-1?r[idx.product]:"Newloan", 
+                centre: idx.centre!==-1?r[idx.centre]:"", 
+                meetingDay: idx.day!==-1?r[idx.day]:"Monday", 
+                isDefault: (idx.def!==-1 && r[idx.def]!=null)?String(r[idx.def]):"", 
+                setNum: (idx.setNum!==-1 && r[idx.setNum]!=null)?String(r[idx.setNum]):"",
+                contactNum: (idx.contactNum!==-1 && r[idx.contactNum]!=null)?String(r[idx.contactNum]):"",
+                status: "Select", 
+                source: "import", 
+                lastUpdated: serverTimestamp() 
+            });
         }
     };
     reader.readAsBinaryString(file);
@@ -337,6 +361,8 @@ if (clientForm) {
             centre: document.getElementById('fCentre').value, 
             productId: document.getElementById('fProduct').value, 
             meetingDay: document.getElementById('fDay').value, 
+            setNum: "",
+            contactNum: "",
             status: "Select", 
             source: "manual" 
         }).then(() => { 
