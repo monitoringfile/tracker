@@ -115,8 +115,11 @@ window.renderDashboard = function() {
     const selStatus = document.getElementById('filterStatus').value;
     
     mBody.innerHTML = ""; sBody.innerHTML = ""; sFoot.innerHTML = ""; pSide.innerHTML = "";
-    let stats = {}; let prodGlobal = {}; products.forEach(p => prodGlobal[p] = 0);
     
+    // Object structure to compile individual Credit Officer summaries
+    let officerStats = {};
+    
+    let stats = {};
     let area = { 
         prospects: 0, approached: 0, captured: 0, applied: 0, claimed: 0, clmdP: 0,
         capR: 0, capN: 0,
@@ -150,7 +153,12 @@ window.renderDashboard = function() {
             const status = rec.status || "Select"; 
             const pId = rec.productId;
             const isReloan = pId?.includes("Reloan");
-            if (prodGlobal[pId] !== undefined) prodGlobal[pId]++;
+            
+            // Initialization for credit officer compilation tracking
+            const officerName = rec.officer ? rec.officer.trim().toUpperCase() : "UNASSIGNED";
+            if (!officerStats[officerName]) {
+                officerStats[officerName] = { prospects: 0, approached: 0, claimed: 0 };
+            }
 
             if (stats[rec.branch]) {
                 const s = stats[rec.branch];
@@ -160,11 +168,13 @@ window.renderDashboard = function() {
 
                 if (rec.source === 'import') {
                     s.prospects++; area.prospects++;
+                    officerStats[officerName].prospects++; // Add to Officer Prospects
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
                     area.prosDetail[pId] = (area.prosDetail[pId] || 0) + 1;
                     
                     if (isAppr) {
                         s.approached++; area.approached++;
+                        officerStats[officerName].approached++; // Add to Officer Approached
                         
                         if (rec.approaches?.a1) { s.apprCounts.a1++; area.apprCounts.a1++; }
                         if (rec.approaches?.a2) { s.apprCounts.a2++; area.apprCounts.a2++; }
@@ -189,6 +199,7 @@ window.renderDashboard = function() {
                     area[key + 'Detail'][pId] = (area[key + 'Detail'][pId] || 0) + 1;
 
                     if (status === 'Claimed') {
+                        officerStats[officerName].claimed++; // Add to Officer Claimed
                         if (isReloan) { s.capConvDetail.rClmd++; area.capConvDetail.rClmd++; }
                         else { s.capConvDetail.nClmd++; area.capConvDetail.nClmd++; }
                     }
@@ -208,7 +219,6 @@ window.renderDashboard = function() {
                      <input type="checkbox" ${rec.approaches?.a3?'checked':''} onchange="upAppr('${id}',3,this.checked)">
                      <input type="checkbox" ${rec.approaches?.a4?'checked':''} onchange="upAppr('${id}',4,this.checked)">` : `<small>From Manual Entry</small>`;
                 
-                // Formatted display strings for Set and Contact fields
                 let setDisplay = rec.setNum ? ` / Set: ${rec.setNum}` : '';
                 let contactDisplay = rec.contactNum ? `<br><small style="color: #94a3b8;">📞 ${rec.contactNum}</small>` : '';
 
@@ -264,7 +274,18 @@ window.renderDashboard = function() {
             <td class="tooltip-edge" style="color:#10b981;">${areaAppliedToClaimedConv ? areaAppliedToClaimedConv + '%' : ''}</td>
         </tr>`;
         
-    Object.entries(prodGlobal).forEach(([p, count]) => { if (count > 0) pSide.insertAdjacentHTML('beforeend', `<tr><td style="padding: 4px 0;">${p}</td><td style="text-align:right; font-weight: 700;">${count}</td></tr>`); });
+    // Dynamic execution to render Credit Officer Summary Rows sorted by top prospects
+    Object.entries(officerStats).sort((a, b) => b[1].prospects - a[1].prospects).forEach(([offName, data]) => {
+        if (data.prospects > 0 || data.approached > 0 || data.claimed > 0) {
+            pSide.insertAdjacentHTML('beforeend', `
+                <tr style="border-bottom: 1px solid #1e293b;">
+                    <td style="padding: 6px 0; max-width: 105px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight:600; color:#f8fafc;" title="${offName}">${offName}</td>
+                    <td style="text-align:right; color:#94a3b8; font-weight:700;">${data.prospects || ''}</td>
+                    <td style="text-align:right; color:var(--brand-accent); font-weight:700;">${data.approached || ''}</td>
+                    <td style="text-align:right; color:#10b981; font-weight:700;">${data.claimed || ''}</td>
+                </tr>`);
+        }
+    });
 };
 
 window.processFile = function(file) {
@@ -273,7 +294,6 @@ window.processFile = function(file) {
         const workbook = XLSX.read(e.target.result, { type: 'binary' }); const sheet = workbook.Sheets[workbook.SheetNames[0]]; const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }); const headers = rows[0].map(h => String(h).toLowerCase().trim()); const dataRows = rows.slice(1);
         const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
         
-        // Extended mapping layout parameters to find Set and Contact Number columns in Excel
         const idx = { 
             branch: findIdx(['br','office']), 
             client: findIdx(['clie','name']), 
