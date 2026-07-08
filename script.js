@@ -216,8 +216,6 @@ window.renderDashboard = function() {
     branches.forEach(b => {
         const s = stats[b];
         const conv = s.approached > 0 ? Math.round((s.clmdP / s.approached) * 100) : 0;
-        s.capConvDetail.rNotClmd = Math.max(0, s.capR - s.capConvDetail.rClmd);
-        s.capConvDetail.nNotClmd = Math.max(0, s.capN - s.capConvDetail.nNotClmd);
 
         const p1 = s.prospects > 0 ? Math.round((s.apprCounts.a1 / s.prospects) * 100) : 0;
         const p2 = s.apprCounts.a1 > 0 ? Math.round((s.apprCounts.a2 / s.apprCounts.a1) * 100) : 0;
@@ -240,8 +238,6 @@ window.renderDashboard = function() {
     });
 
     const areaConv = area.approached > 0 ? Math.round((area.clmdP / area.approached) * 100) : 0;
-    area.capConvDetail.rNotClmd = Math.max(0, area.capR - area.capConvDetail.rClmd);
-    area.capConvDetail.nNotClmd = Math.max(0, area.capN - area.capConvDetail.nNotClmd);
 
     const ap1 = area.prospects > 0 ? Math.round((area.apprCounts.a1 / area.prospects) * 100) : 0;
     const ap2 = area.apprCounts.a1 > 0 ? Math.round((area.apprCounts.a2 / area.apprCounts.a1) * 100) : 0;
