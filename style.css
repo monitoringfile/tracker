@@ -95,14 +95,14 @@ body {
 /* MAIN CONTENT */
 .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 2.5rem; width: calc(100% - var(--sidebar-width)); }
 
-/* FIXED: Allow tooltips to overflow the section/card */
+/* ALLOW TOOLTIPS TO OVERFLOW THE CARD */
 .summary-card, .data-section { 
     background: var(--bg-card); 
     border-radius: 16px; 
     border: 1px solid var(--border-glass); 
     box-shadow: 0 30px 70px rgba(134, 255, 255,0.5); 
     margin-bottom: 2.5rem; 
-    overflow: visible !important; /* Changed from overflow-x: auto to visible */
+    overflow: visible !important; 
 }
 
 .summary-table, .master-table { width: 100%; border-collapse: separate; border-spacing: 0; }
@@ -123,30 +123,20 @@ body {
     padding: 12px; 
     border-radius: 8px; 
     font-size: 0.75rem; 
-    white-space: pre-wrap; /* Better handling of line breaks */
+    white-space: pre-wrap; 
     z-index: 10000; 
     box-shadow: 0 10px 20px rgba(0, 255, 255, 0.4); 
     border: 1px solid var(--brand-accent); 
     text-align: left; 
     line-height: 1.4;
-    pointer-events: none; /* Prevents interference with clicking */
+    pointer-events: none; 
     width: max-content;
     max-width: 280px;
 }
 
-/* Specific positioning for edges and top rows */
 .tooltip-edge[data-tooltip]:hover::after { left: auto; right: 0; transform: translateX(0); }
-
-.tooltip-top[data-tooltip]:hover::after {
-    bottom: auto !important;
-    top: 125% !important;
-}
-
-/* Ensure area total footer tooltips still show UPWARDS */
-#summaryFooter [data-tooltip]:hover::after {
-    bottom: 125% !important;
-    top: auto !important;
-}
+.tooltip-top[data-tooltip]:hover::after { bottom: auto !important; top: 125% !important; }
+#summaryFooter [data-tooltip]:hover::after { bottom: 125% !important; top: auto !important; }
 
 .search-container { 
     background: rgba(192, 192, 192, 0.5); padding: 15px; border-radius: 12px; display: flex; gap: 12px; 
