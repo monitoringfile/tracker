@@ -113,7 +113,6 @@ window.renderDashboard = function() {
     const selDay = document.getElementById('filterDay').value;
     const selStatus = document.getElementById('filterStatus').value;
     
-    // Fallback capturing for the Set Filter Dropdown if it exists in your HTML layout
     const filterSetEl = document.getElementById('filterSet');
     const selSet = filterSetEl ? filterSetEl.value.trim().toUpperCase() : "";
     
@@ -155,7 +154,6 @@ window.renderDashboard = function() {
             const isReloan = pId?.includes("Reloan");
             const recordSet = rec.setNum ? String(rec.setNum).trim().toUpperCase() : "";
             
-            // Check if record matches dropdown criteria before compiling stats
             const matchBranch = (selBranch === "" || rec.branch === selBranch);
             const matchDay = (selDay === "" || rec.meetingDay === selDay);
             const matchStatus = (selStatus === "" || status === selStatus);
@@ -167,7 +165,6 @@ window.renderDashboard = function() {
                 const map = { 'Applied':'applied','Claimed':'claimed' };
                 const key = map[status];
 
-                // 1. Process Imported Records (Prospects)
                 if (rec.source === 'import') {
                     s.prospects++; area.prospects++;
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
@@ -192,15 +189,13 @@ window.renderDashboard = function() {
                         s.convDetail.directClmd++; area.convDetail.directClmd++;
                     }
 
-                    // Separate Applied Figures: Filter for Imported Prospects Only
                     if (status === 'Applied') {
                         s.applied++; area.applied++;
                         s.appliedDetail[pId] = (s.appliedDetail[pId] || 0) + 1;
                         area.appliedDetail[pId] = (area.appliedDetail[pId] || 0) + 1;
                     }
                 } 
-                // 2. Process Manual Entries
-                else if (rec.source === 'manual') {
+                else if (rec.source === 'manual' || !rec.source) {
                     if (status === 'Applied') {
                         s.manualApplied++; area.manualApplied++;
                         s.manualAppliedDetail[pId] = (s.manualAppliedDetail[pId] || 0) + 1;
@@ -208,7 +203,6 @@ window.renderDashboard = function() {
                     }
                 }
 
-                // 3. Process Generic Status Metrics (Claimed Status is tracked overall)
                 if (status === 'Claimed') {
                     s.claimed++; area.claimed++;
                     s.claimedDetail[pId] = (s.claimedDetail[pId] || 0) + 1;
@@ -221,7 +215,6 @@ window.renderDashboard = function() {
 
             const matchSearch = (rec.clientName?.toLowerCase().includes(query) || rec.officer?.toLowerCase().includes(query) || rec.branch?.toLowerCase().includes(query) || rec.centre?.toLowerCase().includes(query) || rec.setNum?.toLowerCase().includes(query) || rec.contactNum?.toLowerCase().includes(query));
             
-            // Render rows that pass all dashboard dynamic filters (including the Set condition)
             if (matchSearch && matchBranch && matchDay && matchStatus && matchSet) {
                 let rCls = ""; 
                 if (rec.isDefault === "1" || rec.isDefault?.toLowerCase() === "df" || rec.isDefault?.toLowerCase() === "yes") rCls = 'row-default';
@@ -246,25 +239,25 @@ window.renderDashboard = function() {
         const s = stats[b];
         const conv = s.approached > 0 ? Math.round((s.clmdP / s.approached) * 100) : 0;
         
-        // Total applied is now the sum of prospects applied + manual applied for accuracy in conversion calculation
         const totalApplied = s.applied + s.manualApplied;
         const appliedToClaimedConv = totalApplied > 0 ? Math.round((s.claimed / totalApplied) * 100) : 0;
 
         const p1 = s.prospects > 0 ? Math.round((s.apprCounts.a1 / s.prospects) * 100) : 0;
         const p2 = s.apprCounts.a1 > 0 ? Math.round((s.apprCounts.a2 / s.apprCounts.a1) * 100) : 0;
         const p3 = s.apprCounts.a2 > 0 ? Math.round((s.apprCounts.a3 / s.apprCounts.a2) * 100) : 0;
-        const p4 = s.apprCounts.a2 > 0 ? Math.round((s.apprCounts.a4 / s.apprCounts.a3) * 100) : 0;
+        const p4 = s.apprCounts.a3 > 0 ? Math.round((s.apprCounts.a4 / s.apprCounts.a3) * 100) : 0;
 
         const appTooltip = `[APPROACHED ANALYSIS]\n1st Apps : ${s.apprCounts.a1} (${p1}%)\n2nd Apps : ${s.apprCounts.a2} (${p2}%)\n3rd Apps : ${s.apprCounts.a3} (${p3}%)\n4th Apps : ${s.apprCounts.a4} (${p4}%)\n\n[STATUS BREAKDOWN]\nApplied: ${s.appStatus.applied}\nClaimed: ${s.appStatus.claimed}`;
 
         const rowClass = (b === "Balingasag - Main2" || b === "Balingoan - Main2") ? "tooltip-top" : "";
 
+        // FIXED: Explicitly outputs exactly 8 columns matching the HTML table headers structure
         sBody.insertAdjacentHTML('beforeend', `
             <tr>
-                <td style="text-align:left;">${b}</td>
+                <td style="text-align:left; font-weight:600;">${b}</td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.prosDetail)}">${fmt(s.prospects)}</td>
                 <td class="${rowClass}" data-tooltip="${appTooltip}">${fmt(s.approached)}</td>
-                <td class="${rowClass}" data-tooltip="App. Converted: ${s.convDetail.appClmd}\nApp. Not Converted: ${s.convDetail.appNotClmd}\nConv. But Not Appr: ${s.convDetail.directClmd}" style="color:var(--brand-accent); font-weight:700;">${conv?conv+'%':''}</td>
+                <td class="${rowClass}" data-tooltip="App. Converted: ${s.convDetail.appClmd}\nApp. Not Converted: ${s.convDetail.appNotClmd}\nConv. But Not Appr: ${s.convDetail.directClmd}" style="color:var(--brand-accent); font-weight:700;">${conv ? conv+'%' : ''}</td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.appliedDetail)}">${fmt(s.applied)}</td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.manualAppliedDetail)}" style="color:#60a5fa;">${fmt(s.manualApplied)}</td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.claimedDetail)}">${fmt(s.claimed)}</td>
@@ -283,17 +276,28 @@ window.renderDashboard = function() {
 
     const areaAppTooltip = `[Area Approached]\n1st Apps: ${area.apprCounts.a1} (${ap1}%)\n2nd Apps : ${area.apprCounts.a2} (${ap2}%)\n3rd Apps : ${area.apprCounts.a3} (${ap3}%)\n4th Apps : ${area.apprCounts.a4} (${ap4}%)\n\n[STATUS BREAKDOWN]\nApplied: ${area.appStatus.applied}\nClaimed: ${area.appStatus.claimed}`;
 
+    // FIXED: Explicitly outputs exactly 8 columns matching the HTML footer structure
     sFoot.innerHTML = `
         <tr style="background:#020617; color:var(--brand-accent); font-weight:800;">
             <td style="text-align:left;">AREA TOTAL</td>
             <td data-tooltip="${getTooltipText(area.prosDetail)}">${area.prospects}</td>
             <td data-tooltip="${areaAppTooltip}">${area.approached}</td>
-            <td data-tooltip="App. Converted: ${area.convDetail.appClmd}\nApp. Not Converted: ${area.convDetail.appNotClmd}\nConv. But Not Appr: ${area.convDetail.directClmd}">${areaConv?areaConv+'%':''}</td>
+            <td data-tooltip="App. Converted: ${area.convDetail.appClmd}\nApp. Not Converted: ${area.convDetail.appNotClmd}\nConv. But Not Appr: ${area.convDetail.directClmd}">${areaConv ? areaConv+'%' : ''}</td>
             <td data-tooltip="${getTooltipText(area.appliedDetail)}">${area.applied}</td>
             <td data-tooltip="${getTooltipText(area.manualAppliedDetail)}" style="color:#60a5fa;">${area.manualApplied}</td>
             <td data-tooltip="${getTooltipText(area.claimedDetail)}">${area.claimed}</td>
             <td class="tooltip-edge" style="color:#10b981;">${areaAppliedToClaimedConv ? areaAppliedToClaimedConv + '%' : ''}</td>
         </tr>`;
+    
+    // Extra display calculation trigger for sidebar if present
+    const sidebarBody = document.getElementById('sidebarProductBody');
+    if (sidebarBody) {
+        sidebarBody.innerHTML = Object.entries(area.manualAppliedDetail).map(([prod, count]) => `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05)">
+                <td style="padding: 6px 0; font-weight:500;">${prod}</td>
+                <td style="text-align: right; color:var(--brand-accent); font-weight:700;">${count}</td>
+            </tr>`).join('') || `<tr><td style="color:var(--text-dim); text-align:center; padding:10px;">No entries</td></tr>`;
+    }
 };
 
 window.processFile = function(file) {
@@ -391,7 +395,7 @@ if (clientForm) {
             meetingDay: document.getElementById('fDay').value, 
             setNum: "",
             contactNum: "",
-            status: "Select", 
+            status: "Applied", // Setting status automatically to 'Applied' for manual workspace entries
             source: "manual" 
         }).then(() => { 
             toggleModal(false); 
