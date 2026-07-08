@@ -121,9 +121,9 @@ window.renderDashboard = function() {
     
     let stats = {};
     let area = { 
-        prospects: 0, approached: 0, captured: 0, applied: 0, claimed: 0, clmdP: 0,
+        prospects: 0, approached: 0, captured: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0,
         capR: 0, capN: 0,
-        prosDetail: {}, appliedDetail: {}, claimedDetail: {},
+        prosDetail: {}, appliedDetail: {}, manualAppliedDetail: {}, claimedDetail: {},
         appStatus: { applied: 0, claimed: 0 },
         apprCounts: { a1: 0, a2: 0, a3: 0, a4: 0 },
         convDetail: { appClmd: 0, appNotClmd: 0, directClmd: 0 },
@@ -137,9 +137,9 @@ window.renderDashboard = function() {
             bCapN += parseInt(capturedData[`${b}_Newloan_${d}`] || 0); 
         }
         stats[b] = { 
-            prospects: 0, approached: 0, captured: (bCapR + bCapN), applied: 0, claimed: 0, clmdP: 0,
+            prospects: 0, approached: 0, captured: (bCapR + bCapN), applied: 0, manualApplied: 0, claimed: 0, clmdP: 0,
             capR: bCapR, capN: bCapN,
-            prosDetail: {}, appliedDetail: {}, claimedDetail: {},
+            prosDetail: {}, appliedDetail: {}, manualAppliedDetail: {}, claimedDetail: {},
             appStatus: { applied: 0, claimed: 0 },
             apprCounts: { a1: 0, a2: 0, a3: 0, a4: 0 },
             convDetail: { appClmd: 0, appNotClmd: 0, directClmd: 0 },
@@ -167,6 +167,7 @@ window.renderDashboard = function() {
                 const map = { 'Applied':'applied','Claimed':'claimed' };
                 const key = map[status];
 
+                // 1. Process Imported Records (Prospects)
                 if (rec.source === 'import') {
                     s.prospects++; area.prospects++;
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
@@ -190,17 +191,31 @@ window.renderDashboard = function() {
                     } else if (status === 'Claimed') {
                         s.convDetail.directClmd++; area.convDetail.directClmd++;
                     }
+
+                    // Separate Applied Figures: Filter for Imported Prospects Only
+                    if (status === 'Applied') {
+                        s.applied++; area.applied++;
+                        s.appliedDetail[pId] = (s.appliedDetail[pId] || 0) + 1;
+                        area.appliedDetail[pId] = (area.appliedDetail[pId] || 0) + 1;
+                    }
+                } 
+                // 2. Process Manual Entries
+                else if (rec.source === 'manual') {
+                    if (status === 'Applied') {
+                        s.manualApplied++; area.manualApplied++;
+                        s.manualAppliedDetail[pId] = (s.manualAppliedDetail[pId] || 0) + 1;
+                        area.manualAppliedDetail[pId] = (area.manualAppliedDetail[pId] || 0) + 1;
+                    }
                 }
 
-                if (key) {
-                    s[key]++; area[key]++;
-                    s[key + 'Detail'][pId] = (s[key + 'Detail'][pId] || 0) + 1;
-                    area[key + 'Detail'][pId] = (area[key + 'Detail'][pId] || 0) + 1;
+                // 3. Process Generic Status Metrics (Claimed Status is tracked overall)
+                if (status === 'Claimed') {
+                    s.claimed++; area.claimed++;
+                    s.claimedDetail[pId] = (s.claimedDetail[pId] || 0) + 1;
+                    area.claimedDetail[pId] = (area.claimedDetail[pId] || 0) + 1;
 
-                    if (status === 'Claimed') {
-                        if (isReloan) { s.capConvDetail.rClmd++; area.capConvDetail.rClmd++; }
-                        else { s.capConvDetail.nClmd++; area.capConvDetail.nClmd++; }
-                    }
+                    if (isReloan) { s.capConvDetail.rClmd++; area.capConvDetail.rClmd++; }
+                    else { s.capConvDetail.nClmd++; area.capConvDetail.nClmd++; }
                 }
             }
 
@@ -230,12 +245,15 @@ window.renderDashboard = function() {
     branches.forEach(b => {
         const s = stats[b];
         const conv = s.approached > 0 ? Math.round((s.clmdP / s.approached) * 100) : 0;
-        const appliedToClaimedConv = s.applied > 0 ? Math.round((s.claimed / s.applied) * 100) : 0;
+        
+        // Total applied is now the sum of prospects applied + manual applied for accuracy in conversion calculation
+        const totalApplied = s.applied + s.manualApplied;
+        const appliedToClaimedConv = totalApplied > 0 ? Math.round((s.claimed / totalApplied) * 100) : 0;
 
         const p1 = s.prospects > 0 ? Math.round((s.apprCounts.a1 / s.prospects) * 100) : 0;
         const p2 = s.apprCounts.a1 > 0 ? Math.round((s.apprCounts.a2 / s.apprCounts.a1) * 100) : 0;
         const p3 = s.apprCounts.a2 > 0 ? Math.round((s.apprCounts.a3 / s.apprCounts.a2) * 100) : 0;
-        const p4 = s.apprCounts.a3 > 0 ? Math.round((s.apprCounts.a4 / s.apprCounts.a3) * 100) : 0;
+        const p4 = s.apprCounts.a2 > 0 ? Math.round((s.apprCounts.a4 / s.apprCounts.a3) * 100) : 0;
 
         const appTooltip = `[APPROACHED ANALYSIS]\n1st Apps : ${s.apprCounts.a1} (${p1}%)\n2nd Apps : ${s.apprCounts.a2} (${p2}%)\n3rd Apps : ${s.apprCounts.a3} (${p3}%)\n4th Apps : ${s.apprCounts.a4} (${p4}%)\n\n[STATUS BREAKDOWN]\nApplied: ${s.appStatus.applied}\nClaimed: ${s.appStatus.claimed}`;
 
@@ -248,13 +266,15 @@ window.renderDashboard = function() {
                 <td class="${rowClass}" data-tooltip="${appTooltip}">${fmt(s.approached)}</td>
                 <td class="${rowClass}" data-tooltip="App. Converted: ${s.convDetail.appClmd}\nApp. Not Converted: ${s.convDetail.appNotClmd}\nConv. But Not Appr: ${s.convDetail.directClmd}" style="color:var(--brand-accent); font-weight:700;">${conv?conv+'%':''}</td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.appliedDetail)}">${fmt(s.applied)}</td>
+                <td class="${rowClass}" data-tooltip="${getTooltipText(s.manualAppliedDetail)}" style="color:#60a5fa;">${fmt(s.manualApplied)}</td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.claimedDetail)}">${fmt(s.claimed)}</td>
                 <td class="${rowClass} tooltip-edge" style="color:#10b981; font-weight:700;">${appliedToClaimedConv ? appliedToClaimedConv + '%' : ''}</td>
             </tr>`);
     });
 
     const areaConv = area.approached > 0 ? Math.round((area.clmdP / area.approached) * 100) : 0;
-    const areaAppliedToClaimedConv = area.applied > 0 ? Math.round((area.claimed / area.applied) * 100) : 0;
+    const totalAreaApplied = area.applied + area.manualApplied;
+    const areaAppliedToClaimedConv = totalAreaApplied > 0 ? Math.round((area.claimed / totalAreaApplied) * 100) : 0;
 
     const ap1 = area.prospects > 0 ? Math.round((area.apprCounts.a1 / area.prospects) * 100) : 0;
     const ap2 = area.apprCounts.a1 > 0 ? Math.round((area.apprCounts.a2 / area.apprCounts.a1) * 100) : 0;
@@ -270,6 +290,7 @@ window.renderDashboard = function() {
             <td data-tooltip="${areaAppTooltip}">${area.approached}</td>
             <td data-tooltip="App. Converted: ${area.convDetail.appClmd}\nApp. Not Converted: ${area.convDetail.appNotClmd}\nConv. But Not Appr: ${area.convDetail.directClmd}">${areaConv?areaConv+'%':''}</td>
             <td data-tooltip="${getTooltipText(area.appliedDetail)}">${area.applied}</td>
+            <td data-tooltip="${getTooltipText(area.manualAppliedDetail)}" style="color:#60a5fa;">${area.manualApplied}</td>
             <td data-tooltip="${getTooltipText(area.claimedDetail)}">${area.claimed}</td>
             <td class="tooltip-edge" style="color:#10b981;">${areaAppliedToClaimedConv ? areaAppliedToClaimedConv + '%' : ''}</td>
         </tr>`;
