@@ -16,7 +16,7 @@ const capRef = ref(db, 'captured_folders');
 
 let rawData = null; 
 let capturedData = {};
-let expandedBranches = {}; // Global state to track expanded branch summary cards[cite: 2]
+let expandedBranches = {}; // Global state to track expanded branch summary cards
 const branches = ["Balingasag - Main2", "Balingoan - Main2", "Camiguin - Main2", "Claveria - Main2", "Gingoog - Main2", "Salay - Main"];
 const products = ["Mauswagon Reloan", "Supplemental Reloan", "New Supplemental", "Newloan", "Balik RMF", "Saver's"];
 
@@ -152,7 +152,8 @@ window.renderDashboard = function() {
             apprCounts: { a1: 0, a2: 0, a3: 0, a4: 0 },
             convDetail: { appClmd: 0, appNotClmd: 0, directClmd: 0 },
             capConvDetail: { rClmd: 0, nClmd: 0, rNotClmd: 0, nNotClmd: 0 },
-            officers: {} // Dynamic compilation sub-structure[cite: 2]
+            officers: {}, // Dynamic compilation sub-structure
+            sets: {} // Added tracking container object for sets
         };
         area.captured += (bCapR + bCapN); area.capR += bCapR; area.capN += bCapN;
     });
@@ -172,12 +173,19 @@ window.renderDashboard = function() {
             if (stats[rec.branch]) {
                 const s = stats[rec.branch];
                 
-                // Track details on Officer Level[cite: 2]
+                // Track details on Officer Level
                 const offKey = rec.officer ? rec.officer.trim().toUpperCase() : "UNASSIGNED";
                 if (!s.officers[offKey]) {
                     s.officers[offKey] = { prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0 };
                 }
                 const o = s.officers[offKey];
+
+                // Track details on Set Level (e.g. SET A, SET B, or UNASSIGNED)
+                const setKey = recordSet ? `SET ${recordSet}` : "NO SET";
+                if (!s.sets[setKey]) {
+                    s.sets[setKey] = { prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0 };
+                }
+                const st = s.sets[setKey];
 
                 const isAppr = (rec.approaches?.a1 || rec.approaches?.a2 || rec.approaches?.a3 || rec.approaches?.a4);
                 const map = { 'Applied':'applied','Claimed':'claimed' };
@@ -185,7 +193,7 @@ window.renderDashboard = function() {
 
                 if (rec.source === 'import') {
                     s.prospects++; area.prospects++;
-                    o.prospects++;
+                    o.prospects++; st.prospects++;
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
                     area.prosDetail[pId] = (area.prosDetail[pId] || 0) + 1;
                     
@@ -196,7 +204,7 @@ window.renderDashboard = function() {
 
                     if (isAppr) {
                         s.approached++; area.approached++;
-                        o.approached++;
+                        o.approached++; st.approached++;
                         
                         if (rec.approaches?.a1) { s.apprCounts.a1++; area.apprCounts.a1++; }
                         if (rec.approaches?.a2) { s.apprCounts.a2++; area.apprCounts.a2++; }
@@ -206,7 +214,7 @@ window.renderDashboard = function() {
                         if (key) { s.appStatus[key]++; area.appStatus[key]++; }
                         if (status === 'Claimed') { 
                             s.clmdP++; area.clmdP++; 
-                            o.clmdP++;
+                            o.clmdP++; st.clmdP++;
                             s.convDetail.appClmd++; area.convDetail.appClmd++;
                         } else {
                             s.convDetail.appNotClmd++; area.convDetail.appNotClmd++;
@@ -217,7 +225,7 @@ window.renderDashboard = function() {
 
                     if (status === 'Applied') {
                         s.applied++; area.applied++;
-                        o.applied++;
+                        o.applied++; st.applied++;
                         s.appliedDetail[pId] = (s.appliedDetail[pId] || 0) + 1;
                         area.appliedDetail[pId] = (area.appliedDetail[pId] || 0) + 1;
                     }
@@ -225,7 +233,7 @@ window.renderDashboard = function() {
                 else if (rec.source === 'manual' || !rec.source) {
                     if (status === 'Applied') {
                         s.manualApplied++; area.manualApplied++;
-                        o.manualApplied++;
+                        o.manualApplied++; st.manualApplied++;
                         s.manualAppliedDetail[pId] = (s.manualAppliedDetail[pId] || 0) + 1;
                         area.manualAppliedDetail[pId] = (area.manualAppliedDetail[pId] || 0) + 1;
                     }
@@ -233,7 +241,7 @@ window.renderDashboard = function() {
 
                 if (status === 'Claimed') {
                     s.claimed++; area.claimed++;
-                    o.claimed++;
+                    o.claimed++; st.claimed++;
                     s.claimedDetail[pId] = (s.claimedDetail[pId] || 0) + 1;
                     area.claimedDetail[pId] = (area.claimedDetail[pId] || 0) + 1;
 
@@ -297,7 +305,7 @@ window.renderDashboard = function() {
 
         sBody.insertAdjacentHTML('beforeend', `
             <tr style="background: ${isExpanded ? 'rgba(56, 189, 248, 0.05)' : 'transparent'}">
-                <td style="text-align:left; font-weight:600;" class="clickable-branch" onclick="toggleBranchExpand('${b}')">
+                <td style="text-align:left; font-weight:600; class="clickable-branch" onclick="toggleBranchExpand('${b}')">
                     ${toggleIndicator}${b}
                 </td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.prosDetail)}">${fmt(s.prospects)}</td>
@@ -309,10 +317,33 @@ window.renderDashboard = function() {
                 <td class="${rowClass} tooltip-edge" style="color:#10b981; font-weight:700;">${appliedToClaimedConv ? appliedToClaimedConv + '%' : ''}</td>
             </tr>`);
 
-        // Render subrows for officers if branch is active[cite: 2]
+        // Render subrows if branch is expanded
         if (isExpanded) {
+            // 1. Render Set Summary Breakdowns
+            const sortedSets = Object.entries(s.sets).sort((x, y) => x[0].localeCompare(y[0]));
+            if (sortedSets.length > 0) {
+                sortedSets.forEach(([setName, st]) => {
+                    const stConv = st.approached > 0 ? Math.round((st.clmdP / st.approached) * 100) : 0;
+                    const stTotalApplied = st.applied + st.manualApplied;
+                    const stAppliedToClaimed = stTotalApplied > 0 ? Math.round((st.claimed / stTotalApplied) * 100) : 0;
+
+                    sBody.insertAdjacentHTML('beforeend', `
+                        <tr class="set-row" style="background: rgba(255, 255, 255, 0.025);">
+                            <td style="text-align:left; padding-left:25px; font-weight:600; color:#38bdf8;">📂 ${setName}</td>
+                            <td>${fmt(st.prospects)}</td>
+                            <td>${fmt(st.approached)}</td>
+                            <td style="color:var(--brand-accent); opacity:0.85;">${stConv ? stConv + '%' : ''}</td>
+                            <td>${fmt(st.applied)}</td>
+                            <td style="color:#60a5fa; opacity:0.85;">${fmt(st.manualApplied)}</td>
+                            <td>${fmt(st.claimed)}</td>
+                            <td style="color:#10b981; opacity:0.85;">${stAppliedToClaimed ? stAppliedToClaimed + '%' : ''}</td>
+                        </tr>`);
+                });
+            }
+
+            // 2. Render Officer Summary Breakdowns
             const sortedOfficers = Object.entries(s.officers).sort((x, y) => x[0].localeCompare(y[0]));
-            if(sortedOfficers.length === 0) {
+            if (sortedOfficers.length === 0) {
                 sBody.insertAdjacentHTML('beforeend', `
                     <tr class="officer-row"><td colspan="8" style="text-align:left; padding-left:30px; color:var(--text-dim);">No operational tracking records found for officers.</td></tr>
                 `);
