@@ -135,6 +135,9 @@ window.renderDashboard = function() {
         capConvDetail: { rClmd: 0, nClmd: 0, rNotClmd: 0, nNotClmd: 0 }
     };
 
+    // Tracks all active imported officer names to populate the modal form dropdown field dynamic choice structure
+    let dynamicImportedOfficers = new Set();
+
     branches.forEach(b => {
         let bCapR = 0, bCapN = 0;
         for(let d=1; d<=31; d++) { 
@@ -186,6 +189,11 @@ window.renderDashboard = function() {
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
                     area.prosDetail[pId] = (area.prosDetail[pId] || 0) + 1;
                     
+                    // Add directly to choices only if generated from target system data upload file rules
+                    if (rec.officer && offKey !== "UNASSIGNED" && offKey !== "N/A") {
+                        dynamicImportedOfficers.add(rec.officer.trim().toUpperCase());
+                    }
+
                     if (isAppr) {
                         s.approached++; area.approached++;
                         o.approached++;
@@ -254,6 +262,19 @@ window.renderDashboard = function() {
                 mBody.insertAdjacentHTML('beforeend', `<tr class="${rCls}"><td>${rec.branch}<br>${rec.meetingDay || ''} / ${rec.centre || ''}${setDisplay}</td><td><strong>${rec.clientName}</strong> <span onclick="navigator.clipboard.writeText('${rec.clientName}')" style="cursor:pointer">📋</span><br><small>${rec.officer}</small>${contactDisplay}</td><td>${rec.productId}</td><td>${apprDisp}</td><td>${rec.isDefault||''}</td><td><select onchange="updateStatus('${id}', this.value)" class="input-styled"><option value="Select">...</option><option value="Applied" ${status==='Applied'?'selected':''}>Applied</option><option value="Claimed" ${status==='Claimed'?'selected':''}>Claimed</option></select></td><td><input type="text" value="${rec.remarks||''}" onblur="updateRemarks('${id}', this.value)" style="width:100%; border:none; background:transparent; color:inherit;"></td><td><button onclick="delRec('${id}')" style="background:none; border:none; cursor:pointer;">🗑️</button></td></tr>`);
             }
         });
+    }
+
+    // Refresh Entry Dropdown Options using the array of uploaded names
+    const officerSelectEl = document.getElementById('fOfficer');
+    if (officerSelectEl) {
+        const primarySelectedValue = officerSelectEl.value; 
+        officerSelectEl.innerHTML = '<option value="" disabled selected>Select Trust Staff Officer...</option>';
+        Array.from(dynamicImportedOfficers).sort().forEach(officerName => {
+            officerSelectEl.add(new Option(officerName, officerName));
+        });
+        if (primarySelectedValue && dynamicImportedOfficers.has(primarySelectedValue)) {
+            officerSelectEl.value = primarySelectedValue;
+        }
     }
 
     branches.forEach(b => {
@@ -436,10 +457,15 @@ const clientForm = document.getElementById('clientForm');
 if (clientForm) {
     clientForm.onsubmit = (e) => { 
         e.preventDefault(); 
+        const selectedOfficer = document.getElementById('fOfficer').value;
+        if(!selectedOfficer) {
+            alert("⚠️ Please select a valid Trust Staff Officer from the list.");
+            return;
+        }
         push(dbRef, { 
             branch: document.getElementById('fBranch').value, 
             clientName: document.getElementById('fClient').value, 
-            officer: document.getElementById('fOfficer').value, 
+            officer: selectedOfficer, 
             centre: document.getElementById('fCentre').value, 
             productId: document.getElementById('fProduct').value, 
             meetingDay: document.getElementById('fDay').value, 
