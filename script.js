@@ -135,7 +135,6 @@ window.renderDashboard = function() {
         capConvDetail: { rClmd: 0, nClmd: 0, rNotClmd: 0, nNotClmd: 0 }
     };
 
-    // Tracks all active imported officer names to populate the modal form dropdown field dynamic choice structure
     let dynamicImportedOfficers = new Set();
 
     branches.forEach(b => {
@@ -152,8 +151,8 @@ window.renderDashboard = function() {
             apprCounts: { a1: 0, a2: 0, a3: 0, a4: 0 },
             convDetail: { appClmd: 0, appNotClmd: 0, directClmd: 0 },
             capConvDetail: { rClmd: 0, nClmd: 0, rNotClmd: 0, nNotClmd: 0 },
-            officers: {}, // Dynamic compilation sub-structure
-            sets: {} // Added tracking container object for sets
+            officers: {}, 
+            sets: {} 
         };
         area.captured += (bCapR + bCapN); area.capR += bCapR; area.capN += bCapN;
     });
@@ -180,7 +179,7 @@ window.renderDashboard = function() {
                 }
                 const o = s.officers[offKey];
 
-                // Track details on Set Level (e.g. SET A, SET B, or UNASSIGNED)
+                // Track details on Set Level
                 const setKey = recordSet ? `SET ${recordSet}` : "NO SET";
                 if (!s.sets[setKey]) {
                     s.sets[setKey] = { prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0 };
@@ -197,7 +196,6 @@ window.renderDashboard = function() {
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
                     area.prosDetail[pId] = (area.prosDetail[pId] || 0) + 1;
                     
-                    // Add directly to choices only if generated from target system data upload file rules
                     if (rec.officer && offKey !== "UNASSIGNED" && offKey !== "N/A") {
                         dynamicImportedOfficers.add(rec.officer.trim().toUpperCase());
                     }
@@ -272,7 +270,6 @@ window.renderDashboard = function() {
         });
     }
 
-    // Refresh Entry Dropdown Options using the array of uploaded names
     const officerSelectEl = document.getElementById('fOfficer');
     if (officerSelectEl) {
         const primarySelectedValue = officerSelectEl.value; 
@@ -305,7 +302,7 @@ window.renderDashboard = function() {
 
         sBody.insertAdjacentHTML('beforeend', `
             <tr style="background: ${isExpanded ? 'rgba(56, 189, 248, 0.05)' : 'transparent'}">
-                <td style="text-align:left; font-weight:600; class="clickable-branch" onclick="toggleBranchExpand('${b}')">
+                <td style="text-align:left; font-weight:600;" class="clickable-branch" onclick="toggleBranchExpand('${b}')">
                     ${toggleIndicator}${b}
                 </td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.prosDetail)}">${fmt(s.prospects)}</td>
@@ -317,31 +314,8 @@ window.renderDashboard = function() {
                 <td class="${rowClass} tooltip-edge" style="color:#10b981; font-weight:700;">${appliedToClaimedConv ? appliedToClaimedConv + '%' : ''}</td>
             </tr>`);
 
-        // Render subrows if branch is expanded
         if (isExpanded) {
-            // 1. Render Set Summary Breakdowns
-            const sortedSets = Object.entries(s.sets).sort((x, y) => x[0].localeCompare(y[0]));
-            if (sortedSets.length > 0) {
-                sortedSets.forEach(([setName, st]) => {
-                    const stConv = st.approached > 0 ? Math.round((st.clmdP / st.approached) * 100) : 0;
-                    const stTotalApplied = st.applied + st.manualApplied;
-                    const stAppliedToClaimed = stTotalApplied > 0 ? Math.round((st.claimed / stTotalApplied) * 100) : 0;
-
-                    sBody.insertAdjacentHTML('beforeend', `
-                        <tr class="set-row" style="background: rgba(255, 255, 255, 0.025);">
-                            <td style="text-align:left; padding-left:25px; font-weight:600; color:#38bdf8;">📂 ${setName}</td>
-                            <td>${fmt(st.prospects)}</td>
-                            <td>${fmt(st.approached)}</td>
-                            <td style="color:var(--brand-accent); opacity:0.85;">${stConv ? stConv + '%' : ''}</td>
-                            <td>${fmt(st.applied)}</td>
-                            <td style="color:#60a5fa; opacity:0.85;">${fmt(st.manualApplied)}</td>
-                            <td>${fmt(st.claimed)}</td>
-                            <td style="color:#10b981; opacity:0.85;">${stAppliedToClaimed ? stAppliedToClaimed + '%' : ''}</td>
-                        </tr>`);
-                });
-            }
-
-            // 2. Render Officer Summary Breakdowns
+            // 1. Render Officers Summary first
             const sortedOfficers = Object.entries(s.officers).sort((x, y) => x[0].localeCompare(y[0]));
             if (sortedOfficers.length === 0) {
                 sBody.insertAdjacentHTML('beforeend', `
@@ -363,6 +337,28 @@ window.renderDashboard = function() {
                             <td style="color:#60a5fa; opacity:0.85;">${fmt(o.manualApplied)}</td>
                             <td>${fmt(o.claimed)}</td>
                             <td style="color:#10b981; opacity:0.85;">${oAppliedToClaimed ? oAppliedToClaimed + '%' : ''}</td>
+                        </tr>`);
+                });
+            }
+
+            // 2. Render Sets Summary below the officers
+            const sortedSets = Object.entries(s.sets).sort((x, y) => x[0].localeCompare(y[0]));
+            if (sortedSets.length > 0) {
+                sortedSets.forEach(([setName, st]) => {
+                    const stConv = st.approached > 0 ? Math.round((st.clmdP / st.approached) * 100) : 0;
+                    const stTotalApplied = st.applied + st.manualApplied;
+                    const stAppliedToClaimed = stTotalApplied > 0 ? Math.round((st.claimed / stTotalApplied) * 100) : 0;
+
+                    sBody.insertAdjacentHTML('beforeend', `
+                        <tr class="set-row" style="background: rgba(255, 255, 255, 0.015);">
+                            <td style="text-align:left; padding-left:35px; font-style:italic; font-weight:600; color:#38bdf8;">📂 ${setName}</td>
+                            <td>${fmt(st.prospects)}</td>
+                            <td>${fmt(st.approached)}</td>
+                            <td style="color:var(--brand-accent); opacity:0.75;">${stConv ? stConv + '%' : ''}</td>
+                            <td>${fmt(st.applied)}</td>
+                            <td style="color:#60a5fa; opacity:0.75;">${fmt(st.manualApplied)}</td>
+                            <td>${fmt(st.claimed)}</td>
+                            <td style="color:#10b981; opacity:0.75;">${stAppliedToClaimed ? stAppliedToClaimed + '%' : ''}</td>
                         </tr>`);
                 });
             }
