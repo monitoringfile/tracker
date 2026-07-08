@@ -67,6 +67,7 @@ document.getElementById('loginBtn').addEventListener('click', () => {
 
 document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
 
+// Manage online presence status
 function managePresence(uid, name) {
     const userStatusRef = ref(db, `online_users/${uid}`);
     const connectedRef = ref(db, ".info/connected");
@@ -78,6 +79,7 @@ function managePresence(uid, name) {
     });
 }
 
+// Listen for online users
 function listenForUsers() {
     const listContainer = document.getElementById('active-users-list');
     onValue(ref(db, 'online_users'), (snapshot) => {
@@ -216,6 +218,9 @@ window.renderDashboard = function() {
     branches.forEach(b => {
         const s = stats[b];
         const conv = s.approached > 0 ? Math.round((s.clmdP / s.approached) * 100) : 0;
+        
+        // Calculate Applied to Claimed Conversion Percentage
+        const appliedToClaimedConv = s.applied > 0 ? Math.round((s.claimed / s.applied) * 100) : 0;
 
         const p1 = s.prospects > 0 ? Math.round((s.apprCounts.a1 / s.prospects) * 100) : 0;
         const p2 = s.apprCounts.a1 > 0 ? Math.round((s.apprCounts.a2 / s.apprCounts.a1) * 100) : 0;
@@ -233,11 +238,15 @@ window.renderDashboard = function() {
                 <td class="${rowClass}" data-tooltip="${appTooltip}">${fmt(s.approached)}</td>
                 <td class="${rowClass}" data-tooltip="App. Converted: ${s.convDetail.appClmd}\nApp. Not Converted: ${s.convDetail.appNotClmd}\nConv. But Not Appr: ${s.convDetail.directClmd}" style="color:var(--brand-accent); font-weight:700;">${conv?conv+'%':''}</td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.appliedDetail)}">${fmt(s.applied)}</td>
-                <td class="${rowClass} tooltip-edge" data-tooltip="${getTooltipText(s.claimedDetail)}">${fmt(s.claimed)}</td>
+                <td class="${rowClass}" data-tooltip="${getTooltipText(s.claimedDetail)}">${fmt(s.claimed)}</td>
+                <td class="${rowClass} tooltip-edge" style="color:#10b981; font-weight:700;">${appliedToClaimedConv ? appliedToClaimedConv + '%' : ''}</td>
             </tr>`);
     });
 
     const areaConv = area.approached > 0 ? Math.round((area.clmdP / area.approached) * 100) : 0;
+    
+    // Area Total calculation for Applied to Claimed Percentage
+    const areaAppliedToClaimedConv = area.applied > 0 ? Math.round((area.claimed / area.applied) * 100) : 0;
 
     const ap1 = area.prospects > 0 ? Math.round((area.apprCounts.a1 / area.prospects) * 100) : 0;
     const ap2 = area.apprCounts.a1 > 0 ? Math.round((area.apprCounts.a2 / area.apprCounts.a1) * 100) : 0;
@@ -253,7 +262,8 @@ window.renderDashboard = function() {
             <td data-tooltip="${areaAppTooltip}">${area.approached}</td>
             <td data-tooltip="App. Converted: ${area.convDetail.appClmd}\nApp. Not Converted: ${area.convDetail.appNotClmd}\nConv. But Not Appr: ${area.convDetail.directClmd}">${areaConv?areaConv+'%':''}</td>
             <td data-tooltip="${getTooltipText(area.appliedDetail)}">${area.applied}</td>
-            <td data-tooltip="${getTooltipText(area.claimedDetail)}" class="tooltip-edge">${area.claimed}</td>
+            <td data-tooltip="${getTooltipText(area.claimedDetail)}">${area.claimed}</td>
+            <td class="tooltip-edge" style="color:#10b981;">${areaAppliedToClaimedConv ? areaAppliedToClaimedConv + '%' : ''}</td>
         </tr>`;
         
     Object.entries(prodGlobal).forEach(([p, count]) => { if (count > 0) pSide.insertAdjacentHTML('beforeend', `<tr><td style="padding: 4px 0;">${p}</td><td style="text-align:right; font-weight: 700;">${count}</td></tr>`); });
