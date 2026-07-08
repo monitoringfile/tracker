@@ -151,8 +151,7 @@ window.renderDashboard = function() {
             apprCounts: { a1: 0, a2: 0, a3: 0, a4: 0 },
             convDetail: { appClmd: 0, appNotClmd: 0, directClmd: 0 },
             capConvDetail: { rClmd: 0, nClmd: 0, rNotClmd: 0, nNotClmd: 0 },
-            officers: {}, 
-            sets: {} 
+            officers: {}
         };
         area.captured += (bCapR + bCapN); area.capR += bCapR; area.capN += bCapN;
     });
@@ -175,16 +174,19 @@ window.renderDashboard = function() {
                 // Track details on Officer Level
                 const offKey = rec.officer ? rec.officer.trim().toUpperCase() : "UNASSIGNED";
                 if (!s.officers[offKey]) {
-                    s.officers[offKey] = { prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0 };
+                    s.officers[offKey] = { 
+                        prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0,
+                        sets: {} 
+                    };
                 }
                 const o = s.officers[offKey];
 
-                // Track details on Set Level
+                // Track nested Set metrics belonging to this Officer
                 const setKey = recordSet ? `SET ${recordSet}` : "NO SET";
-                if (!s.sets[setKey]) {
-                    s.sets[setKey] = { prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0 };
+                if (!o.sets[setKey]) {
+                    o.sets[setKey] = { prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0 };
                 }
-                const st = s.sets[setKey];
+                const st = o.sets[setKey];
 
                 const isAppr = (rec.approaches?.a1 || rec.approaches?.a2 || rec.approaches?.a3 || rec.approaches?.a4);
                 const map = { 'Applied':'applied','Claimed':'claimed' };
@@ -315,7 +317,6 @@ window.renderDashboard = function() {
             </tr>`);
 
         if (isExpanded) {
-            // 1. Render Officers Summary first
             const sortedOfficers = Object.entries(s.officers).sort((x, y) => x[0].localeCompare(y[0]));
             if (sortedOfficers.length === 0) {
                 sBody.insertAdjacentHTML('beforeend', `
@@ -327,39 +328,40 @@ window.renderDashboard = function() {
                     const oTotalApplied = o.applied + o.manualApplied;
                     const oAppliedToClaimed = oTotalApplied > 0 ? Math.round((o.claimed / oTotalApplied) * 100) : 0;
 
+                    // Render individual Officer Row
                     sBody.insertAdjacentHTML('beforeend', `
-                        <tr class="officer-row">
-                            <td style="text-align:left; padding-left:25px; font-weight:500; color:#94a3b8;">👤 ${name}</td>
+                        <tr class="officer-row" style="background: rgba(255, 255, 255, 0.025);">
+                            <td style="text-align:left; padding-left:25px; font-weight:600; color:#cbd5e1;">👤 ${name}</td>
                             <td>${fmt(o.prospects)}</td>
                             <td>${fmt(o.approached)}</td>
-                            <td style="color:var(--brand-accent); opacity:0.85;">${oConv ? oConv + '%' : ''}</td>
+                            <td style="color:var(--brand-accent); opacity:0.9;">${oConv ? oConv + '%' : ''}</td>
                             <td>${fmt(o.applied)}</td>
-                            <td style="color:#60a5fa; opacity:0.85;">${fmt(o.manualApplied)}</td>
+                            <td style="color:#60a5fa; opacity:0.9;">${fmt(o.manualApplied)}</td>
                             <td>${fmt(o.claimed)}</td>
-                            <td style="color:#10b981; opacity:0.85;">${oAppliedToClaimed ? oAppliedToClaimed + '%' : ''}</td>
+                            <td style="color:#10b981; opacity:0.9;">${oAppliedToClaimed ? oAppliedToClaimed + '%' : ''}</td>
                         </tr>`);
-                });
-            }
 
-            // 2. Render Sets Summary below the officers
-            const sortedSets = Object.entries(s.sets).sort((x, y) => x[0].localeCompare(y[0]));
-            if (sortedSets.length > 0) {
-                sortedSets.forEach(([setName, st]) => {
-                    const stConv = st.approached > 0 ? Math.round((st.clmdP / st.approached) * 100) : 0;
-                    const stTotalApplied = st.applied + st.manualApplied;
-                    const stAppliedToClaimed = stTotalApplied > 0 ? Math.round((st.claimed / stTotalApplied) * 100) : 0;
+                    // Render only the Sets belonging to THIS Officer right below them
+                    const sortedSets = Object.entries(o.sets).sort((x, y) => x[0].localeCompare(y[0]));
+                    if (sortedSets.length > 0) {
+                        sortedSets.forEach(([setName, st]) => {
+                            const stConv = st.approached > 0 ? Math.round((st.clmdP / st.approached) * 100) : 0;
+                            const stTotalApplied = st.applied + st.manualApplied;
+                            const stAppliedToClaimed = stTotalApplied > 0 ? Math.round((st.claimed / stTotalApplied) * 100) : 0;
 
-                    sBody.insertAdjacentHTML('beforeend', `
-                        <tr class="set-row" style="background: rgba(255, 255, 255, 0.015);">
-                            <td style="text-align:left; padding-left:35px; font-style:italic; font-weight:600; color:#38bdf8;">📂 ${setName}</td>
-                            <td>${fmt(st.prospects)}</td>
-                            <td>${fmt(st.approached)}</td>
-                            <td style="color:var(--brand-accent); opacity:0.75;">${stConv ? stConv + '%' : ''}</td>
-                            <td>${fmt(st.applied)}</td>
-                            <td style="color:#60a5fa; opacity:0.75;">${fmt(st.manualApplied)}</td>
-                            <td>${fmt(st.claimed)}</td>
-                            <td style="color:#10b981; opacity:0.75;">${stAppliedToClaimed ? stAppliedToClaimed + '%' : ''}</td>
-                        </tr>`);
+                            sBody.insertAdjacentHTML('beforeend', `
+                                <tr class="set-row" style="background: rgba(56, 189, 248, 0.01);">
+                                    <td style="text-align:left; padding-left:45px; font-style:italic; font-weight:500; color:#38bdf8;">📂 ${setName}</td>
+                                    <td>${fmt(st.prospects)}</td>
+                                    <td>${fmt(st.approached)}</td>
+                                    <td style="color:var(--brand-accent); opacity:0.75;">${stConv ? stConv + '%' : ''}</td>
+                                    <td>${fmt(st.applied)}</td>
+                                    <td style="color:#60a5fa; opacity:0.75;">${fmt(st.manualApplied)}</td>
+                                    <td>${fmt(st.claimed)}</td>
+                                    <td style="color:#10b981; opacity:0.75;">${stAppliedToClaimed ? stAppliedToClaimed + '%' : ''}</td>
+                                </tr>`);
+                        });
+                    }
                 });
             }
         }
