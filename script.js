@@ -118,7 +118,6 @@ window.renderDashboard = function() {
     
     // Object structure to compile individual Credit Officer summaries
     let officerStats = {};
-    
     let stats = {};
     let area = { 
         prospects: 0, approached: 0, captured: 0, applied: 0, claimed: 0, clmdP: 0,
@@ -168,13 +167,13 @@ window.renderDashboard = function() {
 
                 if (rec.source === 'import') {
                     s.prospects++; area.prospects++;
-                    officerStats[officerName].prospects++; // Add to Officer Prospects
+                    officerStats[officerName].prospects++; 
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
                     area.prosDetail[pId] = (area.prosDetail[pId] || 0) + 1;
                     
                     if (isAppr) {
                         s.approached++; area.approached++;
-                        officerStats[officerName].approached++; // Add to Officer Approached
+                        officerStats[officerName].approached++; 
                         
                         if (rec.approaches?.a1) { s.apprCounts.a1++; area.apprCounts.a1++; }
                         if (rec.approaches?.a2) { s.apprCounts.a2++; area.apprCounts.a2++; }
@@ -199,7 +198,7 @@ window.renderDashboard = function() {
                     area[key + 'Detail'][pId] = (area[key + 'Detail'][pId] || 0) + 1;
 
                     if (status === 'Claimed') {
-                        officerStats[officerName].claimed++; // Add to Officer Claimed
+                        officerStats[officerName].claimed++; 
                         if (isReloan) { s.capConvDetail.rClmd++; area.capConvDetail.rClmd++; }
                         else { s.capConvDetail.nClmd++; area.capConvDetail.nClmd++; }
                     }
