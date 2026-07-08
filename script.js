@@ -216,7 +216,6 @@ window.renderDashboard = function() {
     branches.forEach(b => {
         const s = stats[b];
         const conv = s.approached > 0 ? Math.round((s.clmdP / s.approached) * 100) : 0;
-        const capConv = s.captured > 0 ? Math.round((s.clmd / s.captured) * 100) : 0;
         s.capConvDetail.rNotClmd = Math.max(0, s.capR - s.capConvDetail.rClmd);
         s.capConvDetail.nNotClmd = Math.max(0, s.capN - s.capConvDetail.nNotClmd);
 
@@ -235,15 +234,12 @@ window.renderDashboard = function() {
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.prosDetail)}">${fmt(s.prospects)}</td>
                 <td class="${rowClass}" data-tooltip="${appTooltip}">${fmt(s.approached)}</td>
                 <td class="${rowClass}" data-tooltip="App. Converted: ${s.convDetail.appClmd}\nApp. Not Converted: ${s.convDetail.appNotClmd}\nConv. But Not Appr: ${s.convDetail.directClmd}" style="color:var(--brand-accent); font-weight:700;">${conv?conv+'%':''}</td>
-                <td class="${rowClass}" data-tooltip="Reloan: ${s.capR}\nNewloan: ${s.capN}" style="background:rgba(255,255,255,0.05)">${fmt(s.captured)}</td>
-                <td class="${rowClass}" data-tooltip="Total Captured Converted: ${s.capConvDetail.rClmd + s.capConvDetail.nClmd}\nTotal Captured Not Converted: ${s.capConvDetail.rNotClmd + s.capConvDetail.nNotClmd}" style="color:var(--brand-accent); font-weight:700;">${capConv?capConv+'%':''}</td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.appliedDetail)}">${fmt(s.applied)}</td>
                 <td class="${rowClass} tooltip-edge" data-tooltip="${getTooltipText(s.claimedDetail)}">${fmt(s.claimed)}</td>
             </tr>`);
     });
 
     const areaConv = area.approached > 0 ? Math.round((area.clmdP / area.approached) * 100) : 0;
-    const areaCapConv = area.captured > 0 ? Math.round((area.clmd / area.captured) * 100) : 0;
     area.capConvDetail.rNotClmd = Math.max(0, area.capR - area.capConvDetail.rClmd);
     area.capConvDetail.nNotClmd = Math.max(0, area.capN - area.capConvDetail.nNotClmd);
 
@@ -260,8 +256,6 @@ window.renderDashboard = function() {
             <td data-tooltip="${getTooltipText(area.prosDetail)}">${area.prospects}</td>
             <td data-tooltip="${areaAppTooltip}">${area.approached}</td>
             <td data-tooltip="App. Converted: ${area.convDetail.appClmd}\nApp. Not Converted: ${area.convDetail.appNotClmd}\nConv. But Not Appr: ${area.convDetail.directClmd}">${areaConv?areaConv+'%':''}</td>
-            <td data-tooltip="Reloan: ${area.capR}\nNewloan: ${area.capN}">${area.captured}</td>
-            <td data-tooltip="Total Captured Converted: ${area.capConvDetail.rClmd + area.capConvDetail.nClmd}\nTotal Captured Not Converted: ${area.capConvDetail.rNotClmd + area.capConvDetail.nNotClmd}">${areaCapConv?areaCapConv+'%':''}</td>
             <td data-tooltip="${getTooltipText(area.appliedDetail)}">${area.applied}</td>
             <td data-tooltip="${getTooltipText(area.claimedDetail)}" class="tooltip-edge">${area.claimed}</td>
         </tr>`;
