@@ -1,109 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getDatabase, ref, onValue, update, remove, push, set, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
-
-const firebaseConfig = { 
-    apiKey: "AIzaSyCmfUxwaeAyoTTlLvU6qHwT22MGtcLa2aU", 
-    databaseURL: "https://mis-tracker-83357-default-rtdb.asia-southeast1.firebasedatabase.app", 
-    projectId: "mis-tracker-83357" 
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-const dbRef = ref(db, 'client_records');
-const capRef = ref(db, 'captured_folders');
-
-let rawData = null; 
-let capturedData = {};
-const branches = ["Balingasag - Main2", "Balingoan - Main2", "Camiguin - Main2", "Claveria - Main2", "Gingoog - Main2", "Salay - Main"];
-const products = ["Mauswagon Reloan", "Supplemental Reloan", "New Supplemental", "Newloan", "Balik RMF", "Saver's"];
-
-// Populate Branch Select
-const branchSelect = document.getElementById('fBranch');
-if (branchSelect) {
-    branches.forEach(b => branchSelect.add(new Option(b, b)));
-}
-
-setInterval(() => { 
-    const clock = document.getElementById('live-clock');
-    if(clock) clock.innerText = new Date().toLocaleString(); 
-}, 1000);
-
-// --- AUTHENTICATION & PRESENCE LOGIC ---
-let isFirstLoad = true;
-
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        const userName = user.email.split('@')[0].toUpperCase();
-        document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('app-wrapper').style.display = 'flex';
-        document.getElementById('current-user').innerText = userName;
-
-        managePresence(user.uid, userName);
-        listenForUsers();
-
-        onValue(dbRef, (snap) => { rawData = snap.val(); renderDashboard(); });
-        onValue(capRef, (snap) => { 
-            capturedData = snap.val() || {}; 
-            renderDashboard(); 
-            if(document.getElementById('capturedModalOverlay').style.display === 'flex') renderCapturedGrid(); 
-        });
-
-        if(!isFirstLoad) showToast(`WELCOME BACK, ${userName}`);
-        isFirstLoad = false;
-    } else {
-        document.getElementById('login-overlay').style.display = 'flex';
-        document.getElementById('app-wrapper').style.display = 'none';
-        isFirstLoad = false;
-    }
-});
-
-document.getElementById('loginBtn').addEventListener('click', () => {
-    const e = document.getElementById('email').value;
-    const p = document.getElementById('pass').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert("⚠️ ACCESS DENIED: Invalid Credentials"));
-});
-
-document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
-
-function managePresence(uid, name) {
-    const userStatusRef = ref(db, `online_users/${uid}`);
-    const connectedRef = ref(db, ".info/connected");
-    onValue(connectedRef, (snap) => {
-        if (snap.val() === true) {
-            onDisconnect(userStatusRef).remove();
-            set(userStatusRef, { name: name, lastActive: Date.now() });
-        }
-    });
-}
-
-function listenForUsers() {
-    const listContainer = document.getElementById('active-users-list');
-    onValue(ref(db, 'online_users'), (snapshot) => {
-        listContainer.innerHTML = '';
-        const users = snapshot.val() || {};
-        Object.values(users).forEach(u => {
-            if (u && u.name && u.name !== "UNDEFINED" && u.name.trim() !== "") {
-                const item = document.createElement('div');
-                item.className = 'user-pill';
-                item.innerHTML = `<span class="status-dot"></span> ${u.name}`;
-                listContainer.appendChild(item);
-            }
-        });
-    });
-}
-
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.innerText = msg; t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 3000);
-}
-
-// --- DASHBOARD LOGIC ---
-const fmt = (n) => n === 0 ? "" : n;
-const getTooltipText = (o) => Object.entries(o).filter(([k,v]) => v > 0).map(([k,v]) => `${k}: ${v}`).join('\n') || "No data";
-
 window.renderDashboard = function() {
     const mBody = document.getElementById('masterBody'); 
     const sBody = document.getElementById('summaryBody');
@@ -129,6 +23,7 @@ window.renderDashboard = function() {
         capConvDetail: { rClmd: 0, nClmd: 0, rNotClmd: 0, nNotClmd: 0 }
     };
 
+    // Initialize stats & officer structures for each branch
     branches.forEach(b => {
         let bCapR = 0, bCapN = 0;
         for(let d=1; d<=31; d++) { 
@@ -142,7 +37,8 @@ window.renderDashboard = function() {
             appStatus: { applied: 0, claimed: 0 },
             apprCounts: { a1: 0, a2: 0, a3: 0, a4: 0 },
             convDetail: { appClmd: 0, appNotClmd: 0, directClmd: 0 },
-            capConvDetail: { rClmd: 0, nClmd: 0, rNotClmd: 0, nNotClmd: 0 }
+            capConvDetail: { rClmd: 0, nClmd: 0, rNotClmd: 0, nNotClmd: 0 },
+            officers: {} // Sub-metrics per trust staff member
         };
         area.captured += (bCapR + bCapN); area.capR += bCapR; area.capN += bCapN;
     });
@@ -161,17 +57,27 @@ window.renderDashboard = function() {
 
             if (stats[rec.branch]) {
                 const s = stats[rec.branch];
+                const offName = rec.officer ? rec.officer.trim().toUpperCase() : "UNASSIGNED";
+                
+                // Initialize individual officer tracking inside the branch if not built yet
+                if (!s.officers[offName]) {
+                    s.officers[offName] = { prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0 };
+                }
+                const o = s.officers[offName];
+
                 const isAppr = (rec.approaches?.a1 || rec.approaches?.a2 || rec.approaches?.a3 || rec.approaches?.a4);
                 const map = { 'Applied':'applied','Claimed':'claimed' };
                 const key = map[status];
 
                 if (rec.source === 'import') {
                     s.prospects++; area.prospects++;
+                    o.prospects++;
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
                     area.prosDetail[pId] = (area.prosDetail[pId] || 0) + 1;
                     
                     if (isAppr) {
                         s.approached++; area.approached++;
+                        o.approached++;
                         
                         if (rec.approaches?.a1) { s.apprCounts.a1++; area.apprCounts.a1++; }
                         if (rec.approaches?.a2) { s.apprCounts.a2++; area.apprCounts.a2++; }
@@ -181,6 +87,7 @@ window.renderDashboard = function() {
                         if (key) { s.appStatus[key]++; area.appStatus[key]++; }
                         if (status === 'Claimed') { 
                             s.clmdP++; area.clmdP++; 
+                            o.clmdP++;
                             s.convDetail.appClmd++; area.convDetail.appClmd++;
                         } else {
                             s.convDetail.appNotClmd++; area.convDetail.appNotClmd++;
@@ -191,6 +98,7 @@ window.renderDashboard = function() {
 
                     if (status === 'Applied') {
                         s.applied++; area.applied++;
+                        o.applied++;
                         s.appliedDetail[pId] = (s.appliedDetail[pId] || 0) + 1;
                         area.appliedDetail[pId] = (area.appliedDetail[pId] || 0) + 1;
                     }
@@ -198,6 +106,7 @@ window.renderDashboard = function() {
                 else if (rec.source === 'manual' || !rec.source) {
                     if (status === 'Applied') {
                         s.manualApplied++; area.manualApplied++;
+                        o.manualApplied++;
                         s.manualAppliedDetail[pId] = (s.manualAppliedDetail[pId] || 0) + 1;
                         area.manualAppliedDetail[pId] = (area.manualAppliedDetail[pId] || 0) + 1;
                     }
@@ -205,6 +114,7 @@ window.renderDashboard = function() {
 
                 if (status === 'Claimed') {
                     s.claimed++; area.claimed++;
+                    o.claimed++;
                     s.claimedDetail[pId] = (s.claimedDetail[pId] || 0) + 1;
                     area.claimedDetail[pId] = (area.claimedDetail[pId] || 0) + 1;
 
@@ -250,11 +160,15 @@ window.renderDashboard = function() {
         const appTooltip = `[APPROACHED ANALYSIS]\n1st Apps : ${s.apprCounts.a1} (${p1}%)\n2nd Apps : ${s.apprCounts.a2} (${p2}%)\n3rd Apps : ${s.apprCounts.a3} (${p3}%)\n4th Apps : ${s.apprCounts.a4} (${p4}%)\n\n[STATUS BREAKDOWN]\nApplied: ${s.appStatus.applied}\nClaimed: ${s.appStatus.claimed}`;
 
         const rowClass = (b === "Balingasag - Main2" || b === "Balingoan - Main2") ? "tooltip-top" : "";
+        const isExpanded = !!expandedBranches[b];
+        const indicator = isExpanded ? "▼ " : "▶ ";
 
-        // FIXED: Explicitly outputs exactly 8 columns matching the HTML table headers structure
+        // Branch Row (Now Clickable via `toggleBranchExpand`)
         sBody.insertAdjacentHTML('beforeend', `
-            <tr>
-                <td style="text-align:left; font-weight:600;">${b}</td>
+            <tr style="background: ${isExpanded ? 'rgba(250,204,21,0.05)' : 'transparent'}; border-bottom: ${isExpanded ? 'none' : '1px solid rgba(255,255,255,0.05)'};">
+                <td style="text-align:left; font-weight:600;" class="clickable-branch" onclick="toggleBranchExpand('${b}')">
+                    ${indicator}${b}
+                </td>
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.prosDetail)}">${fmt(s.prospects)}</td>
                 <td class="${rowClass}" data-tooltip="${appTooltip}">${fmt(s.approached)}</td>
                 <td class="${rowClass}" data-tooltip="App. Converted: ${s.convDetail.appClmd}\nApp. Not Converted: ${s.convDetail.appNotClmd}\nConv. But Not Appr: ${s.convDetail.directClmd}" style="color:var(--brand-accent); font-weight:700;">${conv ? conv+'%' : ''}</td>
@@ -263,8 +177,31 @@ window.renderDashboard = function() {
                 <td class="${rowClass}" data-tooltip="${getTooltipText(s.claimedDetail)}">${fmt(s.claimed)}</td>
                 <td class="${rowClass} tooltip-edge" style="color:#10b981; font-weight:700;">${appliedToClaimedConv ? appliedToClaimedConv + '%' : ''}</td>
             </tr>`);
+
+        // If the branch is clicked/expanded, inject rows right under it for each officer
+        if (isExpanded) {
+            Object.entries(s.officers).sort((x,y) => x[0].localeCompare(y[0])).forEach(([offName, o]) => {
+                const oConv = o.approached > 0 ? Math.round((o.clmdP / o.approached) * 100) : 0;
+                const oTotalApp = o.applied + o.manualApplied;
+                const oAppToClm = oTotalApp > 0 ? Math.round((o.claimed / oTotalApp) * 100) : 0;
+
+                sBody.insertAdjacentHTML('beforeend', `
+                    <tr class="officer-row">
+                        <td style="text-align:left; padding-left: 25px; color:#94a3b8; font-style: italic;">👤 ${offName}</td>
+                        <td>${fmt(o.prospects)}</td>
+                        <td>${fmt(o.approached)}</td>
+                        <td style="color:var(--brand-accent); opacity:0.8;">${oConv ? oConv+'%' : ''}</td>
+                        <td>${fmt(o.applied)}</td>
+                        <td style="color:#60a5fa; opacity:0.8;">${fmt(o.manualApplied)}</td>
+                        <td>${fmt(o.claimed)}</td>
+                        <td style="color:#10b981; opacity:0.8;">${oAppToClm ? oAppToClm + '%' : ''}</td>
+                    </tr>
+                `);
+            });
+        }
     });
 
+    // ... [Leave remainder of area calculations and sidebar totals rendering as-is] ...
     const areaConv = area.approached > 0 ? Math.round((area.clmdP / area.approached) * 100) : 0;
     const totalAreaApplied = area.applied + area.manualApplied;
     const areaAppliedToClaimedConv = totalAreaApplied > 0 ? Math.round((area.claimed / totalAreaApplied) * 100) : 0;
@@ -276,7 +213,6 @@ window.renderDashboard = function() {
 
     const areaAppTooltip = `[Area Approached]\n1st Apps: ${area.apprCounts.a1} (${ap1}%)\n2nd Apps : ${area.apprCounts.a2} (${ap2}%)\n3rd Apps : ${area.apprCounts.a3} (${ap3}%)\n4th Apps : ${area.apprCounts.a4} (${ap4}%)\n\n[STATUS BREAKDOWN]\nApplied: ${area.appStatus.applied}\nClaimed: ${area.appStatus.claimed}`;
 
-    // FIXED: Explicitly outputs exactly 8 columns matching the HTML footer structure
     sFoot.innerHTML = `
         <tr style="background:#020617; color:var(--brand-accent); font-weight:800;">
             <td style="text-align:left;">AREA TOTAL</td>
@@ -289,7 +225,6 @@ window.renderDashboard = function() {
             <td class="tooltip-edge" style="color:#10b981;">${areaAppliedToClaimedConv ? areaAppliedToClaimedConv + '%' : ''}</td>
         </tr>`;
     
-    // Extra display calculation trigger for sidebar if present
     const sidebarBody = document.getElementById('sidebarProductBody');
     if (sidebarBody) {
         sidebarBody.innerHTML = Object.entries(area.manualAppliedDetail).map(([prod, count]) => `
@@ -300,106 +235,8 @@ window.renderDashboard = function() {
     }
 };
 
-window.processFile = function(file) {
-    if (!file) return; const reader = new FileReader(); 
-    reader.onload = async function(e) {
-        const workbook = XLSX.read(e.target.result, { type: 'binary' }); const sheet = workbook.Sheets[workbook.SheetNames[0]]; const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }); const headers = rows[0].map(h => String(h).toLowerCase().trim()); const dataRows = rows.slice(1);
-        const findIdx = (keywords) => headers.findIndex(h => keywords.some(k => h.includes(k)));
-        
-        const idx = { 
-            branch: findIdx(['br','office']), 
-            client: findIdx(['clie','name']), 
-            officer: findIdx(['ts','officer']), 
-            product: findIdx(['prod','loan']), 
-            centre: findIdx(['cent','group']), 
-            day: findIdx(['day','sch']), 
-            def: findIdx(['def','df']),
-            setNum: findIdx(['set']), 
-            contactNum: findIdx(['contact','phone','number','cell']) 
-        };
-        
-        for (let i = 0; i < dataRows.length; i++) {
-            const r = dataRows[i]; if (!r) continue;
-            await push(dbRef, { 
-                branch: idx.branch!==-1?r[idx.branch]:"Unspecified", 
-                clientName: idx.client!==-1?r[idx.client]:"N/A", 
-                officer: idx.officer!==-1?r[idx.officer]:"N/A", 
-                productId: idx.product!==-1?r[idx.product]:"Newloan", 
-                centre: idx.centre!==-1?r[idx.centre]:"", 
-                meetingDay: idx.day!==-1?r[idx.day]:"Monday", 
-                isDefault: (idx.def!==-1 && r[idx.def]!=null)?String(r[idx.def]):"", 
-                setNum: (idx.setNum!==-1 && r[idx.setNum]!=null)?String(r[idx.setNum]):"",
-                contactNum: (idx.contactNum!==-1 && r[idx.contactNum]!=null)?String(r[idx.contactNum]):"",
-                status: "Select", 
-                source: "import", 
-                lastUpdated: serverTimestamp() 
-            });
-        }
-    };
-    reader.readAsBinaryString(file);
+// Add the Toggle Handler to window scope so onclick calls can find it
+window.toggleBranchExpand = function(branchName) {
+    expandedBranches[branchName] = !expandedBranches[branchName];
+    renderDashboard(); // Re-render table with expanded view
 };
-
-window.openCapturedModal = () => { document.getElementById('capturedModalOverlay').style.display = 'flex'; renderCapturedGrid(); };
-window.closeCapturedModal = () => { document.getElementById('capturedModalOverlay').style.display = 'none'; };
-
-window.renderCapturedGrid = function() {
-    const head = document.getElementById('capturedHead'); const body = document.getElementById('capturedBody'); const foot = document.getElementById('capturedSummary'); const cats = ["Reloan", "Newloan", "C/P Leaders Approached", "Oriented Centers"];
-    head.innerHTML = `<tr><th class="frozen-intersection">BRANCH PERFORMANCE</th>${Array.from({length:31}, (_,i)=>`<th>${i+1}</th>`).join('')}</tr>`;
-    body.innerHTML = ""; let areaCatTotals = { "Reloan": Array(32).fill(0), "Newloan": Array(32).fill(0), "C/P Leaders Approached": Array(32).fill(0), "Oriented Centers": Array(32).fill(0) };
-    branches.forEach(b => {
-        cats.forEach((cat, idx) => {
-            let row = `<tr class="${idx === 3 ? 'branch-divider' : ''}"><td class="captured-row-title">${idx === 0 ? `<span style="color:var(--brand-accent)">${b}</span>` : ''}<br><small>${cat}</small></td>`;
-            for(let d=1; d<=31; d++) {
-                const val = capturedData[`${b}_${cat.replace('/', '_')}_${d}`] || 0; areaCatTotals[cat][d] += parseInt(val);
-                row += `<td><input type="number" value="${val > 0 ? val : ''}" class="captured-input" onblur="updateCaptured('${b}','${cat}',${d},this.value)"></td>`;
-            }
-            body.insertAdjacentHTML('beforeend', row + "</tr>");
-        });
-    });
-    foot.innerHTML = cats.map(cat => {
-        let sRow = `<tr style="background:#020617; color:var(--brand-accent)"><td class="captured-row-title">AREA TOTAL: ${cat}</td>`;
-        for(let d=1; d<=31; d++) { sRow += `<td><strong>${areaCatTotals[cat][d] || 0}</strong></td>`; }
-        return sRow + "</tr>";
-    }).join('');
-};
-
-window.updateCaptured = (b, cat, d, val) => { const path = `${b}_${cat.replace('/', '_')}_${d}`; if(!val) remove(ref(db, `captured_folders/${path}`)); else set(ref(db, `captured_folders/${path}`), parseInt(val)); };
-window.updateStatus = (id, v) => update(ref(db, `client_records/${id}`), { status: v, lastUpdated: serverTimestamp() });
-window.updateRemarks = (id, v) => update(ref(db, `client_records/${id}`), { remarks: v });
-window.upAppr = (id, n, v) => set(ref(db, `client_records/${id}/approaches/a${n}`), v);
-window.delRec = (id) => confirm("Delete?") && remove(ref(db, `client_records/${id}`));
-window.toggleModal = (s) => document.getElementById('modalOverlay').style.display = s ? 'flex' : 'none';
-window.secureAction = (type) => { if (prompt("PIN:") === "1234") { if (type === 'wipe') remove(dbRef); else if (type === 'wipeCaptured') remove(capRef); else document.getElementById('csvFileInput').click(); } };
-
-window.validateCentre = function(input) { 
-    let v = input.value.toUpperCase(); 
-    input.value = v; 
-    const d = document.getElementById('fDay'); 
-    if (v.startsWith("MA") || v.startsWith("MB")) d.value = "Monday"; 
-    else if (v.startsWith("TA") || v.startsWith("TB")) d.value = "Tuesday"; 
-    else if (v.startsWith("WA") || v.startsWith("WB")) d.value = "Wednesday"; 
-    else if (v.startsWith("TH")) d.value = "Thursday"; 
-    else d.value = "Incorrect Format - Center Name"; 
-};
-
-const clientForm = document.getElementById('clientForm');
-if (clientForm) {
-    clientForm.onsubmit = (e) => { 
-        e.preventDefault(); 
-        push(dbRef, { 
-            branch: document.getElementById('fBranch').value, 
-            clientName: document.getElementById('fClient').value, 
-            officer: document.getElementById('fOfficer').value, 
-            centre: document.getElementById('fCentre').value, 
-            productId: document.getElementById('fProduct').value, 
-            meetingDay: document.getElementById('fDay').value, 
-            setNum: "",
-            contactNum: "",
-            status: "Applied", // Setting status automatically to 'Applied' for manual workspace entries
-            source: "manual" 
-        }).then(() => { 
-            toggleModal(false); 
-            e.target.reset(); 
-        }); 
-    };
-}
