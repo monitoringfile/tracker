@@ -17,7 +17,7 @@
     
     /* Exact Semantic Color Alignments from the Image Grid */
     --success: #2ca953;            /* Flat Kelly/Mint Green */
-    --processing: #fcc247;         /* Flat Mustard Yellow */
+    --processing: #fcc247;          /* Flat Mustard Yellow */
     --warning: #fcc247;            /* Flat Mustard Yellow */
     --danger: #f05a30;             /* Flat Coral Orange */
     --info: #428b93;               /* Flat Deep Teal */
@@ -260,6 +260,22 @@ body {
 }
 .summary-table tbody tr:hover td, .master-table tbody tr:hover td {
     background: rgba(255,255,255,0.3);
+}
+
+/* Fix visibility for Officer Names, Sets, Icons, and links inside table cells */
+.master-table td, 
+.summary-table td,
+.master-table td *,
+.summary-table td * {
+    color: var(--text-main) !important;
+}
+
+/* Ensures "NO SET" or nested italicized text stands out clearly in charcoal dark */
+.master-table td em,
+.master-table td i,
+.master-table td span {
+    color: var(--text-main) !important;
+    font-weight: 700;
 }
 
 /* TOOLTIPS */
