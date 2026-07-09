@@ -16,7 +16,8 @@ const capRef = ref(db, 'captured_folders');
 
 let rawData = null; 
 let capturedData = {};
-let expandedBranches = {}; // Global state to track expanded branch summary cards
+let expandedBranches = {};  // Global state to track expanded branch summary cards
+let expandedOfficers = {};  // New: Global state to track expanded officer rows
 const branches = ["Balingasag - Main2", "Balingoan - Main2", "Camiguin - Main2", "Claveria - Main2", "Gingoog - Main2", "Salay - Main"];
 const products = ["Mauswagon Reloan", "Supplemental Reloan", "New Supplemental", "Newloan", "Balik RMF", "Saver's"];
 
@@ -107,6 +108,12 @@ const getTooltipText = (o) => Object.entries(o).filter(([k,v]) => v > 0).map(([k
 
 window.toggleBranchExpand = function(branchName) {
     expandedBranches[branchName] = !expandedBranches[branchName];
+    renderDashboard();
+};
+
+// New: Window-level function to toggle operational tracking for officers
+window.toggleOfficerExpand = function(officerKey) {
+    expandedOfficers[officerKey] = !expandedOfficers[officerKey];
     renderDashboard();
 };
 
@@ -328,10 +335,17 @@ window.renderDashboard = function() {
                     const oTotalApplied = o.applied + o.manualApplied;
                     const oAppliedToClaimed = oTotalApplied > 0 ? Math.round((o.claimed / oTotalApplied) * 100) : 0;
 
-                    // Render individual Officer Row
+                    // Unique combination tracking identifier key for safety
+                    const officerKey = `${b}_${name}`;
+                    const isOfficerExpanded = !!expandedOfficers[officerKey];
+                    const officerToggleIndicator = isOfficerExpanded ? "▼ " : "▶ ";
+
+                    // Render individual Officer Row with a dynamic click event listener
                     sBody.insertAdjacentHTML('beforeend', `
-                        <tr class="officer-row" style="background: rgba(255, 255, 255, 0.025);">
-                            <td style="text-align:left; padding-left:25px; font-weight:600; color:#cbd5e1;">👤 ${name}</td>
+                        <tr class="officer-row" style="background: ${isOfficerExpanded ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.025)'};">
+                            <td style="text-align:left; padding-left:25px; font-weight:600; color:#cbd5e1; cursor:pointer;" onclick="toggleOfficerExpand('${officerKey}')">
+                                ${officerToggleIndicator}👤 ${name}
+                            </td>
                             <td>${fmt(o.prospects)}</td>
                             <td>${fmt(o.approached)}</td>
                             <td style="color:var(--brand-accent); opacity:0.9;">${oConv ? oConv + '%' : ''}</td>
@@ -341,26 +355,32 @@ window.renderDashboard = function() {
                             <td style="color:#10b981; opacity:0.9;">${oAppliedToClaimed ? oAppliedToClaimed + '%' : ''}</td>
                         </tr>`);
 
-                    // Render only the Sets belonging to THIS Officer right below them
-                    const sortedSets = Object.entries(o.sets).sort((x, y) => x[0].localeCompare(y[0]));
-                    if (sortedSets.length > 0) {
-                        sortedSets.forEach(([setName, st]) => {
-                            const stConv = st.approached > 0 ? Math.round((st.clmdP / st.approached) * 100) : 0;
-                            const stTotalApplied = st.applied + st.manualApplied;
-                            const stAppliedToClaimed = stTotalApplied > 0 ? Math.round((st.claimed / stTotalApplied) * 100) : 0;
+                    // Render only the Sets belonging to THIS Officer if the officer item row is currently expanded
+                    if (isOfficerExpanded) {
+                        const sortedSets = Object.entries(o.sets).sort((x, y) => x[0].localeCompare(y[0]));
+                        if (sortedSets.length > 0) {
+                            sortedSets.forEach(([setName, st]) => {
+                                const stConv = st.approached > 0 ? Math.round((st.clmdP / st.approached) * 100) : 0;
+                                const stTotalApplied = st.applied + st.manualApplied;
+                                const stAppliedToClaimed = stTotalApplied > 0 ? Math.round((st.claimed / stTotalApplied) * 100) : 0;
 
+                                sBody.insertAdjacentHTML('beforeend', `
+                                    <tr class="set-row" style="background: rgba(56, 189, 248, 0.01);">
+                                        <td style="text-align:left; padding-left:45px; font-style:italic; font-weight:500; color:#38bdf8;">📂 ${setName}</td>
+                                        <td>${fmt(st.prospects)}</td>
+                                        <td>${fmt(st.approached)}</td>
+                                        <td style="color:var(--brand-accent); opacity:0.75;">${stConv ? stConv + '%' : ''}</td>
+                                        <td>${fmt(st.applied)}</td>
+                                        <td style="color:#60a5fa; opacity:0.75;">${fmt(st.manualApplied)}</td>
+                                        <td>${fmt(st.claimed)}</td>
+                                        <td style="color:#10b981; opacity:0.75;">${stAppliedToClaimed ? stAppliedToClaimed + '%' : ''}</td>
+                                    </tr>`);
+                            });
+                        } else {
                             sBody.insertAdjacentHTML('beforeend', `
-                                <tr class="set-row" style="background: rgba(56, 189, 248, 0.01);">
-                                    <td style="text-align:left; padding-left:45px; font-style:italic; font-weight:500; color:#38bdf8;">📂 ${setName}</td>
-                                    <td>${fmt(st.prospects)}</td>
-                                    <td>${fmt(st.approached)}</td>
-                                    <td style="color:var(--brand-accent); opacity:0.75;">${stConv ? stConv + '%' : ''}</td>
-                                    <td>${fmt(st.applied)}</td>
-                                    <td style="color:#60a5fa; opacity:0.75;">${fmt(st.manualApplied)}</td>
-                                    <td>${fmt(st.claimed)}</td>
-                                    <td style="color:#10b981; opacity:0.75;">${stAppliedToClaimed ? stAppliedToClaimed + '%' : ''}</td>
-                                </tr>`);
-                        });
+                                <tr class="set-row"><td colspan="8" style="text-align:left; padding-left:45px; color:var(--text-dim); font-style:italic;">No sets mapped.</td></tr>
+                            `);
+                        }
                     }
                 });
             }
