@@ -158,6 +158,10 @@ window.renderDashboard = function() {
             apprCounts: { a1: 0, a2: 0, a3: 0, a4: 0 },
             convDetail: { appClmd: 0, appNotClmd: 0, directClmd: 0 },
             capConvDetail: { rClmd: 0, nClmd: 0, rNotClmd: 0, nNotClmd: 0 },
+            branchSets: {
+                "A": { prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0 },
+                "B": { prospects: 0, approached: 0, applied: 0, manualApplied: 0, claimed: 0, clmdP: 0 }
+            },
             officers: {}
         };
         area.captured += (bCapR + bCapN); area.capR += bCapR; area.capN += bCapN;
@@ -202,6 +206,8 @@ window.renderDashboard = function() {
                 if (rec.source === 'import') {
                     s.prospects++; area.prospects++;
                     o.prospects++; st.prospects++;
+                    if (s.branchSets[recordSet]) s.branchSets[recordSet].prospects++;
+
                     s.prosDetail[pId] = (s.prosDetail[pId] || 0) + 1;
                     area.prosDetail[pId] = (area.prosDetail[pId] || 0) + 1;
                     
@@ -212,6 +218,7 @@ window.renderDashboard = function() {
                     if (isAppr) {
                         s.approached++; area.approached++;
                         o.approached++; st.approached++;
+                        if (s.branchSets[recordSet]) s.branchSets[recordSet].approached++;
                         
                         if (rec.approaches?.a1) { s.apprCounts.a1++; area.apprCounts.a1++; }
                         if (rec.approaches?.a2) { s.apprCounts.a2++; area.apprCounts.a2++; }
@@ -222,6 +229,7 @@ window.renderDashboard = function() {
                         if (status === 'Claimed') { 
                             s.clmdP++; area.clmdP++; 
                             o.clmdP++; st.clmdP++;
+                            if (s.branchSets[recordSet]) s.branchSets[recordSet].clmdP++;
                             s.convDetail.appClmd++; area.convDetail.appClmd++;
                         } else {
                             s.convDetail.appNotClmd++; area.convDetail.appNotClmd++;
@@ -233,6 +241,7 @@ window.renderDashboard = function() {
                     if (status === 'Applied') {
                         s.applied++; area.applied++;
                         o.applied++; st.applied++;
+                        if (s.branchSets[recordSet]) s.branchSets[recordSet].applied++;
                         s.appliedDetail[pId] = (s.appliedDetail[pId] || 0) + 1;
                         area.appliedDetail[pId] = (area.appliedDetail[pId] || 0) + 1;
                     }
@@ -241,6 +250,7 @@ window.renderDashboard = function() {
                     if (status === 'Applied') {
                         s.manualApplied++; area.manualApplied++;
                         o.manualApplied++; st.manualApplied++;
+                        if (s.branchSets[recordSet]) s.branchSets[recordSet].manualApplied++;
                         s.manualAppliedDetail[pId] = (s.manualAppliedDetail[pId] || 0) + 1;
                         area.manualAppliedDetail[pId] = (area.manualAppliedDetail[pId] || 0) + 1;
                     }
@@ -249,6 +259,7 @@ window.renderDashboard = function() {
                 if (status === 'Claimed') {
                     s.claimed++; area.claimed++;
                     o.claimed++; st.claimed++;
+                    if (s.branchSets[recordSet]) s.branchSets[recordSet].claimed++;
                     s.claimedDetail[pId] = (s.claimedDetail[pId] || 0) + 1;
                     area.claimedDetail[pId] = (area.claimedDetail[pId] || 0) + 1;
 
@@ -324,6 +335,26 @@ window.renderDashboard = function() {
             </tr>`);
 
         if (isExpanded) {
+            // Render Overall Branch Set Summaries directly below Branch name
+            ["A", "B"].forEach(setName => {
+                const bSet = s.branchSets[setName];
+                const bSetConv = bSet.approached > 0 ? Math.round((bSet.clmdP / bSet.approached) * 100) : 0;
+                const bSetTotalApplied = bSet.applied + bSet.manualApplied;
+                const bSetAppliedToClaimed = bSetTotalApplied > 0 ? Math.round((bSet.claimed / bSetTotalApplied) * 100) : 0;
+
+                sBody.insertAdjacentHTML('beforeend', `
+                    <tr class="branch-set-summary-row" style="background: rgba(56, 189, 248, 0.08); font-weight: 600;">
+                        <td style="text-align:left; padding-left:15px; color:#38bdf8;">📊 BRANCH OVERALL: SET ${setName}</td>
+                        <td>${fmt(bSet.prospects)}</td>
+                        <td>${fmt(bSet.approached)}</td>
+                        <td style="color:var(--brand-accent);">${bSetConv ? bSetConv + '%' : ''}</td>
+                        <td>${fmt(bSet.applied)}</td>
+                        <td style="color:#60a5fa;">${fmt(bSet.manualApplied)}</td>
+                        <td>${fmt(bSet.claimed)}</td>
+                        <td style="color:#10b981;">${bSetAppliedToClaimed ? bSetAppliedToClaimed + '%' : ''}</td>
+                    </tr>`);
+            });
+
             const sortedOfficers = Object.entries(s.officers).sort((x, y) => x[0].localeCompare(y[0]));
             if (sortedOfficers.length === 0) {
                 sBody.insertAdjacentHTML('beforeend', `
