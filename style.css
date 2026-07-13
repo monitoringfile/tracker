@@ -280,7 +280,7 @@ body {
 
 /* SPECIAL IDENTIFICATION STYLES FOR CREDIT OFFICERS IN SUMMARY */
 .summary-table tr.officer-row td {
-    background-color: #d8d6c2 !important;     /* Solid, distinct vintage warm background color */
+    background-color: rgba(61, 78, 86, 0.12) !important; /* Glimpse of dark slate tint */
 }
 .summary-table tr.officer-row td,
 .summary-table tr.officer-row td *,
@@ -291,7 +291,7 @@ body {
     font-weight: 700;
 }
 .summary-table tbody tr.officer-row:hover td {
-    background: #ceccb6 !important;             /* Darker background contrast on hover */
+    background: rgba(61, 78, 86, 0.22) !important; /* Darker hint on hover for depth */
 }
 
 /* TOOLTIPS */
