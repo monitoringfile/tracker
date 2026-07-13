@@ -278,6 +278,22 @@ body {
     font-weight: 700;
 }
 
+/* SPECIAL IDENTIFICATION STYLES FOR CREDIT OFFICERS IN SUMMARY */
+.summary-table tr.officer-row td {
+    background-color: rgba(66, 139, 147, 0.05); /* Soft teal tint for distinction */
+}
+.summary-table tr.officer-row td,
+.summary-table tr.officer-row td *,
+.summary-table tr.officer-row td em,
+.summary-table tr.officer-row td i,
+.summary-table tr.officer-row td span {
+    color: var(--bg-sidebar) !important;       /* Flat Deep Teal identification */
+    font-weight: 700;
+}
+.summary-table tbody tr.officer-row:hover td {
+    background: rgba(66, 139, 147, 0.12) !important;
+}
+
 /* TOOLTIPS */
 [data-tooltip] { 
     cursor: help; 
