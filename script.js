@@ -526,6 +526,7 @@ window.validateCentre = function(input) {
     let v = input.value.toUpperCase(); 
     input.value = v; 
     const d = document.getElementById('fDay'); 
+    const s = document.getElementById('fSet'); // Reads the non-editable set input element in your entry form
     
     // --- Meeting Day Detection ---
     if (v.startsWith("MA") || v.startsWith("MB")) d.value = "Monday"; 
@@ -534,12 +535,14 @@ window.validateCentre = function(input) {
     else if (v.startsWith("TH")) d.value = "Thursday"; 
     else d.value = "Incorrect Format - Center Name"; 
 
-    // --- Set Auto Detection (Non-Editable / Code-Handled) ---
+    // --- Set Auto Detection (Manual Entry Form Visuals) ---
+    let detectedSet = "B";
     if (v.startsWith("MA") || v.startsWith("TA") || v.startsWith("WA") || v.startsWith("THA")) {
-        input.setAttribute('data-detected-set', 'A');
-    } else {
-        input.setAttribute('data-detected-set', 'B');
+        detectedSet = "A";
     }
+    
+    if (s) s.value = "SET " + detectedSet; // Renders uneditable "SET A" or "SET B" onto the UI
+    input.setAttribute('data-detected-set', detectedSet);
 };
 
 const clientForm = document.getElementById('clientForm');
@@ -552,7 +555,6 @@ if (clientForm) {
             return;
         }
 
-        // Extracts the auto-detected code calculation from the center field safely 
         const centreInput = document.getElementById('fCentre');
         const finalDetectedSet = centreInput ? (centreInput.getAttribute('data-detected-set') || "B") : "B";
 
