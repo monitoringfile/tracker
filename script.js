@@ -526,11 +526,20 @@ window.validateCentre = function(input) {
     let v = input.value.toUpperCase(); 
     input.value = v; 
     const d = document.getElementById('fDay'); 
+    
+    // --- Meeting Day Detection ---
     if (v.startsWith("MA") || v.startsWith("MB")) d.value = "Monday"; 
     else if (v.startsWith("TA") || v.startsWith("TB")) d.value = "Tuesday"; 
     else if (v.startsWith("WA") || v.startsWith("WB")) d.value = "Wednesday"; 
     else if (v.startsWith("TH")) d.value = "Thursday"; 
     else d.value = "Incorrect Format - Center Name"; 
+
+    // --- Set Auto Detection (Non-Editable / Code-Handled) ---
+    if (v.startsWith("MA") || v.startsWith("TA") || v.startsWith("WA") || v.startsWith("THA")) {
+        input.setAttribute('data-detected-set', 'A');
+    } else {
+        input.setAttribute('data-detected-set', 'B');
+    }
 };
 
 const clientForm = document.getElementById('clientForm');
@@ -542,20 +551,26 @@ if (clientForm) {
             alert("⚠️ Please select a valid Trust Staff Officer from the list.");
             return;
         }
+
+        // Extracts the auto-detected code calculation from the center field safely 
+        const centreInput = document.getElementById('fCentre');
+        const finalDetectedSet = centreInput ? (centreInput.getAttribute('data-detected-set') || "B") : "B";
+
         push(dbRef, { 
             branch: document.getElementById('fBranch').value, 
             clientName: document.getElementById('fClient').value, 
             officer: selectedOfficer, 
-            centre: document.getElementById('fCentre').value, 
+            centre: centreInput.value, 
             productId: document.getElementById('fProduct').value, 
             meetingDay: document.getElementById('fDay').value, 
-            setNum: "",
+            setNum: finalDetectedSet, // Saves perfectly to the database block out-of-reach from manual user edit adjustments
             contactNum: "",
             status: "Applied", 
             source: "manual" 
         }).then(() => { 
             toggleModal(false); 
             e.target.reset(); 
+            if(centreInput) centreInput.removeAttribute('data-detected-set');
         }); 
     };
 }
