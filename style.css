@@ -280,18 +280,18 @@ body {
 
 /* SPECIAL IDENTIFICATION STYLES FOR CREDIT OFFICERS IN SUMMARY */
 .summary-table tr.officer-row td {
-    background-color: rgba(66, 139, 147, 0.05); /* Soft teal tint for distinction */
+    background-color: #d8d6c2 !important;     /* Solid, distinct vintage warm background color */
 }
 .summary-table tr.officer-row td,
 .summary-table tr.officer-row td *,
 .summary-table tr.officer-row td em,
 .summary-table tr.officer-row td i,
 .summary-table tr.officer-row td span {
-    color: var(--bg-sidebar) !important;       /* Flat Deep Teal identification */
+    color: var(--bg-sidebar) !important;       /* Flat Deep Teal text identification */
     font-weight: 700;
 }
 .summary-table tbody tr.officer-row:hover td {
-    background: rgba(66, 139, 147, 0.12) !important;
+    background: #ceccb6 !important;             /* Darker background contrast on hover */
 }
 
 /* TOOLTIPS */
