@@ -563,7 +563,7 @@ function renderWeeklyPacingBarChart(disbWeeks, newWeeks) {
     weeklyChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'],
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
             datasets: [
                 { label: 'Disbursed', data: [disbWeeks[1].size, disbWeeks[2].size, disbWeeks[3].size, disbWeeks[4].size, disbWeeks[5].size], backgroundColor: '#2d6a4f', borderRadius: 4 },
                 { label: 'New Loans', data: [newWeeks[1].size, newWeeks[2].size, newWeeks[3].size, newWeeks[4].size, newWeeks[5].size], backgroundColor: '#52b788', borderRadius: 4 }
