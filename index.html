@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Area KPI Dashboard - Microfinance Operations</title>
+    <!-- Favicon Links -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <!-- Inline fallback for local desktop testing -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232d6a4f'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kpiBg: '#f4f7f4',
+                        bambooDark: '#1b4332',
+                        bambooPrimary: '#2d6a4f',
+                        bambooLight: '#52b788',
+                        bambooAccent: '#74c69d',
+                        cardBorder: '#d8f3dc',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- External Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="text-slate-800 min-h-screen font-sans antialiased selection:bg-emerald-500/25">
+
+    <!-- Header Banner -->
+    <header class="w-full bg-white/95 backdrop-blur-md border-b border-emerald-100 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-[1750px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-11 h-11 rounded-xl bg-bambooPrimary text-white flex items-center justify-center shadow-md border border-emerald-200 flex-shrink-0">
+                    <i data-lucide="trees" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 uppercase">
+                         AREA WIDE KPI DASHBOARD
+                    </h1>
+                    <p class="text-[11px] text-bambooPrimary font-bold tracking-wide">PORTFOLIO & PAR RISK EXECUTIVE OVERVIEW</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <label for="csvFileInput" class="cursor-pointer inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-bambooPrimary hover:bg-bambooDark text-white text-xs sm:text-sm font-bold shadow-md transition-all">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                    <span>UPLOAD CSV PORTFOLIO</span>
+                </label>
+                <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Workspace -->
+    <main class="max-w-[1750px] mx-auto px-3 sm:px-6 py-5 space-y-5">
+
+        <!-- Welcome Upload Screen -->
+        <div id="welcomeBanner" class="kpi-card p-10 text-center my-8">
+            <div class="max-w-xl mx-auto space-y-4 flex flex-col items-center">
+                <div class="w-20 h-20 rounded-2xl bg-emerald-50 text-bambooPrimary flex items-center justify-center shadow-inner border border-emerald-200 mb-2">
+                    <i data-lucide="sprout" class="w-10 h-10"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">Ready for Portfolio Dataset</h2>
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                    Upload your Microfinance portfolio CSV containing exact headers: 
+                    <code class="text-bambooPrimary font-bold">Branch</code>, 
+                    <code class="text-bambooPrimary font-bold">Credit officer</code>, 
+                    <code class="text-bambooPrimary font-bold">Product ID</code>, 
+                    <code class="text-bambooPrimary font-bold">Client name</code>, 
+                    <code class="text-bambooPrimary font-bold">Disbursement date</code>, 
+                    <code class="text-bambooPrimary font-bold">Days in arrears</code>, 
+                    <code class="text-bambooPrimary font-bold">Status</code>, 
+                    <code class="text-bambooPrimary font-bold">OLB principal</code>, and 
+                    <code class="text-bambooPrimary font-bold">Application date</code>.
+                </p>
+                <div class="pt-2">
+                    <label for="csvFileInput" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-bambooPrimary hover:bg-bambooDark text-white text-sm font-bold shadow-lg shadow-emerald-900/20 cursor-pointer transition-all">
+                        <i data-lucide="folder-open" class="w-4 h-4"></i>
+                        <span>Select CSV File</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Content Workspace -->
+        <div id="dashboardContent" class="space-y-5 hidden">
+
+            <!-- Global Filter Bar -->
+            <div class="kpi-card p-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-xs text-bambooPrimary font-extrabold uppercase tracking-wider pl-2">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    <span>Portfolio Filter Scope</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <select id="branchFilter" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs font-semibold rounded-lg px-3 py-1.5 outline-none focus:border-bambooPrimary">
+                        <option value="ALL">All Branches</option>
+                    </select>
+                    <select id="officerFilter" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs font-semibold rounded-lg px-3 py-1.5 outline-none focus:border-bambooPrimary">
+                        <option value="ALL">All Credit Officers / TS</option>
+                    </select>
+                    <button id="resetFilters" class="px-3.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition-all flex items-center gap-1">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- TOP EXECUTIVE KPI TILES -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+                <div class="kpi-card p-4 border-t-4 border-t-bambooDark flex flex-col justify-between">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">Loan Portfolio</span>
+                    <div id="kpiLoanPortfolio" class="text-base sm:text-lg font-black text-slate-900 font-mono mt-1 truncate">0.00</div>
+                    <span id="kpiLoanPortfolioSub" class="text-[10px] text-slate-400 font-medium truncate mt-1">0 Line Items</span>
+                </div>
+                <div class="kpi-card p-4 border-t-4 border-t-rose-600 flex flex-col justify-between">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">PAR Amount</span>
+                    <div id="kpiParAmount" class="text-base sm:text-lg font-black text-rose-600 font-mono mt-1 truncate">0.00</div>
+                    <span id="kpiParAmountSub" class="text-[10px] text-rose-500 font-bold truncate mt-1">0 In Arrears</span>
+                </div>
+                <div class="kpi-card p-4 border-t-4 border-t-amber-500 flex flex-col justify-between">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">PAR Ratio</span>
+                    <div id="kpiParRatio" class="text-base sm:text-lg font-black text-amber-600 font-mono mt-1">0.00%</div>
+                    <span class="text-[10px] text-amber-600 font-bold mt-1">Portfolio Risk</span>
+                </div>
+                <div class="kpi-card p-4 border-t-4 border-t-bambooPrimary flex flex-col justify-between">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">Active Borrowers</span>
+                    <div id="kpiBorrowers" class="text-base sm:text-lg font-black text-bambooPrimary font-mono mt-1">0</div>
+                    <span id="kpiBorrowersSub" class="text-[10px] text-emerald-700 font-bold truncate mt-1">Active / PAR</span>
+                </div>
+                <div class="kpi-card p-4 border-t-4 border-t-blue-600 flex flex-col justify-between">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">Disbursed (Mo)</span>
+                    <div id="kpiDisbursedCount" class="text-base sm:text-lg font-black text-blue-700 font-mono mt-1">0</div>
+                    <div id="kpiDisbursedWeeklySub" class="text-[10px] font-mono text-slate-500 truncate mt-1">Weekly Pacing</div>
+                </div>
+                <div class="kpi-card p-4 border-t-4 border-t-emerald-600 flex flex-col justify-between">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">New Loans</span>
+                    <div id="kpiNewLoanCount" class="text-base sm:text-lg font-black text-emerald-700 font-mono mt-1">0</div>
+                    <div id="kpiNewLoanWeeklySub" class="text-[10px] font-mono text-slate-500 truncate mt-1">Weekly Pacing</div>
+                </div>
+                <div class="kpi-card p-4 border-t-4 border-t-bambooDark flex flex-col justify-between">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">New Inclusions</span>
+                    <div id="kpiNewInclusionsCount" class="text-base sm:text-lg font-black text-bambooDark font-mono mt-1">0</div>
+                    <span id="kpiNewInclusionsSub" class="text-[10px] text-slate-500 truncate mt-1">Arrears &le; days</span>
+                </div>
+            </div>
+
+            <!-- MULTI-SECTION PERFORMANCE DASHBOARDS -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="kpi-card">
+                    <div class="section-header-bamboo px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2 font-bold text-xs uppercase tracking-wide">
+                            <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                            <span>1. Portfolio & Risk Distribution</span>
+                        </div>
+                        <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono">KPI SECTION</span>
+                    </div>
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">Active vs PAR Accounts</h4>
+                            <div class="h-48"><canvas id="borrowerDoughnutChart"></canvas></div>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">PAR Risk Aging Brackets</h4>
+                            <div class="h-48"><canvas id="parAgingBarChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="section-header-alt px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2 font-bold text-xs uppercase tracking-wide">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            <span>2. Monthly Disbursement & Product Trends</span>
+                        </div>
+                        <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono">PACING SECTION</span>
+                    </div>
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">Weekly Pacing</h4>
+                            <div class="h-48"><canvas id="weeklyPacingBarChart"></canvas></div>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">OLB Principal & Borrowers by Product ID</h4>
+                            <div class="h-48"><canvas id="productBarChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DAILY BRANCH DISBURSEMENT BORROWER SUMMARY -->
+            <div class="bg-bambooDark border-2 border-amber-500 rounded-2xl p-4 space-y-3 shadow-xl">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-amber-500/40 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-yellow-400 border border-amber-500/40 flex items-center justify-center font-bold">
+                            <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-xs sm:text-sm text-yellow-400 uppercase tracking-wide">Daily Disbursed Borrower Count Summary</h3>
+                            <p class="text-[11px] text-amber-100/70">Unique borrower client count per branch per day based on Disbursement Date range</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 bg-emerald-950/60 p-1.5 rounded-xl border border-amber-500/40">
+                        <span class="text-xs text-yellow-300 font-bold px-1 flex items-center gap-1">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-yellow-400"></i> From:
+                        </span>
+                        <input type="date" id="disbStartDate" class="bg-emerald-900/90 border border-amber-500/60 text-white text-xs font-bold rounded px-2 py-1 outline-none focus:border-yellow-400">
+                        <span class="text-xs text-yellow-300 font-bold px-1">To:</span>
+                        <input type="date" id="disbEndDate" class="bg-emerald-900/90 border border-amber-500/60 text-white text-xs font-bold rounded px-2 py-1 outline-none focus:border-yellow-400">
+                    </div>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table id="dailyDisbursementTable" class="w-full text-left border-collapse text-xs"></table>
+                </div>
+            </div>
+
+            <!-- CBS STATUS SUMMARY PIVOT MATRIX -->
+            <div class="kpi-card p-4 space-y-3">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-bambooPrimary flex items-center justify-center font-bold">
+                            <i data-lucide="table" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 uppercase">CBS Status Pivot Summary Matrix</h3>
+                            <p class="text-[11px] text-slate-500">Client count per status categorized by Loan Type and Branch</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                        <span class="text-xs text-slate-600 font-bold px-1 flex items-center gap-1">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-bambooPrimary"></i> Range:
+                        </span>
+                        <select id="cbsStartMonthFilter" class="bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded px-2 py-1 outline-none"></select>
+                        <span class="text-xs text-slate-500 font-bold">to</span>
+                        <select id="cbsEndMonthFilter" class="bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded px-2 py-1 outline-none"></select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table id="cbsMatrixTable" class="w-full text-left border-collapse text-xs"></table>
+                </div>
+            </div>
+
+            <!-- GEMINI LIVE AI INSIGHTS ENGINE -->
+            <div class="kpi-card p-4 space-y-3">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-bambooDark flex items-center justify-center font-bold">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 uppercase">Gemini Live AI Operational Insights Engine</h3>
+                            <p class="text-[11px] text-slate-500">Generate executive risk analysis & growth plans</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <span class="text-xs text-slate-600 pl-2 font-bold flex items-center gap-1">
+                            <i data-lucide="target" class="w-3.5 h-3.5 text-bambooPrimary"></i> Scope:
+                        </span>
+                        <select id="promptTargetScope" class="bg-white text-emerald-900 font-bold text-xs rounded px-2.5 py-1 outline-none border border-slate-200">
+                            <option value="OVERALL">Overall Area (All Branches)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="executePresetPrompt('PAR_HOTSPOTS')" class="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 text-xs font-bold text-brandRed transition-all flex items-center gap-1.5">
+                        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> PAR Hotspots
+                    </button>
+                    <button onclick="executePresetPrompt('DISBURSEMENT_PACING')" class="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-xs font-bold text-blue-700 transition-all flex items-center gap-1.5">
+                        <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Disbursement Pacing
+                    </button>
+                    <button onclick="executePresetPrompt('CBS_BOTTLENECKS')" class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-xs font-bold text-amber-700 transition-all flex items-center gap-1.5">
+                        <i data-lucide="hourglass" class="w-3.5 h-3.5"></i> CBS Bottlenecks
+                    </button>
+                    <button onclick="executePresetPrompt('GROWTH_ACTION_PLAN')" class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold text-emerald-700 transition-all flex items-center gap-1.5">
+                        <i data-lucide="rocket" class="w-3.5 h-3.5"></i> Growth Action Plan
+                    </button>
+                </div>
+                <form id="customPromptForm" onsubmit="handleCustomPromptSubmit(event)" class="relative flex items-center">
+                    <input type="text" id="customPromptInput" placeholder="Ask custom operational questions..." class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 pl-4 pr-24 text-xs text-slate-800 outline-none focus:border-bambooPrimary transition-colors">
+                    <button type="submit" class="absolute right-1 px-3 py-1 rounded-lg bg-bambooPrimary hover:bg-bambooDark text-white text-xs font-bold transition-all">Analyze</button>
+                </form>
+                <div id="promptResultContainer" class="bg-slate-50 border border-slate-200 rounded-xl p-4 min-h-[90px]">
+                    <div class="text-xs text-slate-400 italic text-center py-2">Select a prompt chip or type a question above to generate live insights.</div>
+                </div>
+            </div>
+
+            <!-- BRANCH PERFORMANCE CARDS GRID -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-black text-sm text-slate-900 uppercase tracking-wide">BRANCH PERFORMANCE SUMMARIES</h3>
+                    <div id="newInclusionsBadge" class="text-xs font-bold text-bambooDark"></div>
+                </div>
+                <div id="branchCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- TS / OFFICER BREAKDOWN MODAL -->
+    <div id="branchModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="kpi-card w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col m-4 shadow-2xl">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div>
+                    <h3 id="modalBranchTitle" class="font-black text-slate-900 text-base uppercase">Branch Breakdown</h3>
+                    <p class="text-xs text-slate-500">Credit Officer / TS Monthly Disbursements & New Inclusions Summary</p>
+                </div>
+                <button id="closeModalBtn" class="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="modalOfficerList" class="p-6 overflow-y-auto space-y-4 flex-1 custom-scrollbar"></div>
+            <div class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button id="closeModalFooterBtn" class="px-4 py-1.5 rounded-lg bg-bambooPrimary text-white text-xs font-bold">Close Window</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- External JavaScript File -->
+    <script src="script.js"></script>
+</body>
+</html>
