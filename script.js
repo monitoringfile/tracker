@@ -445,18 +445,29 @@ function renderDashboard(data) {
 
     const totalPARAmount = bracket1_30 + bracket31_60 + bracket61_90 + bracket91_180 + bracket181_365 + bracket365Plus;
     const parRatio = totalGLP > 0 ? (totalPARAmount / totalGLP) * 100 : 0;
+    
+    // Area-wide averages
+    const areaAvgPortfolioSize = filteredEligibleClients.size > 0 ? totalGLP / filteredEligibleClients.size : 0;
+    const areaAvgDisbursedSize = globalDisbursedSet.size > 0 ? globalDisbursedLoanAmountTotal / globalDisbursedSet.size : 0;
+    const areaAvgNewLoanSize = globalNewLoanSet.size > 0 ? globalNewLoanAmountTotal / globalNewLoanSet.size : 0;
 
     document.getElementById('kpiLoanPortfolio').innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('kpiLoanPortfolioSub').innerText = `${data.length.toLocaleString()} Line Items`;
+    document.getElementById('kpiLoanPortfolioSub').innerText = `Avg Size: ₱ ${areaAvgPortfolioSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    
     document.getElementById('kpiParAmount').innerText = totalPARAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('kpiParAmountSub').innerText = `${parBorrowersCount.toLocaleString()} In Arrears`;
+    
     document.getElementById('kpiParRatio').innerText = parRatio.toFixed(2) + '%';
+    
     document.getElementById('kpiBorrowers').innerText = filteredEligibleClients.size.toLocaleString();
     document.getElementById('kpiBorrowersSub').innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
+    
     document.getElementById('kpiDisbursedCount').innerText = globalDisbursedSet.size.toLocaleString();
-    document.getElementById('kpiDisbursedTotalLoanHover').innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('kpiDisbursedTotalLoanHover').innerHTML = `Total: ₱ ${globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}<br><span class="text-yellow-300 font-bold">Avg Size: ₱ ${areaAvgDisbursedSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
+    
     document.getElementById('kpiNewLoanCount').innerText = globalNewLoanSet.size.toLocaleString();
-    document.getElementById('kpiNewLoanTotalLoanHover').innerText = '₱ ' + globalNewLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('kpiNewLoanTotalLoanHover').innerHTML = `Total: ₱ ${globalNewLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}<br><span class="text-yellow-300 font-bold">Avg Size: ₱ ${areaAvgNewLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
+    
     document.getElementById('kpiNewInclusionsCount').innerText = globalNewInclusionsSet.size.toLocaleString();
     document.getElementById('kpiNewInclusionsOlbHover').innerText = '₱ ' + globalNewInclusionsOlbTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
@@ -579,23 +590,24 @@ function renderCbsPivotMatrix(data) {
         return;
     }
 
-    let html = `<thead><tr class="bg-slate-100 text-slate-700 border-b-2 border-emerald-950 font-extrabold text-[11px] uppercase"><th class="p-2.5 pl-3">Row Labels</th>`;
-    sortedStatuses.forEach(st => html += `<th class="p-2.5 text-center">${st}</th>`);
-    html += `<th class="p-2.5 text-center font-black">Grand Total</th></tr></thead><tbody>`;
+    let html = `<thead><tr class="bg-slate-50 text-slate-700 border-b border-slate-200 font-extrabold text-[11px] uppercase"><th class="p-3 pl-4">Row Labels</th>`;
+    sortedStatuses.forEach(st => html += `<th class="p-3 text-center">${st}</th>`);
+    html += `<th class="p-3 text-center font-black">Grand Total</th></tr></thead><tbody>`;
 
     const grandTotalStatuses = {};
     sortedStatuses.forEach(st => grandTotalStatuses[st] = new Set());
     let areaGrandTotalClients = new Set();
 
     sortedLoanTypes.forEach(lt => {
-        html += `<tr class="bg-emerald-50/70 border-b border-emerald-900/30 font-bold text-bambooDark"><td colspan="${sortedStatuses.length + 2}" class="p-2 pl-3 uppercase">${lt}</td></tr>`;
+        // Loan type header row (soft green highlight as in reference image)
+        html += `<tr class="bg-emerald-50/60 border-y border-emerald-100 font-bold text-emerald-950"><td colspan="${sortedStatuses.length + 2}" class="p-2.5 pl-4 uppercase tracking-wider">${lt}</td></tr>`;
         
         const ltTotalStatuses = {};
         sortedStatuses.forEach(st => ltTotalStatuses[st] = new Set());
         let ltGrandTotalClients = new Set();
 
         sortedBranches.forEach(b => {
-            html += `<tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors"><td class="p-2 pl-6 font-semibold text-slate-700">${b}</td>`;
+            html += `<tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors"><td class="p-2.5 pl-8 font-medium text-slate-700">${b}</td>`;
             
             let branchRowClients = new Set();
             sortedStatuses.forEach(st => {
@@ -608,23 +620,25 @@ function renderCbsPivotMatrix(data) {
                     areaGrandTotalClients.add(c);
                 });
                 const count = clientSet.size;
-                html += `<td class="p-2 text-center font-mono text-slate-600">${count > 0 ? count : ''}</td>`;
+                html += `<td class="p-2.5 text-center font-mono text-slate-600">${count > 0 ? count : ''}</td>`;
             });
-            html += `<td class="p-2 text-center font-mono font-bold text-slate-900 bg-slate-50">${branchRowClients.size > 0 ? branchRowClients.size : ''}</td></tr>`;
+            html += `<td class="p-2.5 text-center font-mono font-bold text-slate-900 bg-slate-50/50">${branchRowClients.size > 0 ? branchRowClients.size : ''}</td></tr>`;
         });
 
-        html += `<tr class="bg-slate-100/80 border-b-2 border-emerald-950 font-black text-slate-900"><td class="p-2 pl-4 uppercase">TOTAL ${lt}</td>`;
+        // Loan Type Total Row
+        html += `<tr class="bg-slate-100/90 border-y border-slate-200 font-black text-slate-900"><td class="p-2.5 pl-6 uppercase">TOTAL ${lt}</td>`;
         sortedStatuses.forEach(st => {
-            html += `<td class="p-2 text-center font-mono">${ltTotalStatuses[st].size > 0 ? ltTotalStatuses[st].size : ''}</td>`;
+            html += `<td class="p-2.5 text-center font-mono">${ltTotalStatuses[st].size > 0 ? ltTotalStatuses[st].size : ''}</td>`;
         });
-        html += `<td class="p-2 text-center font-mono text-bambooDark">${ltGrandTotalClients.size}</td></tr>`;
+        html += `<td class="p-2.5 text-center font-mono text-bambooDark">${ltGrandTotalClients.size}</td></tr>`;
     });
 
-    html += `<tr class="bg-emerald-950 text-white font-black"><td class="p-3 pl-3 uppercase text-yellow-400">GRAND TOTAL</td>`;
+    // Grand Total Row
+    html += `<tr class="bg-emerald-100/70 border-t-2 border-emerald-950 font-black text-slate-900"><td class="p-3 pl-4 uppercase">GRAND TOTAL</td>`;
     sortedStatuses.forEach(st => {
-        html += `<td class="p-3 text-center font-mono text-yellow-300">${grandTotalStatuses[st].size}</td>`;
+        html += `<td class="p-3 text-center font-mono">${grandTotalStatuses[st].size > 0 ? grandTotalStatuses[st].size : ''}</td>`;
     });
-    html += `<td class="p-3 text-center font-mono text-yellow-400 bg-emerald-900">${areaGrandTotalClients.size}</td></tr></tbody>`;
+    html += `<td class="p-3 text-center font-mono text-emerald-950 bg-emerald-200/60">${areaGrandTotalClients.size}</td></tr></tbody>`;
 
     table.innerHTML = html;
 }
@@ -637,7 +651,6 @@ function renderBranchCards(bMap) {
         const parRatio = bData.totalGLP > 0 ? (bData.parAmount / bData.totalGLP) * 100 : 0;
         const totalOfficersCount = Object.keys(bData.officers).length;
         
-        // Computed metrics:
         const avgPortfolioLoanSize = bData.borrowerSet.size > 0 ? bData.totalGLP / bData.borrowerSet.size : 0;
         const avgDisbursedLoanSize = bData.disbursedBorrowerSet.size > 0 ? bData.disbursedLoanAmount / bData.disbursedBorrowerSet.size : 0;
 
