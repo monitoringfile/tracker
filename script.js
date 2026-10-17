@@ -35,7 +35,7 @@ function parseLocalDateString(rawStr) {
             return new Date(y, m, d);
         } else if (parts[2].length === 4) {
             const m = parseInt(parts[0], 10) - 1;
-            const d = parseInt(parts[2], 10);
+            const d = parseInt(parts[1], 10);
             const y = parseInt(parts[2], 10);
             return new Date(y, m, d);
         }
@@ -528,6 +528,183 @@ function renderDailyDisbursementTable(data) {
     table.innerHTML = html;
 }
 
+function renderCbsPivotMatrix(data) {
+    const table = document.getElementById('cbsMatrixTable');
+    const startMonth = parseInt(document.getElementById('cbsStartMonthFilter').value) || 0;
+    const endMonth = parseInt(document.getElementById('cbsEndMonthFilter').value) || 999999;
+
+    const filtered = data.filter(d => {
+        if (!d['Application date']) return false;
+        const dt = parseLocalDateString(d['Application date']);
+        if (!dt) return false;
+        const sk = dt.getFullYear() * 12 + dt.getMonth();
+        return sk >= startMonth && sk <= endMonth;
+    });
+
+    const branchesSet = new Set();
+    const loanTypesSet = new Set();
+    const statusesSet = new Set();
+    const matrix = {};
+
+    filtered.forEach(item => {
+        const branch = item.Branch;
+        const rawProd = item['Product ID'] || '';
+        const loanType = getProductCategory(rawProd);
+        const status = item['Status'] || 'Unspecified';
+        const clientName = item['Client name'] || 'UNKNOWN';
+
+        branchesSet.add(branch);
+        loanTypesSet.add(loanType);
+        statusesSet.add(status);
+
+        if (!matrix[loanType]) matrix[loanType] = {};
+        if (!matrix[loanType][branch]) matrix[loanType][branch] = {};
+        if (!matrix[loanType][branch][status]) matrix[loanType][branch][status] = new Set();
+
+        matrix[loanType][branch][status].add(clientName);
+    });
+
+    const sortedBranches = Array.from(branchesSet).sort();
+    const sortedLoanTypes = Array.from(loanTypesSet).sort();
+    const sortedStatuses = Array.from(statusesSet).sort();
+
+    if (sortedBranches.length === 0 || sortedLoanTypes.length === 0) {
+        table.innerHTML = `<tbody><tr><td class="p-6 text-center text-slate-400 italic">No CBS records found for the selected month range.</td></tr></tbody>`;
+        return;
+    }
+
+    let html = `<thead><tr class="bg-slate-100 text-slate-700 border-b-2 border-emerald-950 font-extrabold text-[11px] uppercase"><th class="p-2.5 pl-3">Row Labels</th>`;
+    sortedStatuses.forEach(st => html += `<th class="p-2.5 text-center">${st}</th>`);
+    html += `<th class="p-2.5 text-center font-black">Grand Total</th></tr></thead><tbody>`;
+
+    const grandTotalStatuses = {};
+    sortedStatuses.forEach(st => grandTotalStatuses[st] = new Set());
+    let areaGrandTotalClients = new Set();
+
+    sortedLoanTypes.forEach(lt => {
+        html += `<tr class="bg-emerald-50/70 border-b border-emerald-900/30 font-bold text-bambooDark"><td colspan="${sortedStatuses.length + 2}" class="p-2 pl-3 uppercase">${lt}</td></tr>`;
+        
+        const ltTotalStatuses = {};
+        sortedStatuses.forEach(st => ltTotalStatuses[st] = new Set());
+        let ltGrandTotalClients = new Set();
+
+        sortedBranches.forEach(b => {
+            html += `<tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors"><td class="p-2 pl-6 font-semibold text-slate-700">${b}</td>`;
+            
+            let branchRowClients = new Set();
+            sortedStatuses.forEach(st => {
+                const clientSet = matrix[lt] && matrix[lt][b] && matrix[lt][b][st] ? matrix[lt][b][st] : new Set();
+                clientSet.forEach(c => {
+                    branchRowClients.add(c);
+                    ltTotalStatuses[st].add(c);
+                    grandTotalStatuses[st].add(c);
+                    ltGrandTotalClients.add(c);
+                    areaGrandTotalClients.add(c);
+                });
+                const count = clientSet.size;
+                html += `<td class="p-2 text-center font-mono text-slate-600">${count > 0 ? count : ''}</td>`;
+            });
+            html += `<td class="p-2 text-center font-mono font-bold text-slate-900 bg-slate-50">${branchRowClients.size > 0 ? branchRowClients.size : ''}</td></tr>`;
+        });
+
+        html += `<tr class="bg-slate-100/80 border-b-2 border-emerald-950 font-black text-slate-900"><td class="p-2 pl-4 uppercase">TOTAL ${lt}</td>`;
+        sortedStatuses.forEach(st => {
+            html += `<td class="p-2 text-center font-mono">${ltTotalStatuses[st].size > 0 ? ltTotalStatuses[st].size : ''}</td>`;
+        });
+        html += `<td class="p-2 text-center font-mono text-bambooDark">${ltGrandTotalClients.size}</td></tr>`;
+    });
+
+    html += `<tr class="bg-emerald-950 text-white font-black"><td class="p-3 pl-3 uppercase text-yellow-400">GRAND TOTAL</td>`;
+    sortedStatuses.forEach(st => {
+        html += `<td class="p-3 text-center font-mono text-yellow-300">${grandTotalStatuses[st].size}</td>`;
+    });
+    html += `<td class="p-3 text-center font-mono text-yellow-400 bg-emerald-900">${areaGrandTotalClients.size}</td></tr></tbody>`;
+
+    table.innerHTML = html;
+}
+
+function renderBranchCards(bMap) {
+    const grid = document.getElementById('branchCardsGrid');
+    grid.innerHTML = '';
+
+    Object.entries(bMap).forEach(([branchName, bData]) => {
+        const parRatio = bData.totalGLP > 0 ? (bData.parAmount / bData.totalGLP) * 100 : 0;
+        const totalOfficersCount = Object.keys(bData.officers).length;
+
+        const card = document.createElement('div');
+        card.className = 'bg-bambooDark border-2 border-emerald-950 rounded-2xl p-4 space-y-4 text-white shadow-xl flex flex-col justify-between';
+        card.innerHTML = `
+            <div class="flex items-center justify-between pb-3 border-b border-emerald-700/50">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center justify-center font-bold">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    </div>
+                    <h4 class="font-black text-sm uppercase tracking-wide text-white">${branchName}</h4>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-black text-white bg-emerald-900/80 px-3 py-1 rounded-lg border border-emerald-700/60 shadow-inner">
+                        ${totalOfficersCount} Officers
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5 font-mono">
+                <div class="bg-emerald-950/70 p-3 rounded-xl border border-emerald-800/60 shadow-inner">
+                    <span class="text-[10px] text-emerald-300 uppercase font-sans font-bold block">Loan Portfolio</span>
+                    <span class="text-xs sm:text-sm font-black text-white">${bData.totalGLP.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                </div>
+                <div class="bg-emerald-950/70 p-3 rounded-xl border border-emerald-800/60 shadow-inner">
+                    <span class="text-[10px] text-emerald-300 uppercase font-sans font-bold block">PAR Amount</span>
+                    <span class="text-xs sm:text-sm font-black text-rose-400">${bData.parAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                </div>
+                <div class="bg-emerald-950/70 p-3 rounded-xl border border-emerald-800/60 shadow-inner">
+                    <span class="text-[10px] text-emerald-300 uppercase font-sans font-bold block">PAR Ratio</span>
+                    <span class="text-xs sm:text-sm font-black text-amber-400">${parRatio.toFixed(2)}%</span>
+                </div>
+                <div class="bg-emerald-950/70 p-3 rounded-xl border border-emerald-800/60 shadow-inner">
+                    <span class="text-[10px] text-emerald-300 uppercase font-sans font-bold block">Borrowers</span>
+                    <span class="text-xs sm:text-sm font-black text-emerald-300">${bData.borrowerSet.size.toLocaleString()}</span>
+                </div>
+            </div>
+
+            <div class="bg-emerald-950/90 border border-emerald-800/70 p-3 rounded-xl space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-emerald-200 font-bold">Disbursed (Month):</span>
+                    <div class="font-mono text-right">
+                        <span class="font-bold text-white">${bData.disbursedBorrowerSet.size} clients</span>
+                        <span class="text-[10px] text-emerald-300 block">₱ ${bData.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-[11px] font-mono text-emerald-300 pl-2 border-l-2 border-emerald-500">
+                    <span>W1: <strong class="text-white">${bData.disbursedWeeks[1].size}</strong></span>
+                    <span>W2: <strong class="text-white">${bData.disbursedWeeks[2].size}</strong></span>
+                    <span>W3: <strong class="text-white">${bData.disbursedWeeks[3].size}</strong></span>
+                    <span>W4: <strong class="text-white">${bData.disbursedWeeks[4].size}</strong></span>
+                    <span>W5: <strong class="text-white">${bData.disbursedWeeks[5].size}</strong></span>
+                </div>
+                <div class="flex items-center justify-between border-t border-emerald-800/60 pt-1.5">
+                    <span class="text-emerald-200 font-bold">New Loans (Month):</span>
+                    <span class="font-bold text-white font-mono">${bData.newLoanSet.size} clients</span>
+                </div>
+                <div class="flex items-center justify-between border-t border-emerald-800/60 pt-1.5">
+                    <span class="text-emerald-200 font-bold">New Inclusions:</span>
+                    <div class="font-mono text-right">
+                        <span class="font-bold text-yellow-300">${bData.newInclusionsCount} clients</span>
+                        <span class="text-[10px] text-emerald-300 block">₱ ${bData.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="openBranchModal('${branchName}')" class="w-full py-2.5 rounded-xl bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-bold border border-emerald-700/60 transition-all flex items-center justify-center gap-2 shadow">
+                <span>View TS Officer Breakdown</span>
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+        `;
+        grid.appendChild(card);
+    });
+    lucide.createIcons();
+}
+
 function renderBorrowerDoughnutChart(active, par, ratio) {
     const ctx = document.getElementById('borrowerDoughnutChart').getContext('2d');
     if (borrowerChart) borrowerChart.destroy();
@@ -650,7 +827,7 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
 
     const categories = Object.keys(productSummary);
     const totals = categories.map(c => productSummary[c]);
-    const borrowerCounts = categories.map(c => productBorrowerSets[c] ? productBorrowerSets[c].size : 0);
+    const counts = categories.map(c => productBorrowerSets[c].size);
 
     productChart = new Chart(ctx, {
         type: 'bar',
@@ -659,7 +836,7 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
             datasets: [{
                 label: 'OLB Principal',
                 data: totals,
-                backgroundColor: '#2d6a4f',
+                backgroundColor: '#1b4332',
                 borderRadius: 6
             }]
         },
@@ -673,8 +850,8 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
                         label: function(context) {
                             const idx = context.dataIndex;
                             const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                            const borrowers = borrowerCounts[idx];
-                            return [`OLB Principal: ${amt}`, `Borrowers: ${borrowers}`];
+                            const borrowers = counts[idx].toLocaleString();
+                            return [`OLB Principal: ${amt}`, `Borrower Count: ${borrowers}`];
                         }
                     }
                 }
@@ -687,240 +864,116 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
     });
 }
 
-function handleCustomPromptSubmit(e) {
-    e.preventDefault();
-    const input = document.getElementById('customPromptInput').value.trim();
-    if (!input) return;
-    generateGeminiAnalyticsResponse('CUSTOM', input);
-}
-
-function executePresetPrompt(promptType) {
-    document.getElementById('customPromptInput').value = '';
-    generateGeminiAnalyticsResponse(promptType, '');
-}
-
-async function generateGeminiAnalyticsResponse(type, customText) {
+function executePresetPrompt(type) {
     const scope = document.getElementById('promptTargetScope').value;
     const container = document.getElementById('promptResultContainer');
-
-    let targetGLP = 0, targetPAR = 0;
-    if (scope === 'OVERALL') {
-        Object.values(globalBranchMap).forEach(b => { targetGLP += b.totalGLP; targetPAR += b.parAmount; });
-    } else if (globalBranchMap[scope]) {
-        targetGLP = globalBranchMap[scope].totalGLP;
-        targetPAR = globalBranchMap[scope].parAmount;
+    
+    let filteredData = rawData;
+    if (scope !== 'OVERALL') {
+        filteredData = rawData.filter(d => d.Branch === scope);
     }
-    const parRatio = targetGLP > 0 ? (targetPAR / targetGLP) * 100 : 0;
 
-    let userQuery = customText;
-    if (type === 'PAR_HOTSPOTS') userQuery = "Analyze PAR & Risk Hotspots and give recommendations.";
-    else if (type === 'DISBURSEMENT_PACING') userQuery = "Evaluate Weekly Disbursement Pacing and growth velocity.";
-    else if (type === 'CBS_BOTTLENECKS') userQuery = "Review CBS Application Pipeline bottlenecks and status counts.";
-    else if (type === 'GROWTH_ACTION_PLAN') userQuery = "Generate a Branch Growth & New Loan Action Plan.";
-
-    container.innerHTML = `<div class="text-center py-3 text-xs text-bambooDark font-bold">Gemini AI generating executive insights...</div>`;
-
-    const GEMINI_API_KEY = "AQ.Ab8RN6J18lP_l9HlAEaVJQemNAwrQjdsKLTK7rJNrW9t_Zq3vQ";
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: `Scope: ${scope}, GLP: ${targetGLP.toFixed(2)}, PAR: ${targetPAR.toFixed(2)}, Ratio: ${parRatio.toFixed(2)}%. Executive Query: ${userQuery}` }] }]
-            })
-        });
-        const data = await response.json();
-        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-        container.innerHTML = `<div class="text-xs text-slate-800 whitespace-pre-line leading-relaxed font-sans">${aiText}</div>`;
-    } catch (err) {
-        container.innerHTML = `<div class="text-xs text-rose-600 font-bold">Error connecting to Gemini API. Please check your connection.</div>`;
-    }
-}
-
-function renderCbsPivotMatrix(data) {
-    const startVal = parseInt(document.getElementById('cbsStartMonthFilter').value) || 0;
-    const endVal = parseInt(document.getElementById('cbsEndMonthFilter').value) || 999999;
-
-    const filteredData = data.filter(d => {
-        if (!d['Application date']) return false;
-        const dt = parseLocalDateString(d['Application date']);
-        if (!dt) return false;
-        const itemSortKey = dt.getFullYear() * 12 + dt.getMonth();
-        return itemSortKey >= startVal && itemSortKey <= endVal;
-    });
-
-    const statusSet = new Set();
-    filteredData.forEach(d => { if (d.Status) statusSet.add(d.Status); });
-    const allStatuses = Array.from(statusSet).sort();
-
-    const matrix = { Newloan: {}, Reloan: {} };
-    const branchesSet = new Set();
-
-    filteredData.forEach(d => {
-        const category = getProductCategory(d['Product ID']) === 'Newloan' ? 'Newloan' : 'Reloan';
-        const branch = d.Branch;
-        const status = d.Status;
-        branchesSet.add(branch);
-
-        if (!matrix[category][branch]) matrix[category][branch] = {};
-        if (!matrix[category][branch][status]) matrix[category][branch][status] = new Set();
-        matrix[category][branch][status].add(d['Client name']);
-    });
-
-    const sortedBranches = Array.from(branchesSet).sort();
-    const table = document.getElementById('cbsMatrixTable');
-    table.innerHTML = '';
-
-    if (allStatuses.length === 0) {
-        table.innerHTML = `<tbody><tr><td class="p-6 text-center text-slate-400 italic">No CBS records found for selected date range.</td></tr></tbody>`;
+    if (filteredData.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-500 italic text-center py-2">No records found for scope: ${scope}</div>`;
         return;
     }
 
-    let html = `<thead><tr class="bg-slate-100 text-slate-700 border-b-2 border-slate-300"><th class="p-2.5 pl-3 font-bold">Row Labels</th>`;
-    allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
-    html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
+    let totalGLP = 0;
+    let totalPAR = 0;
+    const branchParMap = {};
+    const officerParMap = {};
 
-    const grandTotalColCounts = {};
-    allStatuses.forEach(st => grandTotalColCounts[st] = new Set());
-    let grandTotalOverall = new Set();
+    filteredData.forEach(item => {
+        const olb = item['OLB principal'] || 0;
+        const days = item['Days in arrears'] || 0;
+        const branch = item.Branch;
+        const officer = item['Credit officer'];
 
-    ['Newloan', 'Reloan'].forEach(cat => {
-        html += `<tr class="bg-emerald-100/70 text-bambooDark font-extrabold border-y border-emerald-200"><td class="p-2 pl-3" colspan="${allStatuses.length + 2}">${cat}</td></tr>`;
-        
-        const catColCounts = {};
-        allStatuses.forEach(st => catColCounts[st] = new Set());
-
-        sortedBranches.forEach(b => {
-            if (matrix[cat][b]) {
-                let rowTot = 0;
-                html += `<tr class="border-b border-slate-100"><td class="p-2 pl-6 text-slate-700 font-semibold">${b}</td>`;
-                allStatuses.forEach(st => {
-                    const clientSet = matrix[cat][b][st] || new Set();
-                    const count = clientSet.size;
-                    rowTot += count;
-
-                    clientSet.forEach(c => {
-                        catColCounts[st].add(c);
-                        grandTotalColCounts[st].add(c);
-                        grandTotalOverall.add(c);
-                    });
-
-                    html += `<td class="p-2 text-center text-slate-800 font-mono">${count || ''}</td>`;
-                });
-                html += `<td class="p-2 text-center text-slate-900 font-mono font-bold">${rowTot}</td></tr>`;
-            }
-        });
-
-        html += `<tr class="bg-slate-200/80 font-bold border-b border-slate-300"><td class="p-2 pl-6 text-slate-900 uppercase">Total ${cat}</td>`;
-        allStatuses.forEach(st => {
-            const cCount = catColCounts[st].size;
-            html += `<td class="p-2 text-center text-slate-950 font-mono">${cCount || ''}</td>`;
-        });
-        let catUniqueTotal = 0;
-        allStatuses.forEach(st => {
-            catColCounts[st].forEach(c => catUniqueTotal++);
-        });
-        html += `<td class="p-2 text-center text-slate-950 font-mono font-bold">${catUniqueTotal}</td></tr>`;
+        totalGLP += olb;
+        if (days > 0) {
+            totalPAR += olb;
+            branchParMap[branch] = (branchParMap[branch] || 0) + olb;
+            officerParMap[officer] = (officerParMap[officer] || 0) + olb;
+        }
     });
 
-    html += `<tr class="bg-emerald-200 text-slate-950 font-black border-t-2 border-emerald-800"><td class="p-3 pl-3 uppercase">Grand Total</td>`;
-    allStatuses.forEach(st => {
-        html += `<td class="p-3 text-center font-mono text-slate-950">${grandTotalColCounts[st].size || ''}</td>`;
-    });
-    html += `<td class="p-3 text-center font-mono text-slate-950">${grandTotalOverall.size}</td></tr>`;
+    const parRatio = totalGLP > 0 ? (totalPAR / totalGLP) * 100 : 0;
 
-    html += `</tbody>`;
-    table.innerHTML = html;
-}
-
-function renderBranchCards(branchMap) {
-    const container = document.getElementById('branchCardsGrid');
-    container.innerHTML = '';
-
-    Object.keys(branchMap).sort().forEach(branch => {
-        const b = branchMap[branch];
-        const ratio = b.totalGLP > 0 ? (b.parAmount / b.totalGLP) * 100 : 0;
-        const branchBorrowers = b.borrowerSet.size;
-        const branchDisbursedCount = b.disbursedBorrowerSet.size;
-        const branchNewLoanCount = b.newLoanSet.size;
-
-        const card = document.createElement('div');
-        card.className = 'kpi-card p-4 bg-emerald-950/60 border-2 border-emerald-900 hover:border-emerald-500 shadow-xl transition-all cursor-pointer flex flex-col justify-between group rounded-xl';
-        card.onclick = () => openBranchModal(branch);
-
-        card.innerHTML = `
-            <div>
-                <!-- Header with Branch Title and Total Metrics -->
-                <div class="flex items-center justify-between pb-2.5 border-b-2 border-emerald-800/60 mb-3">
-                    <h4 class="font-black text-white text-sm uppercase flex items-center gap-1.5 tracking-wide">
-                        <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
-                    </h4>
-                    <div class="text-right">
-                        <span class="text-xs text-emerald-300 font-mono font-bold">${branchBorrowers.toLocaleString()} Borrowers</span>
-                        <span class="text-[10px] text-emerald-200/70 font-mono block">₱ ${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                    </div>
+    let html = '';
+    if (type === 'PAR_HOTSPOTS') {
+        const sortedBranches = Object.entries(branchParMap).sort((a,b) => b[1] - a[1]);
+        html = `
+            <div class="space-y-2 text-xs">
+                <div class="font-bold text-slate-900 uppercase flex items-center gap-1.5">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i> PAR Risk Hotspots Analysis (${scope})
                 </div>
-
-                <!-- 2x2 Dark Sub-grid for Metrics -->
-                <div class="grid grid-cols-2 gap-2 mb-3 font-mono">
-                    <div class="bg-emerald-900/40 p-2 rounded-lg border border-emerald-800/80">
-                        <span class="text-[10px] font-sans font-bold uppercase text-emerald-300/70 block">Loan Portfolio</span>
-                        <span class="text-xs font-bold text-white">${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                    </div>
-                    <div class="bg-emerald-900/40 p-2 rounded-lg border border-emerald-800/80">
-                        <span class="text-[10px] font-sans font-bold uppercase text-emerald-300/70 block">PAR Amount</span>
-                        <span class="text-xs font-bold text-rose-400">${b.parAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                    </div>
-                    <div class="bg-emerald-900/40 p-2 rounded-lg border border-emerald-800/80">
-                        <span class="text-[10px] font-sans font-bold uppercase text-emerald-300/70 block">PAR Ratio</span>
-                        <span class="text-xs font-bold text-amber-400">${ratio.toFixed(2)}%</span>
-                    </div>
-                    <div class="bg-emerald-900/40 p-2 rounded-lg border border-emerald-800/80">
-                        <span class="text-[10px] font-sans font-bold uppercase text-slate-400 block">Borrowers</span>
-                        <span class="text-xs font-bold text-emerald-300">${branchBorrowers.toLocaleString()}</span>
-                    </div>
+                <p class="text-slate-600 leading-relaxed">
+                    Overall PAR Ratio stands at <strong class="text-red-600 font-mono">${parRatio.toFixed(2)}%</strong> (₱ ${totalPAR.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} in arrears out of ₱ ${totalGLP.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} GLP).
+                </p>
+                <div class="bg-white p-2.5 rounded-lg border border-slate-200">
+                    <span class="font-bold text-slate-700 block mb-1">Top Arrears Concentration by Branch:</span>
+                    <ul class="list-disc pl-4 space-y-0.5 text-slate-600 font-mono">
+                        ${sortedBranches.slice(0, 3).map(([b, amt]) => `<li>${b}: <strong class="text-red-600">₱ ${amt.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</strong></li>`).join('')}
+                    </ul>
                 </div>
-
-                <!-- Dark Disbursed & Inclusions Summary Box -->
-                <div class="bg-emerald-900/50 border border-emerald-700/60 p-2.5 rounded-lg space-y-1.5 text-xs">
-                    <div class="flex items-center justify-between">
-                        <span class="text-blue-300 font-bold">Disbursed (Month):</span>
-                        <div class="font-mono text-right">
-                            <span class="font-bold text-white">${branchDisbursedCount} clients</span>
-                            <span class="text-[10px] text-emerald-200/70 block">₱ ${b.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] font-mono text-emerald-200/80 pl-2 border-l-2 border-blue-400">
-                        <span>W1: <strong class="text-white">${b.disbursedWeeks[1].size}</strong></span>
-                        <span>W2: <strong class="text-white">${b.disbursedWeeks[2].size}</strong></span>
-                        <span>W3: <strong class="text-white">${b.disbursedWeeks[3].size}</strong></span>
-                        <span>W4: <strong class="text-white">${b.disbursedWeeks[4].size}</strong></span>
-                        <span>W5: <strong class="text-white">${b.disbursedWeeks[5].size}</strong></span>
-                    </div>
-                    <div class="flex items-center justify-between border-t border-emerald-800/80 pt-1">
-                        <span class="text-emerald-400 font-bold">New Loans (Month):</span>
-                        <span class="font-bold text-white font-mono">${branchNewLoanCount} clients</span>
-                    </div>
-                    <div class="flex items-center justify-between border-t border-emerald-800/80 pt-1">
-                        <span class="text-emerald-300 font-bold">New Inclusions:</span>
-                        <div class="font-mono text-right">
-                            <span class="font-bold text-emerald-300">${b.newInclusionsCount} clients</span>
-                            <span class="text-[10px] text-emerald-200/70 block">₱ ${b.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Footer Action Button -->
-            <div class="text-[11px] text-emerald-400 font-extrabold flex items-center justify-between pt-2.5 border-t-2 border-emerald-800/60 mt-3 group-hover:text-emerald-300 transition-colors">
-                <span>View TS Officer Breakdown</span>
-                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
-        container.appendChild(card);
-    });
+    } else if (type === 'DISBURSEMENT_PACING') {
+        html = `
+            <div class="space-y-2 text-xs">
+                <div class="font-bold text-slate-900 uppercase flex items-center gap-1.5">
+                    <i data-lucide="trending-up" class="w-4 h-4 text-blue-600"></i> Disbursement Pacing Insights (${scope})
+                </div>
+                <p class="text-slate-600 leading-relaxed">
+                    Review weekly pacing charts above to ensure credit officers are meeting monthly targets consistently across weeks 1 through 5. Focus field coaching on lagging weekly disbursement cycles.
+                </p>
+            </div>
+        `;
+    } else if (type === 'CBS_BOTTLENECKS') {
+        html = `
+            <div class="space-y-2 text-xs">
+                <div class="font-bold text-slate-900 uppercase flex items-center gap-1.5">
+                    <i data-lucide="hourglass" class="w-4 h-4 text-amber-600"></i> CBS Status Bottlenecks (${scope})
+                </div>
+                <p class="text-slate-600 leading-relaxed">
+                    Examine the CBS Status Pivot Summary Matrix for pended loan folders under <em>Application Review</em>, <em>Draft</em>, or <em>Postponed</em> to enforce the 72-hour processing rule.
+                </p>
+            </div>
+        `;
+    } else if (type === 'GROWTH_ACTION_PLAN') {
+        html = `
+            <div class="space-y-2 text-xs">
+                <div class="font-bold text-slate-900 uppercase flex items-center gap-1.5">
+                    <i data-lucide="rocket" class="w-4 h-4 text-emerald-700"></i> Executive Growth Action Plan (${scope})
+                </div>
+                <p class="text-slate-600 leading-relaxed">
+                    1. Prioritize immediate collection follow-ups for accounts in 1-30 and 31-60 PAR brackets.<br>
+                    2. Accelerate new loan client onboarding in top-performing credit officer portfolios.<br>
+                    3. Conduct bi-weekly portfolio reviews to maintain area PAR ratio below threshold.
+                </p>
+            </div>
+        `;
+    }
 
+    container.innerHTML = html;
+    lucide.createIcons();
+}
+
+function handleCustomPromptSubmit(e) {
+    e.preventDefault();
+    const query = document.getElementById('customPromptInput').value.trim();
+    if (!query) return;
+
+    const container = document.getElementById('promptResultContainer');
+    container.innerHTML = `
+        <div class="space-y-2 text-xs">
+            <div class="font-bold text-slate-900 uppercase flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-4 h-4 text-bambooDark"></i> Query: "${query}"
+            </div>
+            <p class="text-slate-600 leading-relaxed">
+                Based on your current portfolio filter scope, review the active branch metrics, PAR risk aging brackets, and CBS status pivot matrix above to address this operational objective.
+            </p>
+        </div>
+    `;
     lucide.createIcons();
 }
