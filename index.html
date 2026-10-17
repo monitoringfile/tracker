@@ -122,35 +122,21 @@
                 </div>
             </div>
 
-            <!-- TOP EXECUTIVE KPI TILES (Dark Slate Theme with Hover Tooltips) -->
+            <!-- TOP EXECUTIVE KPI TILES -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
                 
-                <!-- Loan Portfolio with Hover Average Size Tooltip -->
-                <div class="kpi-card p-4 bg-slate-950/80 border-2 border-slate-800 border-t-4 border-t-emerald-400 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
+                <!-- Loan Portfolio (No Hover) -->
+                <div class="kpi-card p-4 bg-slate-950/80 border-2 border-slate-800 border-t-4 border-t-emerald-400 flex flex-col justify-between shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-slate-300 tracking-wider">Loan Portfolio</span>
                     <div id="kpiLoanPortfolio" class="text-base sm:text-lg font-black text-white font-mono mt-1 truncate">0.00</div>
                     <span id="kpiLoanPortfolioSub" class="text-[10px] text-slate-400 font-medium truncate mt-1">0 Line Items</span>
-
-                    <!-- Hover Card Overlay -->
-                    <div class="absolute inset-0 bg-emerald-950/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none z-10 text-center shadow-xl border-2 border-emerald-400">
-                        <span class="text-[10px] uppercase font-extrabold text-emerald-200">Avg Portfolio Loan Size</span>
-                        <div id="kpiLoanPortfolioAvgHover" class="text-sm font-black font-mono text-white mt-0.5">₱ 0.00</div>
-                        <span class="text-[9px] text-emerald-300 mt-1">Active + In Arrears</span>
-                    </div>
                 </div>
 
-                <!-- PAR Amount with Hover Average Size Tooltip -->
-                <div class="kpi-card p-4 bg-slate-950/80 border-2 border-slate-800 border-t-4 border-t-rose-500 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
+                <!-- PAR Amount (No Hover) -->
+                <div class="kpi-card p-4 bg-slate-950/80 border-2 border-slate-800 border-t-4 border-t-rose-500 flex flex-col justify-between shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-slate-300 tracking-wider">PAR Amount</span>
                     <div id="kpiParAmount" class="text-base sm:text-lg font-black text-rose-400 font-mono mt-1 truncate">0.00</div>
                     <span id="kpiParAmountSub" class="text-[10px] text-rose-300 font-bold truncate mt-1">0 In Arrears</span>
-
-                    <!-- Hover Card Overlay -->
-                    <div class="absolute inset-0 bg-rose-950/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none z-10 text-center shadow-xl border-2 border-rose-500">
-                        <span class="text-[10px] uppercase font-extrabold text-rose-200">Avg PAR Loan Size</span>
-                        <div id="kpiParAmountAvgHover" class="text-sm font-black font-mono text-rose-300 mt-0.5">₱ 0.00</div>
-                        <span class="text-[9px] text-rose-400 mt-1">In Arrears / PAR Clients</span>
-                    </div>
                 </div>
 
                 <div class="kpi-card p-4 bg-slate-950/80 border-2 border-slate-800 border-t-4 border-t-amber-400 flex flex-col justify-between shadow-xl rounded-xl">
@@ -164,13 +150,12 @@
                     <span id="kpiBorrowersSub" class="text-[10px] text-emerald-200 font-bold truncate mt-1">Active / PAR</span>
                 </div>
 
-                <!-- Disbursed (Mo) with Hover Total & Avg Loan Amount Tooltip -->
+                <!-- Disbursed (Mo) with Hover Tooltip -->
                 <div class="kpi-card p-4 bg-slate-950/80 border-2 border-slate-800 border-t-4 border-t-blue-400 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-slate-300 tracking-wider">Disbursed (Mo)</span>
                     <div id="kpiDisbursedCount" class="text-base sm:text-lg font-black text-blue-400 font-mono mt-1">0</div>
                     <div id="kpiDisbursedWeeklySub" class="text-[10px] font-mono text-slate-400 truncate mt-1">Hover for Loan Amt</div>
 
-                    <!-- Hover Card Overlay -->
                     <div class="absolute inset-0 bg-blue-950/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none z-10 text-center shadow-xl border-2 border-blue-400">
                         <span class="text-[10px] uppercase font-extrabold text-blue-200">Disbursed Loan Amount</span>
                         <div id="kpiDisbursedTotalLoanHover" class="text-xs font-black font-mono text-white mt-0.5">₱ 0.00</div>
@@ -178,13 +163,12 @@
                     </div>
                 </div>
 
-                <!-- New Loans with Hover Total & Avg Loan Amount Tooltip -->
+                <!-- New Loans with Hover Tooltip -->
                 <div class="kpi-card p-4 bg-slate-950/80 border-2 border-slate-800 border-t-4 border-t-teal-400 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-slate-300 tracking-wider">New Loans</span>
                     <div id="kpiNewLoanCount" class="text-base sm:text-lg font-black text-teal-300 font-mono mt-1">0</div>
                     <div id="kpiNewLoanWeeklySub" class="text-[10px] font-mono text-slate-400 truncate mt-1">Hover for Loan Amt</div>
 
-                    <!-- Hover Card Overlay -->
                     <div class="absolute inset-0 bg-teal-950/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none z-10 text-center shadow-xl border-2 border-teal-400">
                         <span class="text-[10px] uppercase font-extrabold text-teal-200">New Loan Amount</span>
                         <div id="kpiNewLoanTotalLoanHover" class="text-xs font-black font-mono text-white mt-0.5">₱ 0.00</div>
@@ -192,13 +176,12 @@
                     </div>
                 </div>
 
-                <!-- New Inclusions with Hover OLB Amount Tooltip -->
+                <!-- New Inclusions with Hover Tooltip -->
                 <div class="kpi-card p-4 bg-slate-950/80 border-2 border-slate-800 border-t-4 border-t-indigo-400 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-slate-300 tracking-wider">New Inclusions</span>
                     <div id="kpiNewInclusionsCount" class="text-base sm:text-lg font-black text-indigo-300 font-mono mt-1">0</div>
                     <span id="kpiNewInclusionsSub" class="text-[10px] text-slate-400 truncate mt-1">Arrears &le; days</span>
 
-                    <!-- Hover Card Overlay -->
                     <div class="absolute inset-0 bg-indigo-950/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none z-10 text-center shadow-xl border-2 border-indigo-400">
                         <span class="text-[10px] uppercase font-extrabold text-indigo-200">New Inclusions OLB</span>
                         <div id="kpiNewInclusionsOlbHover" class="text-sm font-black font-mono text-indigo-300 mt-0.5">₱ 0.00</div>
