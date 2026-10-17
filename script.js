@@ -77,34 +77,34 @@ function openBranchModal(branchName) {
             const officerParRatio = oStats.glp > 0 ? (oStats.parAmount / oStats.glp) * 100 : 0;
             
             const card = document.createElement('div');
-            card.className = 'bg-white border border-slate-300 border-l-4 border-l-bambooPrimary p-4 rounded-xl space-y-3 text-xs shadow-sm';
+            card.className = 'bg-white border-2 border-emerald-900/30 border-l-4 border-l-bambooDark p-4 rounded-xl space-y-3 text-xs shadow-sm';
             card.innerHTML = `
-                <div class="flex items-center justify-between pb-2 border-b border-slate-200 font-bold text-slate-800">
-                    <span class="text-sm font-black text-bambooPrimary"><i data-lucide="user-check" class="w-4 h-4 inline mr-1"></i> ${officerName}</span>
+                <div class="flex items-center justify-between pb-2 border-b-2 border-slate-200 font-bold text-slate-800">
+                    <span class="text-sm font-black text-bambooDark"><i data-lucide="user-check" class="w-4 h-4 inline mr-1"></i> ${officerName}</span>
                     <div class="text-right">
                         <span class="text-slate-700 font-mono font-bold">${oStats.borrowerSet.size} Borrowers</span>
                         <span class="text-[10px] text-slate-500 font-mono block">₱ ${oStats.glp.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-300">
                         <span class="text-slate-400 text-[10px] block font-sans uppercase font-bold">Loan Portfolio</span>
                         <span class="text-slate-900 font-bold">${oStats.glp.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                     </div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-300">
                         <span class="text-slate-400 text-[10px] block font-sans uppercase font-bold">PAR Amount</span>
                         <span class="text-rose-600 font-bold">${oStats.parAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                     </div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-300">
                         <span class="text-slate-400 text-[10px] block font-sans uppercase font-bold">PAR Ratio</span>
                         <span class="text-amber-600 font-bold">${officerParRatio.toFixed(2)}%</span>
                     </div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-300">
                         <span class="text-slate-400 text-[10px] block font-sans uppercase font-bold">Active Borrowers</span>
                         <span class="text-emerald-700 font-bold">${oStats.borrowerSet.size}</span>
                     </div>
                 </div>
-                <div class="bg-emerald-50/50 border border-emerald-100 p-2.5 rounded-lg space-y-1.5 text-xs">
+                <div class="bg-emerald-50/70 border-2 border-emerald-900/30 p-2.5 rounded-lg space-y-1.5 text-xs">
                     <div class="flex items-center justify-between">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
@@ -112,18 +112,18 @@ function openBranchModal(branchName) {
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between text-[11px] font-mono text-slate-600 pl-2 border-l-2 border-blue-400">
+                    <div class="flex items-center justify-between text-[11px] font-mono text-slate-600 pl-2 border-l-2 border-blue-500">
                         <span>W1: <strong class="text-slate-900">${oStats.disbursedWeeks[1].size}</strong></span>
                         <span>W2: <strong class="text-slate-900">${oStats.disbursedWeeks[2].size}</strong></span>
                         <span>W3: <strong class="text-slate-900">${oStats.disbursedWeeks[3].size}</strong></span>
                         <span>W4: <strong class="text-slate-900">${oStats.disbursedWeeks[4].size}</strong></span>
                         <span>W5: <strong class="text-slate-900">${oStats.disbursedWeeks[5].size}</strong></span>
                     </div>
-                    <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
+                    <div class="flex items-center justify-between border-t border-emerald-200 pt-1">
                         <span class="text-emerald-700 font-bold">New Loans (Month):</span>
                         <span class="font-bold text-slate-900 font-mono">${oStats.newLoanSet.size} clients</span>
                     </div>
-                    <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
+                    <div class="flex items-center justify-between border-t border-emerald-200 pt-1">
                         <span class="text-bambooDark font-bold">New Inclusions:</span>
                         <div class="font-mono text-right">
                             <span class="font-bold text-bambooDark">${oStats.newInclusionsCount} clients</span>
@@ -718,7 +718,7 @@ async function generateGeminiAnalyticsResponse(type, customText) {
     else if (type === 'CBS_BOTTLENECKS') userQuery = "Review CBS Application Pipeline bottlenecks and status counts.";
     else if (type === 'GROWTH_ACTION_PLAN') userQuery = "Generate a Branch Growth & New Loan Action Plan.";
 
-    container.innerHTML = `<div class="text-center py-3 text-xs text-bambooPrimary font-bold">Gemini AI generating executive insights...</div>`;
+    container.innerHTML = `<div class="text-center py-3 text-xs text-bambooDark font-bold">Gemini AI generating executive insights...</div>`;
 
     const GEMINI_API_KEY = "AQ.Ab8RN6J18lP_l9HlAEaVJQemNAwrQjdsKLTK7rJNrW9t_Zq3vQ";
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -778,7 +778,7 @@ function renderCbsPivotMatrix(data) {
         return;
     }
 
-    let html = `<thead><tr class="bg-slate-50 text-slate-700 border-b border-slate-200"><th class="p-2.5 pl-3 font-bold">Row Labels</th>`;
+    let html = `<thead><tr class="bg-slate-100 text-slate-700 border-b-2 border-slate-300"><th class="p-2.5 pl-3 font-bold">Row Labels</th>`;
     allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
     html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
 
@@ -787,7 +787,7 @@ function renderCbsPivotMatrix(data) {
     let grandTotalOverall = new Set();
 
     ['Newloan', 'Reloan'].forEach(cat => {
-        html += `<tr class="bg-emerald-50/60 text-bambooDark font-extrabold"><td class="p-2 pl-3" colspan="${allStatuses.length + 2}">${cat}</td></tr>`;
+        html += `<tr class="bg-emerald-100/70 text-bambooDark font-extrabold border-y border-emerald-200"><td class="p-2 pl-3" colspan="${allStatuses.length + 2}">${cat}</td></tr>`;
         
         const catColCounts = {};
         allStatuses.forEach(st => catColCounts[st] = new Set());
@@ -813,7 +813,7 @@ function renderCbsPivotMatrix(data) {
             }
         });
 
-        html += `<tr class="bg-slate-100/80 font-bold border-b border-slate-200"><td class="p-2 pl-6 text-slate-900 uppercase">Total ${cat}</td>`;
+        html += `<tr class="bg-slate-200/80 font-bold border-b border-slate-300"><td class="p-2 pl-6 text-slate-900 uppercase">Total ${cat}</td>`;
         allStatuses.forEach(st => {
             const cCount = catColCounts[st].size;
             html += `<td class="p-2 text-center text-slate-950 font-mono">${cCount || ''}</td>`;
@@ -825,7 +825,7 @@ function renderCbsPivotMatrix(data) {
         html += `<td class="p-2 text-center text-slate-950 font-mono font-bold">${catUniqueTotal}</td></tr>`;
     });
 
-    html += `<tr class="bg-emerald-100/80 text-slate-950 font-black"><td class="p-3 pl-3 uppercase">Grand Total</td>`;
+    html += `<tr class="bg-emerald-200 text-slate-950 font-black border-t-2 border-emerald-800"><td class="p-3 pl-3 uppercase">Grand Total</td>`;
     allStatuses.forEach(st => {
         html += `<td class="p-3 text-center font-mono text-slate-950">${grandTotalColCounts[st].size || ''}</td>`;
     });
@@ -847,74 +847,80 @@ function renderBranchCards(branchMap) {
         const branchNewLoanCount = b.newLoanSet.size;
 
         const card = document.createElement('div');
-        card.className = 'kpi-card p-4 hover:border-bambooPrimary transition-all cursor-pointer flex flex-col justify-between group';
+        card.className = 'kpi-card p-4 bg-emerald-950/60 border-2 border-emerald-900 hover:border-emerald-500 shadow-xl transition-all cursor-pointer flex flex-col justify-between group rounded-xl';
         card.onclick = () => openBranchModal(branch);
 
         card.innerHTML = `
             <div>
-                <div class="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
-                    <h4 class="font-black text-slate-900 text-sm uppercase flex items-center gap-1.5">
-                        <i data-lucide="map-pin" class="w-4 h-4 text-bambooPrimary"></i> ${branch}
+                <!-- Header with Branch Title and Total Metrics -->
+                <div class="flex items-center justify-between pb-2.5 border-b-2 border-emerald-800/60 mb-3">
+                    <h4 class="font-black text-white text-sm uppercase flex items-center gap-1.5 tracking-wide">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs text-slate-700 font-mono font-bold">${branchBorrowers.toLocaleString()} Borrowers</span>
-                        <span class="text-[10px] text-slate-500 font-mono block">₱ ${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span class="text-xs text-emerald-300 font-mono font-bold">${branchBorrowers.toLocaleString()} Borrowers</span>
+                        <span class="text-[10px] text-emerald-200/70 font-mono block">₱ ${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                 </div>
 
+                <!-- 2x2 Dark Sub-grid for Metrics -->
                 <div class="grid grid-cols-2 gap-2 mb-3 font-mono">
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
-                        <span class="text-[10px] font-sans font-bold uppercase text-slate-400 block">Loan Portfolio</span>
-                        <span class="text-xs font-bold text-slate-900">${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <div class="bg-emerald-900/40 p-2 rounded-lg border border-emerald-800/80">
+                        <span class="text-[10px] font-sans font-bold uppercase text-emerald-300/70 block">Loan Portfolio</span>
+                        <span class="text-xs font-bold text-white">${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
-                        <span class="text-[10px] font-sans font-bold uppercase text-slate-400 block">PAR Amount</span>
-                        <span class="text-xs font-bold text-rose-600">${b.parAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <div class="bg-emerald-900/40 p-2 rounded-lg border border-emerald-800/80">
+                        <span class="text-[10px] font-sans font-bold uppercase text-emerald-300/70 block">PAR Amount</span>
+                        <span class="text-xs font-bold text-rose-400">${b.parAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
-                        <span class="text-[10px] font-sans font-bold uppercase text-slate-400 block">PAR Ratio</span>
-                        <span class="text-xs font-bold text-amber-600">${ratio.toFixed(2)}%</span>
+                    <div class="bg-emerald-900/40 p-2 rounded-lg border border-emerald-800/80">
+                        <span class="text-[10px] font-sans font-bold uppercase text-emerald-300/70 block">PAR Ratio</span>
+                        <span class="text-xs font-bold text-amber-400">${ratio.toFixed(2)}%</span>
                     </div>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-100">
+                    <div class="bg-emerald-900/40 p-2 rounded-lg border border-emerald-800/80">
                         <span class="text-[10px] font-sans font-bold uppercase text-slate-400 block">Borrowers</span>
-                        <span class="text-xs font-bold text-emerald-700">${branchBorrowers.toLocaleString()}</span>
+                        <span class="text-xs font-bold text-emerald-300">${branchBorrowers.toLocaleString()}</span>
                     </div>
                 </div>
 
-                <div class="bg-emerald-50/40 border border-emerald-100 p-2.5 rounded-lg space-y-1.5 text-xs">
+                <!-- Dark Disbursed & Inclusions Summary Box -->
+                <div class="bg-emerald-900/50 border border-emerald-700/60 p-2.5 rounded-lg space-y-1.5 text-xs">
                     <div class="flex items-center justify-between">
-                        <span class="text-blue-700 font-bold">Disbursed (Month):</span>
+                        <span class="text-blue-300 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-slate-900">${branchDisbursedCount} clients</span>
-                            <span class="text-[10px] text-slate-500 block">₱ ${b.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="font-bold text-white">${branchDisbursedCount} clients</span>
+                            <span class="text-[10px] text-emerald-200/70 block">₱ ${b.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between text-[11px] font-mono text-slate-600 pl-2 border-l-2 border-blue-400">
-                        <span>W1: <strong class="text-slate-900">${b.disbursedWeeks[1].size}</strong></span>
-                        <span>W2: <strong class="text-slate-900">${b.disbursedWeeks[2].size}</strong></span>
-                        <span>W3: <strong class="text-slate-900">${b.disbursedWeeks[3].size}</strong></span>
-                        <span>W4: <strong class="text-slate-900">${b.disbursedWeeks[4].size}</strong></span>
-                        <span>W5: <strong class="text-slate-900">${b.disbursedWeeks[5].size}</strong></span>
+                    <div class="flex items-center justify-between text-[11px] font-mono text-emerald-200/80 pl-2 border-l-2 border-blue-400">
+                        <span>W1: <strong class="text-white">${b.disbursedWeeks[1].size}</strong></span>
+                        <span>W2: <strong class="text-white">${b.disbursedWeeks[2].size}</strong></span>
+                        <span>W3: <strong class="text-white">${b.disbursedWeeks[3].size}</strong></span>
+                        <span>W4: <strong class="text-white">${b.disbursedWeeks[4].size}</strong></span>
+                        <span>W5: <strong class="text-white">${b.disbursedWeeks[5].size}</strong></span>
                     </div>
-                    <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
-                        <span class="text-emerald-700 font-bold">New Loans (Month):</span>
-                        <span class="font-bold text-slate-900 font-mono">${branchNewLoanCount} clients</span>
+                    <div class="flex items-center justify-between border-t border-emerald-800/80 pt-1">
+                        <span class="text-emerald-400 font-bold">New Loans (Month):</span>
+                        <span class="font-bold text-white font-mono">${branchNewLoanCount} clients</span>
                     </div>
-                    <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
-                        <span class="text-bambooDark font-bold">New Inclusions:</span>
+                    <div class="flex items-center justify-between border-t border-emerald-800/80 pt-1">
+                        <span class="text-emerald-300 font-bold">New Inclusions:</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-bambooDark">${b.newInclusionsCount} clients</span>
-                            <span class="text-[10px] text-slate-500 block">₱ ${b.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="font-bold text-emerald-300">${b.newInclusionsCount} clients</span>
+                            <span class="text-[10px] text-emerald-200/70 block">₱ ${b.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="text-[11px] text-bambooPrimary font-bold flex items-center justify-between pt-2 border-t border-slate-100 mt-2 group-hover:text-bambooDark">
+            <!-- Footer Action Button -->
+            <div class="text-[11px] text-emerald-400 font-extrabold flex items-center justify-between pt-2.5 border-t-2 border-emerald-800/60 mt-3 group-hover:text-emerald-300 transition-colors">
                 <span>View TS Officer Breakdown</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
         container.appendChild(card);
     });
+
+    lucide.createIcons();
 }
