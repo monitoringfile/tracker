@@ -717,7 +717,7 @@ function renderCbsPivotMatrix(data) {
 
     let html = `<thead><tr class="bg-slate-50 text-slate-700 border-b border-slate-200"><th class="p-2.5 pl-3 font-bold">Loan Type by Branch</th>`;
     allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
-    html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
+    html += `<th class="p-2.5 text-center font-bold">Area Total</th></tr></thead><tbody>`;
 
     const grandTotalColCounts = {};
     allStatuses.forEach(st => grandTotalColCounts[st] = new Set());
