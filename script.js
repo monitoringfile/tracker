@@ -446,13 +446,11 @@ function renderDashboard(data) {
     const totalPARAmount = bracket1_30 + bracket31_60 + bracket61_90 + bracket91_180 + bracket181_365 + bracket365Plus;
     const parRatio = totalGLP > 0 ? (totalPARAmount / totalGLP) * 100 : 0;
     
-    // Exact Formula Computations for Area-Wide Executive KPIs:
     const areaAvgPortfolioSize = filteredEligibleClients.size > 0 ? totalGLP / filteredEligibleClients.size : 0;
     const areaAvgParSize = parBorrowersCount > 0 ? totalPARAmount / parBorrowersCount : 0;
     const areaAvgDisbursedSize = globalDisbursedSet.size > 0 ? globalDisbursedLoanAmountTotal / globalDisbursedSet.size : 0;
     const areaAvgNewLoanSize = globalNewLoanSet.size > 0 ? globalNewLoanAmountTotal / globalNewLoanSet.size : 0;
 
-    // DOM Updates
     document.getElementById('kpiLoanPortfolio').innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('kpiLoanPortfolioSub').innerText = `${filteredEligibleClients.size.toLocaleString()} Clients (Active+PAR)`;
     document.getElementById('kpiLoanPortfolioAvgHover').innerText = '₱ ' + areaAvgPortfolioSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -563,33 +561,27 @@ function renderCbsPivotMatrix(data) {
     });
 
     const branchesSet = new Set();
-    const loanTypesSet = new Set();
     const statusesSet = new Set();
-    const matrix = {};
+    const branchMatrix = {};
 
     filtered.forEach(item => {
         const branch = item.Branch;
-        const rawProd = item['Product ID'] || '';
-        const loanType = getProductCategory(rawProd);
         const status = item['Status'] || 'Unspecified';
         const clientName = item['Client name'] || 'UNKNOWN';
 
         branchesSet.add(branch);
-        loanTypesSet.add(loanType);
         statusesSet.add(status);
 
-        if (!matrix[loanType]) matrix[loanType] = {};
-        if (!matrix[loanType][branch]) matrix[loanType][branch] = {};
-        if (!matrix[loanType][branch][status]) matrix[loanType][branch][status] = new Set();
+        if (!branchMatrix[branch]) branchMatrix[branch] = {};
+        if (!branchMatrix[branch][status]) branchMatrix[branch][status] = new Set();
 
-        matrix[loanType][branch][status].add(clientName);
+        branchMatrix[branch][status].add(clientName);
     });
 
     const sortedBranches = Array.from(branchesSet).sort();
-    const sortedLoanTypes = Array.from(loanTypesSet).sort();
     const sortedStatuses = Array.from(statusesSet).sort();
 
-    if (sortedBranches.length === 0 || sortedLoanTypes.length === 0) {
+    if (sortedBranches.length === 0 || sortedStatuses.length === 0) {
         table.innerHTML = `<tbody><tr><td class="p-6 text-center text-slate-400 italic">No CBS records found for the selected month range.</td></tr></tbody>`;
         return;
     }
@@ -602,39 +594,24 @@ function renderCbsPivotMatrix(data) {
     sortedStatuses.forEach(st => grandTotalStatuses[st] = new Set());
     let areaGrandTotalClients = new Set();
 
-    sortedLoanTypes.forEach(lt => {
-        html += `<tr class="bg-emerald-50/60 border-y border-emerald-100 font-bold text-emerald-950"><td colspan="${sortedStatuses.length + 2}" class="p-2.5 pl-4 uppercase tracking-wider">${lt}</td></tr>`;
+    sortedBranches.forEach(b => {
+        html += `<tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors"><td class="p-3 pl-6 font-semibold text-slate-800">${b}</td>`;
         
-        const ltTotalStatuses = {};
-        sortedStatuses.forEach(st => ltTotalStatuses[st] = new Set());
-        let ltGrandTotalClients = new Set();
-
-        sortedBranches.forEach(b => {
-            html += `<tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors"><td class="p-2.5 pl-8 font-medium text-slate-700">${b}</td>`;
-            
-            let branchRowClients = new Set();
-            sortedStatuses.forEach(st => {
-                const clientSet = matrix[lt] && matrix[lt][b] && matrix[lt][b][st] ? matrix[lt][b][st] : new Set();
-                clientSet.forEach(c => {
-                    branchRowClients.add(c);
-                    ltTotalStatuses[st].add(c);
-                    grandTotalStatuses[st].add(c);
-                    ltGrandTotalClients.add(c);
-                    areaGrandTotalClients.add(c);
-                });
-                const count = clientSet.size;
-                html += `<td class="p-2.5 text-center font-mono text-slate-600">${count > 0 ? count : ''}</td>`;
-            });
-            html += `<td class="p-2.5 text-center font-mono font-bold text-slate-900 bg-slate-50/50">${branchRowClients.size > 0 ? branchRowClients.size : ''}</td></tr>`;
-        });
-
-        html += `<tr class="bg-slate-100/90 border-y border-slate-200 font-black text-slate-900"><td class="p-2.5 pl-6 uppercase">TOTAL ${lt}</td>`;
+        let branchRowClients = new Set();
         sortedStatuses.forEach(st => {
-            html += `<td class="p-2.5 text-center font-mono">${ltTotalStatuses[st].size > 0 ? ltTotalStatuses[st].size : ''}</td>`;
+            const clientSet = branchMatrix[b] && branchMatrix[b][st] ? branchMatrix[b][st] : new Set();
+            clientSet.forEach(c => {
+                branchRowClients.add(c);
+                grandTotalStatuses[st].add(c);
+                areaGrandTotalClients.add(c);
+            });
+            const count = clientSet.size;
+            html += `<td class="p-3 text-center font-mono text-slate-600">${count > 0 ? count : ''}</td>`;
         });
-        html += `<td class="p-2.5 text-center font-mono text-bambooDark">${ltGrandTotalClients.size}</td></tr>`;
+        html += `<td class="p-3 text-center font-mono font-bold text-slate-900 bg-slate-50/50">${branchRowClients.size > 0 ? branchRowClients.size : ''}</td></tr>`;
     });
 
+    // Grand Total Row
     html += `<tr class="bg-emerald-100/70 border-t-2 border-emerald-950 font-black text-slate-900"><td class="p-3 pl-4 uppercase">GRAND TOTAL</td>`;
     sortedStatuses.forEach(st => {
         html += `<td class="p-3 text-center font-mono">${grandTotalStatuses[st].size > 0 ? grandTotalStatuses[st].size : ''}</td>`;
