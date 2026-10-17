@@ -65,13 +65,13 @@ function openBranchModal(branchName) {
     const bData = globalBranchMap[branchName];
     if (!bData) return;
 
-    document.getElementById('modalBranchTitle').innerText = `${branchName} - TS Officer Summary`;
+    document.getElementById('modalBranchTitle').innerText = `${branchName} - Trust Staff Summary`;
     const container = document.getElementById('modalOfficerList');
     container.innerHTML = '';
 
     const officerEntries = Object.entries(bData.officers);
     if (officerEntries.length === 0) {
-        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No officer records found.</div>`;
+        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No TS records found.</div>`;
     } else {
         officerEntries.forEach(([officerName, oStats]) => {
             const officerParRatio = oStats.glp > 0 ? (oStats.parAmount / oStats.glp) * 100 : 0;
