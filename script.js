@@ -842,7 +842,6 @@ function renderBranchCards(branchMap) {
     Object.keys(branchMap).sort().forEach(branch => {
         const b = branchMap[branch];
         const ratio = b.totalGLP > 0 ? (b.parAmount / b.totalGLP) * 100 : 0;
-        const officerCount = Object.keys(b.officers).length;
         const branchBorrowers = b.borrowerSet.size;
         const branchDisbursedCount = b.disbursedBorrowerSet.size;
         const branchNewLoanCount = b.newLoanSet.size;
