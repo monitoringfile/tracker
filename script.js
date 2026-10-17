@@ -75,6 +75,8 @@ function openBranchModal(branchName) {
     } else {
         officerEntries.forEach(([officerName, oStats]) => {
             const officerParRatio = oStats.glp > 0 ? (oStats.parAmount / oStats.glp) * 100 : 0;
+            const officerAvgPortfolioSize = oStats.borrowerSet.size > 0 ? oStats.glp / oStats.borrowerSet.size : 0;
+            const officerAvgDisbursedSize = oStats.disbursedBorrowerSet.size > 0 ? oStats.disbursedLoanAmount / oStats.disbursedBorrowerSet.size : 0;
             
             const card = document.createElement('div');
             card.className = 'bg-white border-2 border-emerald-900/30 border-l-4 border-l-bambooDark p-4 rounded-xl space-y-3 text-xs shadow-sm';
@@ -109,7 +111,7 @@ function openBranchModal(branchName) {
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
                             <span class="font-bold text-slate-900">${oStats.disbursedBorrowerSet.size} clients</span>
-                            <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                            <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} (Avg: ₱ ${officerAvgDisbursedSize.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})})</span>
                         </div>
                     </div>
                     <div class="flex items-center justify-between text-[11px] font-mono text-slate-600 pl-2 border-l-2 border-blue-500">
@@ -118,6 +120,10 @@ function openBranchModal(branchName) {
                         <span>W3: <strong class="text-slate-900">${oStats.disbursedWeeks[3].size}</strong></span>
                         <span>W4: <strong class="text-slate-900">${oStats.disbursedWeeks[4].size}</strong></span>
                         <span>W5: <strong class="text-slate-900">${oStats.disbursedWeeks[5].size}</strong></span>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-emerald-200 pt-1">
+                        <span class="text-emerald-700 font-bold">Avg Portfolio Loan Size:</span>
+                        <span class="font-bold text-slate-900 font-mono">₱ ${officerAvgPortfolioSize.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-200 pt-1">
                         <span class="text-emerald-700 font-bold">New Loans (Month):</span>
@@ -630,6 +636,10 @@ function renderBranchCards(bMap) {
     Object.entries(bMap).forEach(([branchName, bData]) => {
         const parRatio = bData.totalGLP > 0 ? (bData.parAmount / bData.totalGLP) * 100 : 0;
         const totalOfficersCount = Object.keys(bData.officers).length;
+        
+        // Computed metrics:
+        const avgPortfolioLoanSize = bData.borrowerSet.size > 0 ? bData.totalGLP / bData.borrowerSet.size : 0;
+        const avgDisbursedLoanSize = bData.disbursedBorrowerSet.size > 0 ? bData.disbursedLoanAmount / bData.disbursedBorrowerSet.size : 0;
 
         const card = document.createElement('div');
         card.className = 'bg-bambooDark border-2 border-emerald-950 rounded-2xl p-4 space-y-4 text-white shadow-xl flex flex-col justify-between';
@@ -681,6 +691,14 @@ function renderBranchCards(bMap) {
                     <span>W3: <strong class="text-white">${bData.disbursedWeeks[3].size}</strong></span>
                     <span>W4: <strong class="text-white">${bData.disbursedWeeks[4].size}</strong></span>
                     <span>W5: <strong class="text-white">${bData.disbursedWeeks[5].size}</strong></span>
+                </div>
+                <div class="flex items-center justify-between border-t border-emerald-800/60 pt-1.5">
+                    <span class="text-emerald-200 font-bold">Avg Disbursed Loan Size:</span>
+                    <span class="font-bold text-white font-mono">₱ ${avgDisbursedLoanSize.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                </div>
+                <div class="flex items-center justify-between border-t border-emerald-800/60 pt-1.5">
+                    <span class="text-emerald-200 font-bold">Avg Portfolio Loan Size:</span>
+                    <span class="font-bold text-white font-mono">₱ ${avgPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                 </div>
                 <div class="flex items-center justify-between border-t border-emerald-800/60 pt-1.5">
                     <span class="text-emerald-200 font-bold">New Loans (Month):</span>
