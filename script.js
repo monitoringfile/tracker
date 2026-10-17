@@ -446,17 +446,21 @@ function renderDashboard(data) {
     const totalPARAmount = bracket1_30 + bracket31_60 + bracket61_90 + bracket91_180 + bracket181_365 + bracket365Plus;
     const parRatio = totalGLP > 0 ? (totalPARAmount / totalGLP) * 100 : 0;
     
-    // Area-wide averages
+    // Exact Formula Computations for Area-Wide Executive KPIs:
     const areaAvgPortfolioSize = filteredEligibleClients.size > 0 ? totalGLP / filteredEligibleClients.size : 0;
+    const areaAvgParSize = parBorrowersCount > 0 ? totalPARAmount / parBorrowersCount : 0;
     const areaAvgDisbursedSize = globalDisbursedSet.size > 0 ? globalDisbursedLoanAmountTotal / globalDisbursedSet.size : 0;
     const areaAvgNewLoanSize = globalNewLoanSet.size > 0 ? globalNewLoanAmountTotal / globalNewLoanSet.size : 0;
 
+    // DOM Updates
     document.getElementById('kpiLoanPortfolio').innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('kpiLoanPortfolioSub').innerText = `Avg Size: ₱ ${areaAvgPortfolioSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    
+    document.getElementById('kpiLoanPortfolioSub').innerText = `${filteredEligibleClients.size.toLocaleString()} Clients (Active+PAR)`;
+    document.getElementById('kpiLoanPortfolioAvgHover').innerText = '₱ ' + areaAvgPortfolioSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
     document.getElementById('kpiParAmount').innerText = totalPARAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('kpiParAmountSub').innerText = `${parBorrowersCount.toLocaleString()} In Arrears`;
-    
+    document.getElementById('kpiParAmountAvgHover').innerText = '₱ ' + areaAvgParSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
     document.getElementById('kpiParRatio').innerText = parRatio.toFixed(2) + '%';
     
     document.getElementById('kpiBorrowers').innerText = filteredEligibleClients.size.toLocaleString();
@@ -599,7 +603,6 @@ function renderCbsPivotMatrix(data) {
     let areaGrandTotalClients = new Set();
 
     sortedLoanTypes.forEach(lt => {
-        // Loan type header row (soft green highlight as in reference image)
         html += `<tr class="bg-emerald-50/60 border-y border-emerald-100 font-bold text-emerald-950"><td colspan="${sortedStatuses.length + 2}" class="p-2.5 pl-4 uppercase tracking-wider">${lt}</td></tr>`;
         
         const ltTotalStatuses = {};
@@ -625,7 +628,6 @@ function renderCbsPivotMatrix(data) {
             html += `<td class="p-2.5 text-center font-mono font-bold text-slate-900 bg-slate-50/50">${branchRowClients.size > 0 ? branchRowClients.size : ''}</td></tr>`;
         });
 
-        // Loan Type Total Row
         html += `<tr class="bg-slate-100/90 border-y border-slate-200 font-black text-slate-900"><td class="p-2.5 pl-6 uppercase">TOTAL ${lt}</td>`;
         sortedStatuses.forEach(st => {
             html += `<td class="p-2.5 text-center font-mono">${ltTotalStatuses[st].size > 0 ? ltTotalStatuses[st].size : ''}</td>`;
@@ -633,7 +635,6 @@ function renderCbsPivotMatrix(data) {
         html += `<td class="p-2.5 text-center font-mono text-bambooDark">${ltGrandTotalClients.size}</td></tr>`;
     });
 
-    // Grand Total Row
     html += `<tr class="bg-emerald-100/70 border-t-2 border-emerald-950 font-black text-slate-900"><td class="p-3 pl-4 uppercase">GRAND TOTAL</td>`;
     sortedStatuses.forEach(st => {
         html += `<td class="p-3 text-center font-mono">${grandTotalStatuses[st].size > 0 ? grandTotalStatuses[st].size : ''}</td>`;
