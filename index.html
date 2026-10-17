@@ -35,8 +35,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- External Stylesheet -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="text-slate-800 min-h-screen font-sans antialiased selection:bg-emerald-500/25">
 
@@ -75,8 +75,8 @@
                     <i data-lucide="sprout" class="w-10 h-10"></i>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">Ready for Portfolio Dataset</h2>
-                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
-                  NORTH MINDANAO DISTRICT
+                <p class="text-base sm:text-lg text-bambooDark font-black uppercase tracking-wider">
+                    MINDANAO DISTRICT
                 </p>
                 <div class="pt-2">
                     <label for="csvFileInput" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-bambooPrimary hover:bg-bambooDark text-white text-sm font-bold shadow-lg shadow-emerald-900/20 cursor-pointer transition-all">
@@ -101,7 +101,7 @@
                         <option value="ALL">All Branches</option>
                     </select>
                     <select id="officerFilter" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs font-semibold rounded-lg px-3 py-1.5 outline-none focus:border-bambooPrimary">
-                        <option value="ALL">All Trust Staff</option>
+                        <option value="ALL">All Credit Officers / TS</option>
                     </select>
                     <button id="resetFilters" class="px-3.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition-all flex items-center gap-1">
                         <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset
@@ -124,27 +124,54 @@
                 <div class="kpi-card p-4 border-t-4 border-t-amber-500 flex flex-col justify-between">
                     <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">PAR Ratio</span>
                     <div id="kpiParRatio" class="text-base sm:text-lg font-black text-amber-600 font-mono mt-1">0.00%</div>
-                    <span class="text-[10px] text-amber-600 font-bold mt-1">Portfolio At Risk</span>
+                    <span class="text-[10px] text-amber-600 font-bold mt-1">Portfolio Risk</span>
                 </div>
                 <div class="kpi-card p-4 border-t-4 border-t-bambooPrimary flex flex-col justify-between">
                     <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">Active Borrowers</span>
                     <div id="kpiBorrowers" class="text-base sm:text-lg font-black text-bambooPrimary font-mono mt-1">0</div>
-                    <span id="kpiBorrowersSub" class="text-[10px] text-emerald-700 font-bold truncate mt-1">Active / In Arrears</span>
+                    <span id="kpiBorrowersSub" class="text-[10px] text-emerald-700 font-bold truncate mt-1">Active / PAR</span>
                 </div>
-                <div class="kpi-card p-4 border-t-4 border-t-blue-600 flex flex-col justify-between">
-                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">Over All Disbursed</span>
+
+                <!-- Disbursed (Mo) with Hover Total Loan Amount Tooltip -->
+                <div class="kpi-card p-4 border-t-4 border-t-blue-600 flex flex-col justify-between relative group cursor-pointer">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">Disbursed (Mo)</span>
                     <div id="kpiDisbursedCount" class="text-base sm:text-lg font-black text-blue-700 font-mono mt-1">0</div>
-                    <div id="kpiDisbursedWeeklySub" class="text-[10px] font-mono text-slate-500 truncate mt-1">For the Month</div>
+                    <div id="kpiDisbursedWeeklySub" class="text-[10px] font-mono text-slate-500 truncate mt-1">Hover for Loan Amt</div>
+
+                    <!-- Hover Card Overlay -->
+                    <div class="absolute inset-0 bg-blue-900/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none z-10 text-center shadow-xl">
+                        <span class="text-[10px] uppercase font-extrabold text-blue-200">Total Loan Amount</span>
+                        <div id="kpiDisbursedTotalLoanHover" class="text-sm font-black font-mono text-white mt-0.5">₱ 0.00</div>
+                        <span class="text-[9px] text-blue-300 mt-1">Current Month Disbursement</span>
+                    </div>
                 </div>
-                <div class="kpi-card p-4 border-t-4 border-t-emerald-600 flex flex-col justify-between">
-                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">New Loan Disbursed</span>
+
+                <!-- New Loans with Hover Total Loan Amount Tooltip -->
+                <div class="kpi-card p-4 border-t-4 border-t-emerald-600 flex flex-col justify-between relative group cursor-pointer">
+                    <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">New Loans</span>
                     <div id="kpiNewLoanCount" class="text-base sm:text-lg font-black text-emerald-700 font-mono mt-1">0</div>
-                    <div id="kpiNewLoanWeeklySub" class="text-[10px] font-mono text-slate-500 truncate mt-1">For the Month</div>
+                    <div id="kpiNewLoanWeeklySub" class="text-[10px] font-mono text-slate-500 truncate mt-1">Hover for Loan Amt</div>
+
+                    <!-- Hover Card Overlay -->
+                    <div class="absolute inset-0 bg-emerald-900/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none z-10 text-center shadow-xl">
+                        <span class="text-[10px] uppercase font-extrabold text-emerald-200">New Loan Amount</span>
+                        <div id="kpiNewLoanTotalLoanHover" class="text-sm font-black font-mono text-white mt-0.5">₱ 0.00</div>
+                        <span class="text-[9px] text-emerald-300 mt-1">Current Month New Loans</span>
+                    </div>
                 </div>
-                <div class="kpi-card p-4 border-t-4 border-t-bambooDark flex flex-col justify-between">
+
+                <!-- New Inclusions with Hover OLB Amount Tooltip -->
+                <div class="kpi-card p-4 border-t-4 border-t-bambooDark flex flex-col justify-between relative group cursor-pointer">
                     <span class="text-[11px] font-extrabold uppercase text-slate-500 tracking-wider">New Inclusions</span>
                     <div id="kpiNewInclusionsCount" class="text-base sm:text-lg font-black text-bambooDark font-mono mt-1">0</div>
-                    <span id="kpiNewInclusionsSub" class="text-[10px] text-slate-500 truncate mt-1">Days In Arrears &le; Current day</span>
+                    <span id="kpiNewInclusionsSub" class="text-[10px] text-slate-500 truncate mt-1">Arrears &le; days</span>
+
+                    <!-- Hover Card Overlay -->
+                    <div class="absolute inset-0 bg-emerald-950/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none z-10 text-center shadow-xl">
+                        <span class="text-[10px] uppercase font-extrabold text-emerald-200">New Inclusions OLB</span>
+                        <div id="kpiNewInclusionsOlbHover" class="text-sm font-black font-mono text-emerald-300 mt-0.5">₱ 0.00</div>
+                        <span class="text-[9px] text-emerald-400 mt-1">Total Risk Exposure</span>
+                    </div>
                 </div>
             </div>
 
@@ -159,9 +186,11 @@
                         <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono">KPI SECTION</span>
                     </div>
                     <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div class="relative">
                             <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">Active vs PAR Accounts</h4>
-                            <div class="h-48"><canvas id="borrowerDoughnutChart"></canvas></div>
+                            <div class="h-48 relative flex items-center justify-center">
+                                <canvas id="borrowerDoughnutChart"></canvas>
+                            </div>
                         </div>
                         <div>
                             <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">PAR Risk Aging Brackets</h4>
@@ -306,7 +335,7 @@
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div>
                     <h3 id="modalBranchTitle" class="font-black text-slate-900 text-base uppercase">Branch Breakdown</h3>
-                    <p class="text-xs text-slate-500">Trust Staff Monthly Disbursements & New Inclusions Summary</p>
+                    <p class="text-xs text-slate-500">Credit Officer / TS Monthly Disbursements & New Inclusions Summary</p>
                 </div>
                 <button id="closeModalBtn" class="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
@@ -317,7 +346,7 @@
         </div>
     </div>
 
-    <!-- External JavaScript File -->
+    <!-- Application Script Reference -->
     <script src="script.js"></script>
 </body>
 </html>
