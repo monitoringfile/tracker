@@ -40,7 +40,7 @@
 </head>
 <body class="text-slate-800 min-h-screen font-sans antialiased selection:bg-emerald-500/25">
 
-    <!-- Header Banner (Upload button removed) -->
+    <!-- Header Banner with Restored Upload Button -->
     <header class="w-full bg-emerald-950/95 backdrop-blur-md border-b-2 border-bambooDark sticky top-0 z-40 shadow-md">
         <div class="max-w-[1750px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -55,8 +55,14 @@
                 </div>
             </div>
 
-            <!-- Single hidden input preserved for file handling -->
-            <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+            <!-- Restored Header Upload Trigger -->
+            <div class="flex items-center">
+                <label for="csvFileInput" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold border-2 border-emerald-600 cursor-pointer transition-all shadow-md">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                    <span>Upload CSV Portfolio</span>
+                </label>
+                <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+            </div>
         </div>
     </header>
 
