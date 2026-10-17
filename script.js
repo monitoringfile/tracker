@@ -65,13 +65,13 @@ function openBranchModal(branchName) {
     const bData = globalBranchMap[branchName];
     if (!bData) return;
 
-    document.getElementById('modalBranchTitle').innerText = `${branchName} - Trust Staff Summary`;
+    document.getElementById('modalBranchTitle').innerText = `${branchName} - TS Officer Summary`;
     const container = document.getElementById('modalOfficerList');
     container.innerHTML = '';
 
     const officerEntries = Object.entries(bData.officers);
     if (officerEntries.length === 0) {
-        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No TS records found.</div>`;
+        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No officer records found.</div>`;
     } else {
         officerEntries.forEach(([officerName, oStats]) => {
             const officerParRatio = oStats.glp > 0 ? (oStats.parAmount / oStats.glp) * 100 : 0;
@@ -81,7 +81,10 @@ function openBranchModal(branchName) {
             card.innerHTML = `
                 <div class="flex items-center justify-between pb-2 border-b border-slate-200 font-bold text-slate-800">
                     <span class="text-sm font-black text-bambooPrimary"><i data-lucide="user-check" class="w-4 h-4 inline mr-1"></i> ${officerName}</span>
-                    <span class="text-slate-500 font-mono">${oStats.borrowerSet.size} Borrowers</span>
+                    <div class="text-right">
+                        <span class="text-slate-700 font-mono font-bold">${oStats.borrowerSet.size} Borrowers</span>
+                        <span class="text-[10px] text-slate-500 font-mono block">₱ ${oStats.glp.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
                     <div class="bg-slate-50 p-2 rounded border border-slate-200">
@@ -104,7 +107,10 @@ function openBranchModal(branchName) {
                 <div class="bg-emerald-50/50 border border-emerald-100 p-2.5 rounded-lg space-y-1.5 text-xs">
                     <div class="flex items-center justify-between">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
-                        <span class="font-bold text-slate-900 font-mono">${oStats.disbursedBorrowerSet.size} clients</span>
+                        <div class="font-mono text-right">
+                            <span class="font-bold text-slate-900">${oStats.disbursedBorrowerSet.size} clients</span>
+                            <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                        </div>
                     </div>
                     <div class="flex items-center justify-between text-[11px] font-mono text-slate-600 pl-2 border-l-2 border-blue-400">
                         <span>W1: <strong class="text-slate-900">${oStats.disbursedWeeks[1].size}</strong></span>
@@ -119,7 +125,10 @@ function openBranchModal(branchName) {
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
                         <span class="text-bambooDark font-bold">New Inclusions:</span>
-                        <span class="font-bold text-bambooDark font-mono">${oStats.newInclusionsCount} clients</span>
+                        <div class="font-mono text-right">
+                            <span class="font-bold text-bambooDark">${oStats.newInclusionsCount} clients</span>
+                            <span class="text-[10px] text-slate-500 block">₱ ${oStats.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -156,6 +165,7 @@ document.getElementById('csvFileInput').addEventListener('change', (e) => {
                 'Disbursement date': row['Disbursement date'] || '',
                 'Days in arrears': parseFloat(row['Days in arrears']) || 0,
                 Status: (row['Status'] || 'Unspecified').toString().trim(),
+                'Loan Amount': parseFloat(row['Loan Amount'] || row['Loan amount'] || 0) || 0,
                 'OLB principal': parseFloat(row['OLB principal']) || 0,
                 'Application date': row['Application date'] || ''
             }));
@@ -264,8 +274,8 @@ function applyFilters() {
 
 function renderDashboard(data) {
     let totalGLP = 0;
-    let par1_30 = 0, par31_60 = 0, par61_90 = 0, par90Plus = 0;
-    let count1_30 = 0, count31_60 = 0, count61_90 = 0, count90Plus = 0;
+    let bracket1_30 = 0, bracket31_60 = 0, bracket61_90 = 0, bracket91_180 = 0, bracket181_365 = 0, bracket365Plus = 0;
+    let count1_30 = 0, count31_60 = 0, count61_90 = 0, count91_180 = 0, count181_365 = 0, count365Plus = 0;
     
     const productSummary = {};
     const productBorrowerSets = {};
@@ -279,9 +289,13 @@ function renderDashboard(data) {
     const globalDisbursedWeeks = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
     const globalNewLoanWeeks = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
     const globalNewInclusionsSet = new Set();
+    let globalNewInclusionsOlbTotal = 0;
+    let globalDisbursedLoanAmountTotal = 0;
+    let globalNewLoanAmountTotal = 0;
 
     data.forEach(item => {
         const olb = item['OLB principal'] || 0;
+        const loanAmount = item['Loan Amount'] || 0;
         const days = item['Days in arrears'] || 0;
         const rawProd = item['Product ID'] || '';
         const categoryProd = getProductCategory(rawProd);
@@ -293,10 +307,12 @@ function renderDashboard(data) {
 
         totalGLP += olb;
 
-        if (days >= 1 && days <= 30) { par1_30 += olb; count1_30++; }
-        else if (days >= 31 && days <= 60) { par31_60 += olb; count31_60++; }
-        else if (days >= 61 && days <= 90) { par61_90 += olb; count61_90++; }
-        else if (days > 90) { par90Plus += olb; count90Plus++; }
+        if (days >= 1 && days <= 30) { bracket1_30 += olb; count1_30++; }
+        else if (days >= 31 && days <= 60) { bracket31_60 += olb; count31_60++; }
+        else if (days >= 61 && days <= 90) { bracket61_90 += olb; count61_90++; }
+        else if (days >= 91 && days <= 180) { bracket91_180 += olb; count91_180++; }
+        else if (days >= 181 && days <= 365) { bracket181_365 += olb; count181_365++; }
+        else if (days > 365) { bracket365Plus += olb; count365Plus++; }
 
         productSummary[categoryProd] = (productSummary[categoryProd] || 0) + olb;
 
@@ -304,7 +320,10 @@ function renderDashboard(data) {
         productBorrowerSets[categoryProd].add(clientName);
 
         const isNewInclusion = (days > 0 && days <= maxDaysForNewInclusion);
-        if (isNewInclusion) globalNewInclusionsSet.add(clientName);
+        if (isNewInclusion) {
+            globalNewInclusionsSet.add(clientName);
+            globalNewInclusionsOlbTotal += olb;
+        }
 
         let isCurrentMonthDisbursement = false;
         let isMonthlyNewLoan = false;
@@ -316,10 +335,12 @@ function renderDashboard(data) {
                 isCurrentMonthDisbursement = true;
                 disbWeek = getCustomWeekOfMonth(dDate);
                 globalDisbursedWeeks[disbWeek].add(clientName);
+                globalDisbursedLoanAmountTotal += loanAmount;
 
                 if (categoryProd === 'Newloan') {
                     isMonthlyNewLoan = true;
                     globalNewLoanWeeks[disbWeek].add(clientName);
+                    globalNewLoanAmountTotal += loanAmount;
                 }
             }
         }
@@ -337,9 +358,11 @@ function renderDashboard(data) {
                 totalGLP: 0, 
                 parAmount: 0, 
                 newInclusionsCount: 0, 
+                newInclusionsOlb: 0,
                 newLoanSet: new Set(), 
                 borrowerSet: new Set(), 
                 disbursedBorrowerSet: new Set(),
+                disbursedLoanAmount: 0,
                 disbursedWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 newLoanWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 officers: {} 
@@ -348,9 +371,13 @@ function renderDashboard(data) {
         globalBranchMap[branch].totalGLP += olb;
         if (status === 'active' || status === 'in arrears') globalBranchMap[branch].borrowerSet.add(clientName);
         if (days > 0) globalBranchMap[branch].parAmount += olb;
-        if (isNewInclusion) globalBranchMap[branch].newInclusionsCount += 1;
+        if (isNewInclusion) {
+            globalBranchMap[branch].newInclusionsCount += 1;
+            globalBranchMap[branch].newInclusionsOlb += olb;
+        }
         if (isCurrentMonthDisbursement) {
             globalBranchMap[branch].disbursedBorrowerSet.add(clientName);
+            globalBranchMap[branch].disbursedLoanAmount += loanAmount;
             globalBranchMap[branch].disbursedWeeks[disbWeek].add(clientName);
         }
         if (isMonthlyNewLoan) {
@@ -363,8 +390,10 @@ function renderDashboard(data) {
                 glp: 0, 
                 parAmount: 0, 
                 newInclusionsCount: 0,
+                newInclusionsOlb: 0,
                 borrowerSet: new Set(),
                 disbursedBorrowerSet: new Set(),
+                disbursedLoanAmount: 0,
                 disbursedWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 newLoanWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 newLoanSet: new Set()
@@ -373,9 +402,13 @@ function renderDashboard(data) {
         globalBranchMap[branch].officers[officer].glp += olb;
         if (status === 'active' || status === 'in arrears') globalBranchMap[branch].officers[officer].borrowerSet.add(clientName);
         if (days > 0) globalBranchMap[branch].officers[officer].parAmount += olb;
-        if (isNewInclusion) globalBranchMap[branch].officers[officer].newInclusionsCount += 1;
+        if (isNewInclusion) {
+            globalBranchMap[branch].officers[officer].newInclusionsCount += 1;
+            globalBranchMap[branch].officers[officer].newInclusionsOlb += olb;
+        }
         if (isCurrentMonthDisbursement) {
             globalBranchMap[branch].officers[officer].disbursedBorrowerSet.add(clientName);
+            globalBranchMap[branch].officers[officer].disbursedLoanAmount += loanAmount;
             globalBranchMap[branch].officers[officer].disbursedWeeks[disbWeek].add(clientName);
         }
         if (isMonthlyNewLoan) {
@@ -404,7 +437,7 @@ function renderDashboard(data) {
         }
     });
 
-    const totalPARAmount = par1_30 + par31_60 + par61_90 + par90Plus;
+    const totalPARAmount = bracket1_30 + bracket31_60 + bracket61_90 + bracket91_180 + bracket181_365 + bracket365Plus;
     const parRatio = totalGLP > 0 ? (totalPARAmount / totalGLP) * 100 : 0;
 
     document.getElementById('kpiLoanPortfolio').innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -415,11 +448,14 @@ function renderDashboard(data) {
     document.getElementById('kpiBorrowers').innerText = filteredEligibleClients.size.toLocaleString();
     document.getElementById('kpiBorrowersSub').innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
     document.getElementById('kpiDisbursedCount').innerText = globalDisbursedSet.size.toLocaleString();
+    document.getElementById('kpiDisbursedTotalLoanHover').innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('kpiNewLoanCount').innerText = globalNewLoanSet.size.toLocaleString();
+    document.getElementById('kpiNewLoanTotalLoanHover').innerText = '₱ ' + globalNewLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('kpiNewInclusionsCount').innerText = globalNewInclusionsSet.size.toLocaleString();
+    document.getElementById('kpiNewInclusionsOlbHover').innerText = '₱ ' + globalNewInclusionsOlbTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-    renderBorrowerDoughnutChart(activeBorrowersCount, parBorrowersCount);
-    renderParAgingBarChart(par1_30, par31_60, par61_90, par90Plus, count1_30, count31_60, count61_90, count90Plus);
+    renderBorrowerDoughnutChart(activeBorrowersCount, parBorrowersCount, parRatio);
+    renderParAgingBarChart(bracket1_30, bracket31_60, bracket61_90, bracket91_180, bracket181_365, bracket365Plus, count1_30, count31_60, count61_90, count91_180, count181_365, count365Plus);
     renderWeeklyPacingBarChart(globalDisbursedWeeks, globalNewLoanWeeks);
     renderProductBarChart(productSummary, productBorrowerSets);
     renderDailyDisbursementTable(data);
@@ -471,7 +507,7 @@ function renderDailyDisbursementTable(data) {
 
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
     sortedBranches.forEach(b => html += `<th class="p-2.5 text-center font-bold">${b} (Borrowers)</th>`);
-    html += `<th class="p-2.5 text-center font-bold text-yellow-400">Daily Area Total</th></tr></thead><tbody>`;
+    html += `<th class="p-2.5 text-center font-bold text-yellow-400">Daily Unique Total</th></tr></thead><tbody>`;
 
     sortedDates.forEach(dateStr => {
         html += `<tr class="border-b border-emerald-900/60 hover:bg-emerald-900/30 transition-colors"><td class="p-2 pl-3 font-bold text-white">${dateStr}</td>`;
@@ -492,9 +528,35 @@ function renderDailyDisbursementTable(data) {
     table.innerHTML = html;
 }
 
-function renderBorrowerDoughnutChart(active, par) {
+function renderBorrowerDoughnutChart(active, par, ratio) {
     const ctx = document.getElementById('borrowerDoughnutChart').getContext('2d');
     if (borrowerChart) borrowerChart.destroy();
+
+    const centerTextPlugin = {
+        id: 'centerText',
+        beforeDraw(chart) {
+            const { width, height, ctx } = chart;
+            ctx.restore();
+            const fontSize = (height / 115).toFixed(2);
+            ctx.font = `bold ${fontSize}rem sans-serif`;
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#1b4332';
+
+            const text = ratio.toFixed(2) + '%';
+            const textX = Math.round((width - ctx.measureText(text).width) / 2);
+            const textY = height / 2 - 8;
+
+            ctx.fillText(text, textX, textY);
+
+            ctx.font = `bold 9px sans-serif`;
+            ctx.fillStyle = '#64748b';
+            const subText = 'PAR RATIO';
+            const subTextX = Math.round((width - ctx.measureText(subText).width) / 2);
+            const subTextY = height / 2 + 12;
+            ctx.fillText(subText, subTextX, subTextY);
+            ctx.save();
+        }
+    };
 
     borrowerChart = new Chart(ctx, {
         type: 'doughnut',
@@ -511,24 +573,25 @@ function renderBorrowerDoughnutChart(active, par) {
             maintainAspectRatio: false,
             plugins: { legend: { position: 'bottom', labels: { color: '#475569', font: { size: 10, weight: 'bold' } } } },
             cutout: '65%'
-        }
+        },
+        plugins: [centerTextPlugin]
     });
 }
 
-function renderParAgingBarChart(p1, p2, p3, p4, c1, c2, c3, c4) {
+function renderParAgingBarChart(b1, b2, b3, b4, b5, b6, c1, c2, c3, c4, c5, c6) {
     const ctx = document.getElementById('parAgingBarChart').getContext('2d');
     if (parAgingChart) parAgingChart.destroy();
 
-    const counts = [c1, c2, c3, c4];
+    const counts = [c1, c2, c3, c4, c5, c6];
 
     parAgingChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['1-30d', '31-60d', '61-90d', '>90d'],
+            labels: ['1-30', '31-60', '61-90', '91-180', '181-365', '>365'],
             datasets: [{
                 label: 'OLB Principal',
-                data: [p1, p2, p3, p4],
-                backgroundColor: ['#52b788', '#d97706', '#c8102e', '#1b4332'],
+                data: [b1, b2, b3, b4, b5, b6],
+                backgroundColor: ['#52b788', '#d97706', '#c8102e', '#991b1b', '#7f1d1d', '#1b4332'],
                 borderRadius: 6
             }]
         },
@@ -563,7 +626,7 @@ function renderWeeklyPacingBarChart(disbWeeks, newWeeks) {
     weeklyChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
+            labels: ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'],
             datasets: [
                 { label: 'Disbursed', data: [disbWeeks[1].size, disbWeeks[2].size, disbWeeks[3].size, disbWeeks[4].size, disbWeeks[5].size], backgroundColor: '#2d6a4f', borderRadius: 4 },
                 { label: 'New Loans', data: [newWeeks[1].size, newWeeks[2].size, newWeeks[3].size, newWeeks[4].size, newWeeks[5].size], backgroundColor: '#52b788', borderRadius: 4 }
@@ -715,9 +778,9 @@ function renderCbsPivotMatrix(data) {
         return;
     }
 
-    let html = `<thead><tr class="bg-slate-50 text-slate-700 border-b border-slate-200"><th class="p-2.5 pl-3 font-bold">Loan Type by Branch</th>`;
+    let html = `<thead><tr class="bg-slate-50 text-slate-700 border-b border-slate-200"><th class="p-2.5 pl-3 font-bold">Row Labels</th>`;
     allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
-    html += `<th class="p-2.5 text-center font-bold">Area Total</th></tr></thead><tbody>`;
+    html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
 
     const grandTotalColCounts = {};
     allStatuses.forEach(st => grandTotalColCounts[st] = new Set());
@@ -794,7 +857,10 @@ function renderBranchCards(branchMap) {
                     <h4 class="font-black text-slate-900 text-sm uppercase flex items-center gap-1.5">
                         <i data-lucide="map-pin" class="w-4 h-4 text-bambooPrimary"></i> ${branch}
                     </h4>
-                    <span class="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded">${officerCount} Officers</span>
+                    <div class="text-right">
+                        <span class="text-xs text-slate-700 font-mono font-bold">${branchBorrowers.toLocaleString()} Borrowers</span>
+                        <span class="text-[10px] text-slate-500 font-mono block">₱ ${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 mb-3 font-mono">
@@ -819,7 +885,10 @@ function renderBranchCards(branchMap) {
                 <div class="bg-emerald-50/40 border border-emerald-100 p-2.5 rounded-lg space-y-1.5 text-xs">
                     <div class="flex items-center justify-between">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
-                        <span class="font-bold text-slate-900 font-mono">${branchDisbursedCount} clients</span>
+                        <div class="font-mono text-right">
+                            <span class="font-bold text-slate-900">${branchDisbursedCount} clients</span>
+                            <span class="text-[10px] text-slate-500 block">₱ ${b.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
                     </div>
                     <div class="flex items-center justify-between text-[11px] font-mono text-slate-600 pl-2 border-l-2 border-blue-400">
                         <span>W1: <strong class="text-slate-900">${b.disbursedWeeks[1].size}</strong></span>
@@ -834,7 +903,10 @@ function renderBranchCards(branchMap) {
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
                         <span class="text-bambooDark font-bold">New Inclusions:</span>
-                        <span class="font-bold text-bambooDark font-mono">${b.newInclusionsCount} clients</span>
+                        <div class="font-mono text-right">
+                            <span class="font-bold text-bambooDark">${b.newInclusionsCount} clients</span>
+                            <span class="text-[10px] text-slate-500 block">₱ ${b.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
                     </div>
                 </div>
             </div>
