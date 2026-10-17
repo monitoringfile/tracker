@@ -1,5 +1,6 @@
 body {
-    background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%);
+    background: linear-gradient(135deg, #0d2319 0%, #1b4332 35%, #2d6a4f 75%, #40916c 100%);
+    background-attachment: fixed;
     min-height: 100vh;
 }
 .custom-scrollbar::-webkit-scrollbar {
@@ -7,21 +8,21 @@ body {
     width: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(27, 67, 50, 0.1);
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #95d5b2;
+    background: #52b788;
     border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #74c69d;
+    background: #40916c;
 }
 .kpi-card {
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, 0.97);
     backdrop-filter: blur(8px);
     border-radius: 0.85rem;
-    box-shadow: 0 4px 20px -2px rgba(27, 67, 50, 0.15);
-    border: 1px solid #d8f3dc;
+    box-shadow: 0 8px 25px -4px rgba(13, 35, 25, 0.35);
+    border: 2px solid #1b4332;
     overflow: hidden;
 }
 .section-header-bamboo {
