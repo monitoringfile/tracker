@@ -591,7 +591,6 @@ function renderCbsPivotMatrix(data) {
     let areaGrandTotalClients = new Set();
 
     sortedBranches.forEach((b, index) => {
-        // Alternating soft green / white background rows matching user's reference image
         const rowBgClass = index % 2 === 0 ? 'bg-emerald-50/40 hover:bg-emerald-50/80' : 'bg-white hover:bg-slate-50/80';
         html += `<tr class="${rowBgClass} border-b border-slate-100 transition-colors"><td class="p-3 pl-6 font-semibold text-slate-800">${b}</td>`;
         
