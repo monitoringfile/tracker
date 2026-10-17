@@ -77,8 +77,17 @@
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">Ready for Portfolio Dataset</h2>
                 <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                    MINDANAO REGION
-                    
+                    Upload your Microfinance portfolio CSV containing headers: 
+                    <code class="text-bambooDark font-bold">Branch</code>, 
+                    <code class="text-bambooDark font-bold">Credit officer</code>, 
+                    <code class="text-bambooDark font-bold">Product ID</code>, 
+                    <code class="text-bambooDark font-bold">Client name</code>, 
+                    <code class="text-bambooDark font-bold">Disbursement date</code>, 
+                    <code class="text-bambooDark font-bold">Days in arrears</code>, 
+                    <code class="text-bambooDark font-bold">Status</code>, 
+                    <code class="text-bambooDark font-bold">Loan Amount</code>, 
+                    <code class="text-bambooDark font-bold">OLB principal</code>, and 
+                    <code class="text-bambooDark font-bold">Application date</code>.
                 </p>
                 <div class="pt-2">
                     <label for="csvFileInput" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-bambooDark hover:bg-emerald-900 text-white text-sm font-bold shadow-lg shadow-emerald-950/30 border-2 border-emerald-600 cursor-pointer transition-all">
@@ -271,7 +280,6 @@
                         <select id="cbsEndMonthFilter" class="bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded px-2 py-1 outline-none"></select>
                     </div>
                 </div>
-                <!-- Wrapped table container with solid dark bamboo border and rounded corners -->
                 <div class="overflow-x-auto custom-scrollbar border-2 border-emerald-950 rounded-xl shadow-md">
                     <table id="cbsMatrixTable" class="w-full text-left border-collapse text-xs"></table>
                 </div>
