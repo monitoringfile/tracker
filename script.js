@@ -446,18 +446,14 @@ function renderDashboard(data) {
     const totalPARAmount = bracket1_30 + bracket31_60 + bracket61_90 + bracket91_180 + bracket181_365 + bracket365Plus;
     const parRatio = totalGLP > 0 ? (totalPARAmount / totalGLP) * 100 : 0;
     
-    const areaAvgPortfolioSize = filteredEligibleClients.size > 0 ? totalGLP / filteredEligibleClients.size : 0;
-    const areaAvgParSize = parBorrowersCount > 0 ? totalPARAmount / parBorrowersCount : 0;
     const areaAvgDisbursedSize = globalDisbursedSet.size > 0 ? globalDisbursedLoanAmountTotal / globalDisbursedSet.size : 0;
     const areaAvgNewLoanSize = globalNewLoanSet.size > 0 ? globalNewLoanAmountTotal / globalNewLoanSet.size : 0;
 
     document.getElementById('kpiLoanPortfolio').innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('kpiLoanPortfolioSub').innerText = `${filteredEligibleClients.size.toLocaleString()} Clients (Active+PAR)`;
-    document.getElementById('kpiLoanPortfolioAvgHover').innerText = '₱ ' + areaAvgPortfolioSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('kpiLoanPortfolioSub').innerText = `${data.length.toLocaleString()} Line Items`;
 
     document.getElementById('kpiParAmount').innerText = totalPARAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     document.getElementById('kpiParAmountSub').innerText = `${parBorrowersCount.toLocaleString()} In Arrears`;
-    document.getElementById('kpiParAmountAvgHover').innerText = '₱ ' + areaAvgParSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
     document.getElementById('kpiParRatio').innerText = parRatio.toFixed(2) + '%';
     
@@ -594,8 +590,10 @@ function renderCbsPivotMatrix(data) {
     sortedStatuses.forEach(st => grandTotalStatuses[st] = new Set());
     let areaGrandTotalClients = new Set();
 
-    sortedBranches.forEach(b => {
-        html += `<tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors"><td class="p-3 pl-6 font-semibold text-slate-800">${b}</td>`;
+    sortedBranches.forEach((b, index) => {
+        // Alternating soft green / white background rows matching user's reference image
+        const rowBgClass = index % 2 === 0 ? 'bg-emerald-50/40 hover:bg-emerald-50/80' : 'bg-white hover:bg-slate-50/80';
+        html += `<tr class="${rowBgClass} border-b border-slate-100 transition-colors"><td class="p-3 pl-6 font-semibold text-slate-800">${b}</td>`;
         
         let branchRowClients = new Set();
         sortedStatuses.forEach(st => {
@@ -611,7 +609,6 @@ function renderCbsPivotMatrix(data) {
         html += `<td class="p-3 text-center font-mono font-bold text-slate-900 bg-slate-50/50">${branchRowClients.size > 0 ? branchRowClients.size : ''}</td></tr>`;
     });
 
-    // Grand Total Row
     html += `<tr class="bg-emerald-100/70 border-t-2 border-emerald-950 font-black text-slate-900"><td class="p-3 pl-4 uppercase">GRAND TOTAL</td>`;
     sortedStatuses.forEach(st => {
         html += `<td class="p-3 text-center font-mono">${grandTotalStatuses[st].size > 0 ? grandTotalStatuses[st].size : ''}</td>`;
