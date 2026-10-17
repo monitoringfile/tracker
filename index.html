@@ -40,7 +40,7 @@
 </head>
 <body class="text-slate-800 min-h-screen font-sans antialiased selection:bg-emerald-500/25">
 
-    <!-- Header Banner with Restored Upload Button -->
+    <!-- Header Banner with Upload Button -->
     <header class="w-full bg-emerald-950/95 backdrop-blur-md border-b-2 border-bambooDark sticky top-0 z-40 shadow-md">
         <div class="max-w-[1750px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -55,7 +55,7 @@
                 </div>
             </div>
 
-            <!-- Restored Header Upload Trigger -->
+            <!-- Header Upload Trigger -->
             <div class="flex items-center">
                 <label for="csvFileInput" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold border-2 border-emerald-600 cursor-pointer transition-all shadow-md">
                     <i data-lucide="upload" class="w-4 h-4"></i>
@@ -280,7 +280,8 @@
                         <select id="cbsEndMonthFilter" class="bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded px-2 py-1 outline-none"></select>
                     </div>
                 </div>
-                <div class="overflow-x-auto custom-scrollbar">
+                <!-- Wrapped table container with solid dark bamboo border and rounded corners -->
+                <div class="overflow-x-auto custom-scrollbar border-2 border-emerald-950 rounded-xl shadow-md">
                     <table id="cbsMatrixTable" class="w-full text-left border-collapse text-xs"></table>
                 </div>
             </div>
@@ -360,6 +361,6 @@
     </div>
 
     <!-- Application Script -->
-    <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
