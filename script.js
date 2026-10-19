@@ -548,7 +548,7 @@ function renderDashboard(data) {
     if (kpiBorrowers) kpiBorrowers.innerText = filteredEligibleClients.size.toLocaleString();
     if (kpiBorrowersSub) kpiBorrowersSub.innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
     
-    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} loans`;
+    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} Clients`;
     if (kpiDisbursedTotalLoanHover) kpiDisbursedTotalLoanHover.innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
     const disbursedHoverContainer = kpiDisbursedCount ? kpiDisbursedCount.parentElement.querySelector('.absolute') : null;
