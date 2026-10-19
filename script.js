@@ -526,7 +526,7 @@ function renderDashboard(data) {
         portfolioHoverOverlay.innerHTML = `
             <span class="text-[10px] uppercase font-extrabold text-emerald-200">Portfolio Loan Size</span>
             <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <span class="text-[9px] text-emerald-300 mt-1">GLP / Active Borrowers</span>
+            <span class="text-[9px] text-emerald-300 mt-1">----------</span>
         `;
     }
 
