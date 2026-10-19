@@ -666,7 +666,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
     const maxDays = maxDaysForNewInclusion || new Date().getDate();
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> ACTIVE VS PAR ACCOUNTS: ${branchFilterValue} (By Officer)`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
 
         const officerMap = {};
         data.forEach(item => {
@@ -690,7 +690,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
         olbTotals = sortedOfficers.map(o => officerMap[o].olb);
 
     } else {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> ACTIVE VS PAR ACCOUNTS`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions`;
 
         const branchMap = {};
         data.forEach(item => {
