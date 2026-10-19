@@ -1,5 +1,5 @@
 body {
-    background: linear-gradient(135deg, #0a2318 0%, #113626 50%, #1b4d36 100%);
+    background: linear-gradient(135deg, #ffff80 0%, #008040 50%, #fcb103 100%);
     min-height: 100vh;
 }
 .custom-scrollbar::-webkit-scrollbar {
@@ -10,7 +10,7 @@ body {
     background: rgba(10, 35, 24, 0.3);
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #40916c;
+    background: #ffff80;
     border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -21,34 +21,34 @@ body {
     backdrop-filter: blur(12px);
     border-radius: 0.9rem;
     box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.3);
-    border: 1px solid #95d5b2;
+    border: 1px solid #ffff80;
     overflow: hidden;
 }
 .section-header-bamboo {
-    background: linear-gradient(135deg, #0a2318 0%, #16422d 100%);
+    background: linear-gradient(135deg, #804000 0%, #16422d 100%);
     color: #ffffff;
 }
 .section-header-alt {
-    background: linear-gradient(135deg, #113626 0%, #1b4d36 100%);
+    background: linear-gradient(135deg, #113626 0%, #25cde0 100%);
     color: #ffffff;
 }
 
 /* Dark background styling and distinct separation border for each branch summary card */
 #branchCardsGrid .kpi-card {
-    background: #071a12 !important;
-    border: 2px solid #092015 !important;
+    background: #004040 !important;
+    border: 2px solid #ffff80 !important;
     box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.6);
     color: #f1f5f9 !important;
 }
 
 /* Invert inner sub-boxes and text colors inside the dark branch summary cards for maximum contrast */
 #branchCardsGrid .kpi-card h4 {
-    color: #f8fafc !important;
+    color: #ffff0d !important;
 }
 #branchCardsGrid .kpi-card .border-b,
 #branchCardsGrid .kpi-card .border-t,
 #branchCardsGrid .kpi-card .border {
-    border-color: #16422d !important;
+    border-color: #808000 !important;
 }
 #branchCardsGrid .kpi-card .bg-slate-50,
 #branchCardsGrid .kpi-card .bg-emerald-50\/40 {
@@ -72,5 +72,11 @@ body {
     color: #93c5fd !important;
 }
 #branchCardsGrid .kpi-card .text-bambooDark {
-    color: #34d399 !important;
+    color: #004000 !important;
+}
+
+/* Required CSS rule to trigger the hover tooltip when mousing over the New Loans row */
+.group-new-loan:hover .new-loan-hover-card {
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
