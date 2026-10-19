@@ -1333,8 +1333,8 @@ function renderBranchCards(branchMap) {
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Officers / TS</span>
-                        <span class="text-[10px] text-slate-400 font-mono block">Active Roster</span>
+                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Trust Staff</span>
+                        <span class="text-[10px] text-slate-400 font-mono block">Active</span>
                     </div>
                 </div>
 
