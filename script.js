@@ -65,13 +65,13 @@ function openBranchModal(branchName) {
     const bData = globalBranchMap[branchName];
     if (!bData) return;
 
-    document.getElementById('modalBranchTitle').innerText = `${branchName} - TS Officer Summary`;
+    document.getElementById('modalBranchTitle').innerText = `${branchName} - Trust Staff Summary`;
     const container = document.getElementById('modalOfficerList');
     container.innerHTML = '';
 
     const officerEntries = Object.entries(bData.officers);
     if (officerEntries.length === 0) {
-        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No officer records found.</div>`;
+        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No TS records found.</div>`;
     } else {
         officerEntries.forEach(([officerName, oStats]) => {
             const officerParRatio = oStats.glp > 0 ? (oStats.parAmount / oStats.glp) * 100 : 0;
@@ -626,7 +626,7 @@ function renderDailyDisbursementTable(data) {
         return;
     }
 
-    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
+    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Trust Staff' : 'Branch';
 
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
     sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
@@ -1395,7 +1395,7 @@ function renderBranchCards(branchMap) {
             </div>
 
             <div class="text-[11px] text-emerald-300 font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2 group-hover:text-emerald-200">
-                <span>View TS Officer Breakdown</span>
+                <span>View TS Breakdown</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
