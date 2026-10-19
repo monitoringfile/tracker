@@ -92,8 +92,8 @@
         <!-- Dashboard Content Workspace -->
         <div id="dashboardContent" class="space-y-5 hidden">
 
-            <!-- Global Filter Bar -->
-            <div class="kpi-card p-4 bg-[#0a2318]/90 border-2 border-[#16422d] shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <!-- Global Filter Bar (Sticky below Header) -->
+            <div class="kpi-card p-4 bg-[#0a2318]/95 backdrop-blur-md border-2 border-[#16422d] shadow-2xl sticky top-16 z-30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                 <div class="flex items-center gap-2.5 text-xs text-emerald-300 font-extrabold uppercase tracking-wider pl-1">
                     <div class="w-7 h-7 rounded-lg bg-[#16422d] border border-[#2d6a4f] flex items-center justify-center text-emerald-300">
                         <i data-lucide="sliders" class="w-4 h-4"></i>
@@ -193,7 +193,7 @@
                             <i data-lucide="pie-chart" class="w-4 h-4"></i>
                             <span>1. Portfolio & Risk Distribution</span>
                         </div>
-                        <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono">Graph Analysis</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono">Infographic Analysis</span>
                     </div>
                     <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div class="relative">
@@ -233,7 +233,7 @@
                             <div class="h-56"><canvas id="weeklyPacingBarChart"></canvas></div>
                         </div>
                         <div>
-                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">OLB Principal & Borrowers by Product ID</h4>
+                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">OLB Principal by Product ID (Hexagon Graph)</h4>
                             <div class="h-56"><canvas id="productBarChart"></canvas></div>
                         </div>
                     </div>
