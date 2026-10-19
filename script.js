@@ -150,82 +150,100 @@ function openBranchModal(branchName) {
 }
 
 const maxDaysForNewInclusion = new Date().getDate();
-document.getElementById('newInclusionsBadge').innerText = `New Inclusions: Arrears ≤ ${maxDaysForNewInclusion} days`;
+const badgeEl = document.getElementById('newInclusionsBadge');
+if (badgeEl) badgeEl.innerText = `New Inclusions: Arrears ≤ ${maxDaysForNewInclusion} days`;
 
 const currentDateObj = new Date();
 const currentDateStr = formatYYYYMMDD(currentDateObj);
-document.getElementById('disbStartDate').value = currentDateStr;
-document.getElementById('disbEndDate').value = currentDateStr;
+const disbStartEl = document.getElementById('disbStartDate');
+const disbEndEl = document.getElementById('disbEndDate');
+if (disbStartEl) disbStartEl.value = currentDateStr;
+if (disbEndEl) disbEndEl.value = currentDateStr;
 
-document.getElementById('csvFileInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+const csvInput = document.getElementById('csvFileInput');
+if (csvInput) {
+    csvInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    Papa.parse(file, {
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            rawData = results.data.map(row => ({
-                Branch: (row['Branch'] || 'Unknown Branch').toString().trim(),
-                'Credit officer': (row['Credit officer'] || 'Unknown Officer').toString().trim(),
-                Centre: (row['Centre'] || 'Unknown Centre').toString().trim(),
-                'Product ID': (row['Product ID'] || 'Unknown Product').toString().trim(),
-                'Client name': (row['Client name'] || 'Unknown Client').toString().trim().toUpperCase(),
-                'Disbursement date': row['Disbursement date'] || '',
-                'Days in arrears': parseFloat(row['Days in arrears']) || 0,
-                Status: (row['Status'] || 'Unspecified').toString().trim(),
-                'Loan Amount': parseFloat(row['Loan Amount'] || row['Loan amount'] || 0) || 0,
-                'OLB principal': parseFloat(row['OLB principal']) || 0,
-                'Application date': row['Application date'] || ''
-            }));
+        Papa.parse(file, {
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                rawData = results.data.map(row => ({
+                    Branch: (row['Branch'] || 'Unknown Branch').toString().trim(),
+                    'Credit officer': (row['Credit officer'] || 'Unknown Officer').toString().trim(),
+                    Centre: (row['Centre'] || 'Unknown Centre').toString().trim(),
+                    'Product ID': (row['Product ID'] || 'Unknown Product').toString().trim(),
+                    'Client name': (row['Client name'] || 'Unknown Client').toString().trim().toUpperCase(),
+                    'Disbursement date': row['Disbursement date'] || '',
+                    'Days in arrears': parseFloat(row['Days in arrears']) || 0,
+                    Status: (row['Status'] || 'Unspecified').toString().trim(),
+                    'Loan Amount': parseFloat(row['Loan Amount'] || row['Loan amount'] || 0) || 0,
+                    'OLB principal': parseFloat(row['OLB principal']) || 0,
+                    'Application date': row['Application date'] || ''
+                }));
 
-            document.getElementById('welcomeBanner').classList.add('hidden');
-            document.getElementById('dashboardContent').classList.remove('hidden');
+                const welcomeBanner = document.getElementById('welcomeBanner');
+                const dashboardContent = document.getElementById('dashboardContent');
+                if (welcomeBanner) welcomeBanner.classList.add('hidden');
+                if (dashboardContent) dashboardContent.classList.remove('hidden');
 
-            populateFilters(rawData);
-            
-            const disbDates = rawData.map(d => parseLocalDateString(d['Disbursement date'])).filter(Boolean);
-            if (disbDates.length > 0) {
-                disbDates.sort((a,b) => b - a);
-                const maxDateStr = formatYYYYMMDD(disbDates[0]);
-                document.getElementById('disbStartDate').value = maxDateStr;
-                document.getElementById('disbEndDate').value = maxDateStr;
+                populateFilters(rawData);
+                
+                const disbDates = rawData.map(d => parseLocalDateString(d['Disbursement date'])).filter(Boolean);
+                if (disbDates.length > 0) {
+                    disbDates.sort((a,b) => b - a);
+                    const maxDateStr = formatYYYYMMDD(disbDates[0]);
+                    if (disbStartEl) disbStartEl.value = maxDateStr;
+                    if (disbEndEl) disbEndEl.value = maxDateStr;
+                }
+
+                renderDashboard(rawData);
+                if (typeof executePresetPrompt === 'function') executePresetPrompt('PAR_HOTSPOTS');
             }
-
-            renderDashboard(rawData);
-            if (typeof executePresetPrompt === 'function') executePresetPrompt('PAR_HOTSPOTS');
-        }
+        });
     });
-});
+}
 
-document.getElementById('branchFilter').addEventListener('change', applyFilters);
-document.getElementById('officerFilter').addEventListener('change', applyFilters);
-document.getElementById('cbsStartMonthFilter').addEventListener('change', () => renderDashboard(rawData));
-document.getElementById('cbsEndMonthFilter').addEventListener('change', () => renderDashboard(rawData));
-document.getElementById('disbStartDate').addEventListener('change', () => renderDailyDisbursementTable(rawData));
-document.getElementById('disbEndDate').addEventListener('change', () => renderDailyDisbursementTable(rawData));
+const branchFilterEl = document.getElementById('branchFilter');
+const officerFilterEl = document.getElementById('officerFilter');
+const cbsStartFilterEl = document.getElementById('cbsStartMonthFilter');
+const cbsEndFilterEl = document.getElementById('cbsEndMonthFilter');
+const resetFiltersEl = document.getElementById('resetFilters');
 
-document.getElementById('resetFilters').addEventListener('click', () => {
-    document.getElementById('branchFilter').value = 'ALL';
-    document.getElementById('officerFilter').value = 'ALL';
-    document.getElementById('disbStartDate').value = currentDateStr;
-    document.getElementById('disbEndDate').value = currentDateStr;
-    renderDashboard(rawData);
-    if (typeof executePresetPrompt === 'function') executePresetPrompt('PAR_HOTSPOTS');
-});
+if (branchFilterEl) branchFilterEl.addEventListener('change', applyFilters);
+if (officerFilterEl) officerFilterEl.addEventListener('change', applyFilters);
+if (cbsStartFilterEl) cbsStartFilterEl.addEventListener('change', () => applyFilters());
+if (cbsEndFilterEl) cbsEndFilterEl.addEventListener('change', () => applyFilters());
+if (disbStartEl) disbStartEl.addEventListener('change', () => renderDailyDisbursementTable(rawData));
+if (disbEndEl) disbEndEl.addEventListener('change', () => renderDailyDisbursementTable(rawData));
+
+if (resetFiltersEl) {
+    resetFiltersEl.addEventListener('click', () => {
+        if (branchFilterEl) branchFilterEl.value = 'ALL';
+        if (officerFilterEl) officerFilterEl.value = 'ALL';
+        if (disbStartEl) disbStartEl.value = currentDateStr;
+        if (disbEndEl) disbEndEl.value = currentDateStr;
+        renderDashboard(rawData);
+        if (typeof executePresetPrompt === 'function') executePresetPrompt('PAR_HOTSPOTS');
+    });
+}
 
 function populateFilters(data) {
     const branches = [...new Set(data.map(d => d.Branch))].sort();
     const officers = [...new Set(data.map(d => d['Credit officer']))].sort();
 
-    const branchSelect = document.getElementById('branchFilter');
-    branchSelect.innerHTML = '<option value="ALL">All Branches</option>';
-    branches.forEach(b => branchSelect.innerHTML += `<option value="${b}">${b}</option>`);
+    if (branchFilterEl) {
+        branchFilterEl.innerHTML = '<option value="ALL">All Branches</option>';
+        branches.forEach(b => branchFilterEl.innerHTML += `<option value="${b}">${b}</option>`);
+    }
 
-    const officerSelect = document.getElementById('officerFilter');
-    officerSelect.innerHTML = '<option value="ALL">All Trust Staff</option>';
-    officers.forEach(o => officerSelect.innerHTML += `<option value="${o}">${o}</option>`);
+    if (officerFilterEl) {
+        officerFilterEl.innerHTML = '<option value="ALL">All Credit Officers / TS</option>';
+        officers.forEach(o => officerFilterEl.innerHTML += `<option value="${o}">${o}</option>`);
+    }
 
     const promptScopeSelect = document.getElementById('promptTargetScope');
     if (promptScopeSelect) {
@@ -246,32 +264,32 @@ function populateFilters(data) {
     });
 
     const sortedMonths = Array.from(monthMap.values()).sort((a, b) => a.sortKey - b.sortKey);
-    const startSelect = document.getElementById('cbsStartMonthFilter');
-    const endSelect = document.getElementById('cbsEndMonthFilter');
-    startSelect.innerHTML = '';
-    endSelect.innerHTML = '';
+    if (cbsStartFilterEl && cbsEndFilterEl) {
+        cbsStartFilterEl.innerHTML = '';
+        cbsEndFilterEl.innerHTML = '';
 
-    sortedMonths.forEach(m => {
-        startSelect.innerHTML += `<option value="${m.sortKey}">${m.label}</option>`;
-        endSelect.innerHTML += `<option value="${m.sortKey}">${m.label}</option>`;
-    });
+        sortedMonths.forEach(m => {
+            cbsStartFilterEl.innerHTML += `<option value="${m.sortKey}">${m.label}</option>`;
+            cbsEndFilterEl.innerHTML += `<option value="${m.sortKey}">${m.label}</option>`;
+        });
 
-    const currentDt = new Date();
-    const currentSortKey = currentDt.getFullYear() * 12 + currentDt.getMonth();
-    const hasCurrentMonth = sortedMonths.some(m => m.sortKey === currentSortKey);
+        const currentDt = new Date();
+        const currentSortKey = currentDt.getFullYear() * 12 + currentDt.getMonth();
+        const hasCurrentMonth = sortedMonths.some(m => m.sortKey === currentSortKey);
 
-    if (hasCurrentMonth) {
-        startSelect.value = currentSortKey;
-        endSelect.value = currentSortKey;
-    } else if (sortedMonths.length > 0) {
-        startSelect.value = sortedMonths[0].sortKey;
-        endSelect.value = sortedMonths[sortedMonths.length - 1].sortKey;
+        if (hasCurrentMonth) {
+            cbsStartFilterEl.value = currentSortKey;
+            cbsEndFilterEl.value = currentSortKey;
+        } else if (sortedMonths.length > 0) {
+            cbsStartFilterEl.value = sortedMonths[0].sortKey;
+            cbsEndFilterEl.value = sortedMonths[sortedMonths.length - 1].sortKey;
+        }
     }
 }
 
 function applyFilters() {
-    const selectedBranch = document.getElementById('branchFilter').value;
-    const selectedOfficer = document.getElementById('officerFilter').value;
+    const selectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
+    const selectedOfficer = officerFilterEl ? officerFilterEl.value : 'ALL';
 
     const filtered = rawData.filter(d => {
         const matchBranch = selectedBranch === 'ALL' || d.Branch === selectedBranch;
@@ -378,16 +396,9 @@ function renderDashboard(data) {
 
         if (!globalBranchMap[branch]) {
             globalBranchMap[branch] = { 
-                totalGLP: 0, 
-                parAmount: 0, 
-                newInclusionsCount: 0, 
-                newInclusionsOlb: 0,
-                disbursedCount: 0,
-                newLoanSet: new Set(), 
-                borrowerSet: new Set(), 
-                disbursedBorrowerSet: new Set(),
-                disbursedLoanAmount: 0,
-                newLoanAmount: 0,
+                totalGLP: 0, parAmount: 0, newInclusionsCount: 0, newInclusionsOlb: 0,
+                disbursedCount: 0, newLoanSet: new Set(), borrowerSet: new Set(), 
+                disbursedBorrowerSet: new Set(), disbursedLoanAmount: 0, newLoanAmount: 0,
                 disbursedWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 newLoanWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 officers: {} 
@@ -414,13 +425,8 @@ function renderDashboard(data) {
 
         if (!globalBranchMap[branch].officers[officer]) {
             globalBranchMap[branch].officers[officer] = { 
-                glp: 0, 
-                parAmount: 0, 
-                newInclusionsCount: 0,
-                newInclusionsOlb: 0,
-                disbursedCount: 0,
-                borrowerSet: new Set(),
-                disbursedBorrowerSet: new Set(),
+                glp: 0, parAmount: 0, newInclusionsCount: 0, newInclusionsOlb: 0,
+                disbursedCount: 0, borrowerSet: new Set(), disbursedBorrowerSet: new Set(),
                 disbursedLoanAmount: 0,
                 disbursedWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 newLoanWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
@@ -472,9 +478,10 @@ function renderDashboard(data) {
     const globalPortfolioLoanSize = filteredEligibleClients.size > 0 ? (totalGLP / filteredEligibleClients.size) : 0;
     const globalDisbursedLoanSize = globalDisbursedCountTotal > 0 ? (globalDisbursedLoanAmountTotal / globalDisbursedCountTotal) : 0;
 
-    document.getElementById('kpiLoanPortfolio').innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    const kpiLoanPortfolio = document.getElementById('kpiLoanPortfolio');
+    if (kpiLoanPortfolio) kpiLoanPortfolio.innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
-    const portfolioParentTile = document.getElementById('kpiLoanPortfolio').parentElement;
+    const portfolioParentTile = kpiLoanPortfolio ? kpiLoanPortfolio.parentElement : null;
     if (portfolioParentTile) {
         if (!portfolioParentTile.classList.contains('group')) {
             portfolioParentTile.classList.add('relative', 'group', 'cursor-pointer');
@@ -489,20 +496,32 @@ function renderDashboard(data) {
         portfolioHoverOverlay.innerHTML = `
             <span class="text-[10px] uppercase font-extrabold text-emerald-200">Portfolio Loan Size</span>
             <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <span class="text-[9px] text-emerald-300 mt-1">____________</span>
+            <span class="text-[9px] text-emerald-300 mt-1">GLP / Active Borrowers</span>
         `;
     }
 
-    document.getElementById('kpiParAmount').innerText = totalPARAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('kpiParAmountSub').innerText = `${parBorrowersCount.toLocaleString()} In Arrears`;
-    document.getElementById('kpiParRatio').innerText = parRatio.toFixed(2) + '%';
-    document.getElementById('kpiBorrowers').innerText = filteredEligibleClients.size.toLocaleString();
-    document.getElementById('kpiBorrowersSub').innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
+    const kpiParAmount = document.getElementById('kpiParAmount');
+    const kpiParAmountSub = document.getElementById('kpiParAmountSub');
+    const kpiParRatio = document.getElementById('kpiParRatio');
+    const kpiBorrowers = document.getElementById('kpiBorrowers');
+    const kpiBorrowersSub = document.getElementById('kpiBorrowersSub');
+    const kpiDisbursedCount = document.getElementById('kpiDisbursedCount');
+    const kpiDisbursedTotalLoanHover = document.getElementById('kpiDisbursedTotalLoanHover');
+    const kpiNewLoanCount = document.getElementById('kpiNewLoanCount');
+    const kpiNewLoanTotalLoanHover = document.getElementById('kpiNewLoanTotalLoanHover');
+    const kpiNewInclusionsCount = document.getElementById('kpiNewInclusionsCount');
+    const kpiNewInclusionsOlbHover = document.getElementById('kpiNewInclusionsOlbHover');
+
+    if (kpiParAmount) kpiParAmount.innerText = totalPARAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (kpiParAmountSub) kpiParAmountSub.innerText = `${parBorrowersCount.toLocaleString()} In Arrears`;
+    if (kpiParRatio) kpiParRatio.innerText = parRatio.toFixed(2) + '%';
+    if (kpiBorrowers) kpiBorrowers.innerText = filteredEligibleClients.size.toLocaleString();
+    if (kpiBorrowersSub) kpiBorrowersSub.innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
     
-    document.getElementById('kpiDisbursedCount').innerText = `${globalDisbursedCountTotal} loans`;
-    document.getElementById('kpiDisbursedTotalLoanHover').innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} loans`;
+    if (kpiDisbursedTotalLoanHover) kpiDisbursedTotalLoanHover.innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
-    const disbursedHoverContainer = document.querySelector('#kpiDisbursedCount').parentElement.querySelector('.absolute');
+    const disbursedHoverContainer = kpiDisbursedCount ? kpiDisbursedCount.parentElement.querySelector('.absolute') : null;
     if (disbursedHoverContainer) {
         disbursedHoverContainer.innerHTML = `
             <span class="text-[10px] uppercase font-extrabold text-blue-200">Disbursed Metrics</span>
@@ -512,14 +531,15 @@ function renderDashboard(data) {
         `;
     }
 
-    document.getElementById('kpiNewLoanCount').innerText = globalNewLoanSet.size.toLocaleString();
-    document.getElementById('kpiNewLoanTotalLoanHover').innerText = '₱ ' + globalNewLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    document.getElementById('kpiNewInclusionsCount').innerText = globalNewInclusionsSet.size.toLocaleString();
-    document.getElementById('kpiNewInclusionsOlbHover').innerText = '₱ ' + globalNewInclusionsOlbTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (kpiNewLoanCount) kpiNewLoanCount.innerText = globalNewLoanSet.size.toLocaleString();
+    if (kpiNewLoanTotalLoanHover) kpiNewLoanTotalLoanHover.innerText = '₱ ' + globalNewLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (kpiNewInclusionsCount) kpiNewInclusionsCount.innerText = globalNewInclusionsSet.size.toLocaleString();
+    if (kpiNewInclusionsOlbHover) kpiNewInclusionsOlbHover.innerText = '₱ ' + globalNewInclusionsOlbTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-    renderBorrowerDoughnutChart(activeBorrowersCount, parBorrowersCount, parRatio);
+    const currentSelectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
+    renderNewInclusionsLineChart(rawData, currentSelectedBranch);
     renderParAgingBarChart(bracket1_30, bracket31_60, bracket61_90, bracket91_180, bracket181_365, bracket365Plus, count1_30, count31_60, count61_90, count91_180, count181_365, count365Plus);
-    renderWeeklyPacingBarChart(globalDisbursedWeeks, globalNewLoanWeeks);
+    renderWeeklyPacingLineChart(globalDisbursedWeeks, globalNewLoanWeeks);
     renderProductBarChart(productSummary, productBorrowerSets);
     renderDailyDisbursementTable(data);
     renderCbsPivotMatrix(data);
@@ -530,8 +550,9 @@ function renderDashboard(data) {
 
 function renderDailyDisbursementTable(data) {
     const table = document.getElementById('dailyDisbursementTable');
-    const startDateStr = document.getElementById('disbStartDate').value;
-    const endDateStr = document.getElementById('disbEndDate').value;
+    if (!table) return;
+    const startDateStr = disbStartEl ? disbStartEl.value : '';
+    const endDateStr = disbEndEl ? disbEndEl.value : '';
 
     const dailyMap = {};
     const datesSet = new Set();
@@ -591,58 +612,132 @@ function renderDailyDisbursementTable(data) {
     table.innerHTML = html;
 }
 
-function renderBorrowerDoughnutChart(active, par, ratio) {
-    const ctx = document.getElementById('borrowerDoughnutChart').getContext('2d');
+function renderNewInclusionsLineChart(data, branchFilterValue) {
+    const canvas = document.getElementById('borrowerDoughnutChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (borrowerChart) borrowerChart.destroy();
 
-    const centerTextPlugin = {
-        id: 'centerText',
-        beforeDraw(chart) {
-            const { width, height, ctx } = chart;
-            ctx.restore();
-            const fontSize = (height / 115).toFixed(2);
-            ctx.font = `bold ${fontSize}rem sans-serif`;
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#1b4332';
+    const titleEl = document.getElementById('newInclusionsChartTitle');
+    
+    let labels = [];
+    let counts = [];
+    let olbTotals = [];
 
-            const text = ratio.toFixed(2) + '%';
-            const textX = Math.round((width - ctx.measureText(text).width) / 2);
-            const textY = height / 2 - 8;
+    const maxDays = maxDaysForNewInclusion || new Date().getDate();
 
-            ctx.fillText(text, textX, textY);
+    if (branchFilterValue && branchFilterValue !== 'ALL') {
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
 
-            ctx.font = `bold 9px sans-serif`;
-            ctx.fillStyle = '#64748b';
-            const subText = 'PAR RATIO';
-            const subTextX = Math.round((width - ctx.measureText(subText).width) / 2);
-            const subTextY = height / 2 + 12;
-            ctx.fillText(subText, subTextX, subTextY);
-            ctx.save();
-        }
-    };
+        const officerMap = {};
+        data.forEach(item => {
+            if (item.Branch === branchFilterValue) {
+                const officer = item['Credit officer'] || 'Unknown Officer';
+                const days = item['Days in arrears'] || 0;
+                const olb = item['OLB principal'] || 0;
+                const clientName = item['Client name'] || 'UNKNOWN';
+
+                if (days > 0 && days <= maxDays) {
+                    if (!officerMap[officer]) officerMap[officer] = { clients: new Set(), olb: 0 };
+                    officerMap[officer].clients.add(clientName);
+                    officerMap[officer].olb += olb;
+                }
+            }
+        });
+
+        const sortedOfficers = Object.keys(officerMap).sort();
+        labels = sortedOfficers;
+        counts = sortedOfficers.map(o => officerMap[o].clients.size);
+        olbTotals = sortedOfficers.map(o => officerMap[o].olb);
+
+    } else {
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions by Branch`;
+
+        const branchMap = {};
+        data.forEach(item => {
+            const branch = item.Branch || 'Unknown Branch';
+            const days = item['Days in arrears'] || 0;
+            const olb = item['OLB principal'] || 0;
+            const clientName = item['Client name'] || 'UNKNOWN';
+
+            if (days > 0 && days <= maxDays) {
+                if (!branchMap[branch]) branchMap[branch] = { clients: new Set(), olb: 0 };
+                branchMap[branch].clients.add(clientName);
+                branchMap[branch].olb += olb;
+            }
+        });
+
+        const sortedBranches = Object.keys(branchMap).sort();
+        labels = sortedBranches;
+        counts = sortedBranches.map(b => branchMap[b].clients.size);
+        olbTotals = sortedBranches.map(b => branchMap[b].olb);
+    }
 
     borrowerChart = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'line',
         data: {
-            labels: ['Active Borrowers', 'In Arrears'],
+            labels: labels,
             datasets: [{
-                data: [active, par],
-                backgroundColor: ['#2d6a4f', '#c8102e'],
-                borderWidth: 0
+                label: 'New Inclusions Count',
+                data: counts,
+                borderColor: '#2d6a4f',
+                backgroundColor: 'rgba(45, 106, 79, 0.12)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.35,
+                pointRadius: 5,
+                pointBackgroundColor: '#1b4332',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { color: '#475569', font: { size: 10, weight: 'bold' } } } },
-            cutout: '65%'
-        },
-        plugins: [centerTextPlugin]
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#071a12',
+                    titleColor: '#52b788',
+                    bodyColor: '#ffffff',
+                    borderColor: '#52b788',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        title: function(context) {
+                            return (branchFilterValue && branchFilterValue !== 'ALL' ? 'Officer: ' : 'Branch: ') + context[0].label;
+                        },
+                        label: function(context) {
+                            const idx = context.dataIndex;
+                            const count = context.raw;
+                            const olbAmt = olbTotals[idx].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            return [
+                                `New Inclusions: ${count} clients`,
+                                `Total OLB: ₱ ${olbAmt}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#64748b', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 },
+                    grid: { display: false }
+                },
+                y: {
+                    ticks: { color: '#64748b', font: { size: 10 }, precision: 0 },
+                    grid: { color: '#f1f5f9' }
+                }
+            }
+        }
     });
+    lucide.createIcons();
 }
 
 function renderParAgingBarChart(b1, b2, b3, b4, b5, b6, c1, c2, c3, c4, c5, c6) {
-    const ctx = document.getElementById('parAgingBarChart').getContext('2d');
+    const canvas = document.getElementById('parAgingBarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (parAgingChart) parAgingChart.destroy();
 
     const counts = [c1, c2, c3, c4, c5, c6];
@@ -682,17 +777,39 @@ function renderParAgingBarChart(b1, b2, b3, b4, b5, b6, c1, c2, c3, c4, c5, c6) 
     });
 }
 
-function renderWeeklyPacingBarChart(disbWeeks, newWeeks) {
-    const ctx = document.getElementById('weeklyPacingBarChart').getContext('2d');
+function renderWeeklyPacingLineChart(disbWeeks, newWeeks) {
+    const canvas = document.getElementById('weeklyPacingBarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (weeklyChart) weeklyChart.destroy();
 
     weeklyChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'],
             datasets: [
-                { label: 'Disbursed', data: [disbWeeks[1].size, disbWeeks[2].size, disbWeeks[3].size, disbWeeks[4].size, disbWeeks[5].size], backgroundColor: '#2d6a4f', borderRadius: 4 },
-                { label: 'New Loans', data: [newWeeks[1].size, newWeeks[2].size, newWeeks[3].size, newWeeks[4].size, newWeeks[5].size], backgroundColor: '#52b788', borderRadius: 4 }
+                { 
+                    label: 'Disbursed', 
+                    data: [disbWeeks[1].size, disbWeeks[2].size, disbWeeks[3].size, disbWeeks[4].size, disbWeeks[5].size], 
+                    borderColor: '#2d6a4f', 
+                    backgroundColor: 'rgba(45, 106, 79, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#2d6a4f'
+                },
+                { 
+                    label: 'New Loans', 
+                    data: [newWeeks[1].size, newWeeks[2].size, newWeeks[3].size, newWeeks[4].size, newWeeks[5].size], 
+                    borderColor: '#52b788', 
+                    backgroundColor: 'rgba(82, 183, 136, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#52b788'
+                }
             ]
         },
         options: {
@@ -708,51 +825,102 @@ function renderWeeklyPacingBarChart(disbWeeks, newWeeks) {
 }
 
 function renderProductBarChart(productSummary, productBorrowerSets) {
-    const ctx = document.getElementById('productBarChart').getContext('2d');
+    const canvas = document.getElementById('productBarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (productChart) productChart.destroy();
 
     const categories = Object.keys(productSummary);
     const totals = categories.map(c => productSummary[c]);
     const borrowerCounts = categories.map(c => productBorrowerSets[c] ? productBorrowerSets[c].size : 0);
 
+    const totalPortfolio = totals.reduce((acc, val) => acc + val, 0);
+
+    const vibrantColors = [
+        '#2d6a4f', 
+        '#3b82f6', 
+        '#f59e0b', 
+        '#ec4899', 
+        '#8b5cf6', 
+        '#06b6d4', 
+        '#10b981', 
+        '#f97316'  
+    ];
+
     productChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
             labels: categories,
             datasets: [{
-                label: 'OLB Principal',
                 data: totals,
-                backgroundColor: '#2d6a4f',
-                borderRadius: 6
+                backgroundColor: vibrantColors.slice(0, categories.length),
+                borderWidth: 2,
+                borderColor: '#071a12',
+                hoverOffset: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { 
-                legend: { display: false },
+                legend: { 
+                    position: 'right', 
+                    labels: { 
+                        boxWidth: 12, 
+                        color: '#475569', 
+                        font: { size: 10, weight: 'bold' },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const value = data.datasets[0].data[i];
+                                    const percentage = totalPortfolio > 0 ? ((value / totalPortfolio) * 100).toFixed(1) + '%' : '0%';
+                                    return {
+                                        text: `${label} (${percentage})`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    } 
+                },
                 tooltip: {
+                    backgroundColor: '#071a12',
+                    titleColor: '#52b788',
+                    bodyColor: '#ffffff',
+                    borderColor: '#52b788',
+                    borderWidth: 1,
+                    padding: 10,
+                    boxPadding: 4,
                     callbacks: {
+                        title: function(context) {
+                            return `Product: ${context[0].label}`;
+                        },
                         label: function(context) {
                             const idx = context.dataIndex;
                             const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                            const borrowers = borrowerCounts[idx];
-                            return [`OLB Principal: ${amt}`, `Borrowers: ${borrowers}`];
+                            const percentage = totalPortfolio > 0 ? ((context.raw / totalPortfolio) * 100).toFixed(2) + '%' : '0%';
+                            const borrowers = borrowerCounts[idx].toLocaleString();
+                            return [
+                                `OLB Principal: ₱ ${amt}`,
+                                `Portfolio Share: ${percentage}`,
+                                `Active Borrowers: ${borrowers} clients`
+                            ];
                         }
                     }
                 }
             },
-            scales: {
-                x: { ticks: { color: '#64748b', font: { size: 10, weight: 'bold' } }, grid: { display: false } },
-                y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#f1f5f9' } }
-            }
+            cutout: '55%'
         }
     });
 }
 
 function renderCbsPivotMatrix(data) {
-    const startVal = parseInt(document.getElementById('cbsStartMonthFilter').value) || 0;
-    const endVal = parseInt(document.getElementById('cbsEndMonthFilter').value) || 999999;
+    const startVal = cbsStartFilterEl ? parseInt(cbsStartFilterEl.value) || 0 : 0;
+    const endVal = cbsEndFilterEl ? parseInt(cbsEndFilterEl.value) || 999999 : 999999;
 
     const filteredData = data.filter(d => {
         if (!d['Application date']) return false;
@@ -782,6 +950,7 @@ function renderCbsPivotMatrix(data) {
 
     const sortedBranches = Array.from(branchesSet).sort();
     const table = document.getElementById('cbsMatrixTable');
+    if (!table) return;
     table.innerHTML = '';
 
     if (allStatuses.length === 0) {
@@ -848,6 +1017,7 @@ function renderCbsPivotMatrix(data) {
 
 function renderBranchCards(branchMap) {
     const container = document.getElementById('branchCardsGrid');
+    if (!container) return;
     container.innerHTML = '';
 
     Object.keys(branchMap).sort().forEach(branch => {
@@ -873,7 +1043,7 @@ function renderBranchCards(branchMap) {
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Trust Staffs</span>
+                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Officers / TS</span>
                         <span class="text-[10px] text-slate-400 font-mono block">Active Roster</span>
                     </div>
                 </div>
