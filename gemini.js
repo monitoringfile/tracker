@@ -37,8 +37,8 @@ async function generateGeminiAnalyticsResponse(type, customText) {
 
     container.innerHTML = `<div class="text-center py-3 text-xs text-emerald-300 font-bold">Gemini AI generating executive insights & action plan...</div>`;
 
-    const GEMINI_API_KEY = "AQ.Ab8RN6J18lP_l9HlAEaVJQemNAwrQjdsKLTK7rJNrW9t_Zq3vQ";
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const GEMINI_API_KEY = "AQ.Ab8RN6Iao91PBwo8i5Jg_eKi9Gjqjpt4eZaBHGIr7XUUnzWIMQ";
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     const systemDirective = "You are a Senior Microfinance Operations Director. For the given portfolio scope and metrics, structure your response professionally into two distinct sections: \n1. **Executive Insights** (Key observations, risk patterns, and performance takeaways).\n2. **Action Plan** (3 clear, tactical, time-bound steps for Credit Officers / Branch Managers). Keep your tone authoritative, clear, and actionable.";
 
