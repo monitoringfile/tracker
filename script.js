@@ -507,28 +507,12 @@ function renderDashboard(data) {
             portfolioParentTile.classList.add('relative', 'group', 'cursor-pointer');
         }
         
-        // Update the subtext element inside the portfolio card with total active/arrears row count (including duplicates)
-        let subCountEl = portfolioParentTile.querySelector('.portfolio-sub-count');
-        if (!subCountEl) {
-            subCountEl = document.createElement('div');
-            subCountEl.className = 'portfolio-sub-count text-xs text-emerald-300 font-mono mt-1 font-bold';
-            portfolioParentTile.querySelector('div').appendChild(subCountEl); // or insert appropriately
-        }
-        // Alternatively, if there is a specific DOM element for line items, target it directly:
-        const lineItemsEl = portfolioParentTile.querySelector('.text-xs, span:not(.font-mono)');
-        // Let's ensure we update or insert cleanly:
         let targetSub = portfolioParentTile.querySelector('#kpiPortfolioLineItemsCount');
         if (!targetSub) {
-            // Check if there is any existing text node or element in that position
-            const children = portfolioParentTile.children;
-            if (children.length >= 3) {
-                targetSub = children[2];
-            } else {
-                targetSub = document.createElement('div');
-                targetSub.id = 'kpiPortfolioLineItemsCount';
-                targetSub.className = 'text-xs text-emerald-300 font-mono mt-1';
-                portfolioParentTile.appendChild(targetSub);
-            }
+            targetSub = document.createElement('div');
+            targetSub.id = 'kpiPortfolioLineItemsCount';
+            targetSub.className = 'text-xs text-emerald-300 font-mono mt-1 font-bold';
+            portfolioParentTile.appendChild(targetSub);
         }
         targetSub.innerText = `${totalActiveAndArrearsRows.toLocaleString()} Total Accounts`;
 
@@ -975,6 +959,7 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
 function renderCbsPivotMatrix(data) {
     const startVal = cbsStartFilterEl ? parseInt(cbsStartFilterEl.value) || 0 : 0;
     const endVal = cbsEndFilterEl ? parseInt(cbsEndFilterEl.value) || 999999 : 999999;
+    const selectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
 
     const filteredData = data.filter(d => {
         if (!d['Application date']) return false;
@@ -989,30 +974,35 @@ function renderCbsPivotMatrix(data) {
     const allStatuses = Array.from(statusSet).sort();
 
     const matrix = { Newloan: {}, Reloan: {} };
-    const branchesSet = new Set();
+    const rowKeysSet = new Set();
 
     filteredData.forEach(d => {
         const category = getProductCategory(d['Product ID']) === 'Newloan' ? 'Newloan' : 'Reloan';
         const branch = d.Branch;
+        const officer = d['Credit officer'] || 'Unknown Officer';
         const status = d.Status;
-        branchesSet.add(branch);
 
-        if (!matrix[category][branch]) matrix[category][branch] = {};
-        if (!matrix[category][branch][status]) matrix[category][branch][status] = new Set();
-        matrix[category][branch][status].add(d['Client name']);
+        if (selectedBranch !== 'ALL' && branch !== selectedBranch) return;
+
+        const rowKey = (selectedBranch !== 'ALL') ? officer : branch;
+        rowKeysSet.add(rowKey);
+
+        if (!matrix[category][rowKey]) matrix[category][rowKey] = {};
+        if (!matrix[category][rowKey][status]) matrix[category][rowKey][status] = new Set();
+        matrix[category][rowKey][status].add(d['Client name']);
     });
 
-    const sortedBranches = Array.from(branchesSet).sort();
+    const sortedRowKeys = Array.from(rowKeysSet).sort();
     const table = document.getElementById('cbsMatrixTable');
     if (!table) return;
     table.innerHTML = '';
 
-    if (allStatuses.length === 0) {
-        table.innerHTML = `<tbody><tr><td class="p-6 text-center text-slate-400 italic">No CBS records found for selected date range.</td></tr></tbody>`;
+    if (allStatuses.length === 0 || sortedRowKeys.length === 0) {
+        table.innerHTML = `<tbody><tr><td class="p-6 text-center text-slate-400 italic">No CBS records found for selected date range and filters.</td></tr></tbody>`;
         return;
     }
 
-    let html = `<thead><tr class="bg-slate-50 text-slate-700 border-b border-slate-200"><th class="p-2.5 pl-3 font-bold">Row Labels</th>`;
+    let html = `<thead><tr class="bg-slate-50 text-slate-700 border-b border-slate-200"><th class="p-2.5 pl-3 font-bold">Row Labels (${selectedBranch !== 'ALL' ? 'Credit Officer' : 'Branch'})</th>`;
     allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
     html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
 
@@ -1026,12 +1016,12 @@ function renderCbsPivotMatrix(data) {
         const catColCounts = {};
         allStatuses.forEach(st => catColCounts[st] = new Set());
 
-        sortedBranches.forEach(b => {
-            if (matrix[cat][b]) {
+        sortedRowKeys.forEach(rowKey => {
+            if (matrix[cat][rowKey]) {
                 let rowTot = 0;
-                html += `<tr class="border-b border-slate-100"><td class="p-2 pl-6 text-slate-700 font-semibold">${b}</td>`;
+                html += `<tr class="border-b border-slate-100"><td class="p-2 pl-6 text-slate-700 font-semibold">${rowKey}</td>`;
                 allStatuses.forEach(st => {
-                    const clientSet = matrix[cat][b][st] || new Set();
+                    const clientSet = matrix[cat][rowKey][st] || new Set();
                     const count = clientSet.size;
                     rowTot += count;
 
@@ -1145,7 +1135,6 @@ function renderBranchCards(branchMap) {
                         <span>W5: <strong class="text-white">${b.disbursedWeeks[5].size}</strong></span>
                     </div>
                     
-                    <!-- New Loans (Month) with Hover Tooltip -->
                     <div class="flex items-center justify-between border-t border-[#16422d] pt-1 relative group-new-loan cursor-pointer py-0.5">
                         <span class="text-teal-300 font-bold">New Loans (Month):</span>
                         <span class="font-bold text-white font-mono">${branchNewLoanCount} clients</span>
