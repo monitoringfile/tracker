@@ -35,7 +35,7 @@ function parseLocalDateString(rawStr) {
             return new Date(y, m, d);
         } else if (parts[2].length === 4) {
             const m = parseInt(parts[0], 10) - 1;
-            const d = parseInt(parts[2], 10);
+            const d = parseInt(parts[1], 10);
             const y = parseInt(parts[2], 10);
             return new Date(y, m, d);
         }
@@ -107,7 +107,11 @@ function openBranchModal(branchName) {
                     </div>
                 </div>
                 <div class="bg-emerald-50/50 border border-emerald-100 p-2.5 rounded-lg space-y-1.5 text-xs">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between font-mono">
+                        <span class="text-slate-700 font-bold font-sans text-[10px] uppercase">Portfolio Loan Size:</span>
+                        <span class="font-bold text-slate-900">₱ ${officerPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1 border-t border-emerald-100/60">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
                             <span class="font-bold text-slate-900">${oStats.disbursedCount} loans</span>
@@ -117,10 +121,6 @@ function openBranchModal(branchName) {
                     <div class="flex items-center justify-between font-mono pt-1 border-t border-emerald-100/60">
                         <span class="text-blue-800 font-bold font-sans text-[10px] uppercase">Disbursement Loan Size:</span>
                         <span class="font-bold text-blue-900">₱ ${officerDisbLoanSize.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
-                    </div>
-                    <div class="flex items-center justify-between font-mono pt-1 border-t border-emerald-100/60">
-                        <span class="text-slate-700 font-bold font-sans text-[10px] uppercase">Portfolio Loan Size:</span>
-                        <span class="font-bold text-slate-900">₱ ${officerPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                     </div>
                     <div class="flex items-center justify-between text-[11px] font-mono text-slate-600 pl-2 border-l-2 border-blue-400 pt-1">
                         <span>W1: <strong class="text-slate-900">${oStats.disbursedWeeks[1].size}</strong></span>
@@ -382,6 +382,7 @@ function renderDashboard(data) {
                 borrowerSet: new Set(), 
                 disbursedBorrowerSet: new Set(),
                 disbursedLoanAmount: 0,
+                newLoanAmount: 0,
                 disbursedWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 newLoanWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 officers: {} 
@@ -402,6 +403,7 @@ function renderDashboard(data) {
         }
         if (isMonthlyNewLoan) {
             globalBranchMap[branch].newLoanSet.add(clientName);
+            globalBranchMap[branch].newLoanAmount += loanAmount;
             globalBranchMap[branch].newLoanWeeks[disbWeek].add(clientName);
         }
 
@@ -903,9 +905,11 @@ function renderBranchCards(branchMap) {
         const branchBorrowers = b.borrowerSet.size;
         const branchDisbursedCount = b.disbursedCount;
         const branchNewLoanCount = b.newLoanSet.size;
+        const totalOfficersCount = Object.keys(b.officers).length;
 
         const portfolioLoanSize = branchBorrowers > 0 ? (b.totalGLP / branchBorrowers) : 0;
         const disbursementLoanSize = branchDisbursedCount > 0 ? (b.disbursedLoanAmount / branchDisbursedCount) : 0;
+        const newLoanSize = branchNewLoanCount > 0 ? (b.newLoanAmount / branchNewLoanCount) : 0;
 
         const card = document.createElement('div');
         card.className = 'kpi-card p-4 hover:border-emerald-400 transition-all cursor-pointer flex flex-col justify-between group';
@@ -918,8 +922,8 @@ function renderBranchCards(branchMap) {
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs text-emerald-200 font-mono font-bold">${branchBorrowers.toLocaleString()} Borrowers</span>
-                        <span class="text-[10px] text-slate-400 font-mono block">₱ ${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Officers / TS</span>
+                        <span class="text-[10px] text-slate-400 font-mono block">Active Roster</span>
                     </div>
                 </div>
 
@@ -943,7 +947,11 @@ function renderBranchCards(branchMap) {
                 </div>
 
                 <div class="bg-[#113626]/50 border border-[#16422d] p-2.5 rounded-lg space-y-1.5 text-xs text-slate-200">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between font-mono">
+                        <span class="text-slate-300 font-bold font-sans text-[10px] uppercase">Portfolio Loan Size:</span>
+                        <span class="font-bold text-white">₱ ${portfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1 border-t border-[#16422d]">
                         <span class="text-blue-300 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
                             <span class="font-bold text-white">${branchDisbursedCount} loans</span>
@@ -954,10 +962,6 @@ function renderBranchCards(branchMap) {
                         <span class="text-blue-300 font-bold font-sans text-[10px] uppercase">Disbursement Loan Size:</span>
                         <span class="font-bold text-blue-200">₱ ${disbursementLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
-                    <div class="flex items-center justify-between font-mono pt-1 border-t border-[#16422d]">
-                        <span class="text-slate-300 font-bold font-sans text-[10px] uppercase">Portfolio Loan Size:</span>
-                        <span class="font-bold text-white">₱ ${portfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                    </div>
                     <div class="flex items-center justify-between text-[11px] font-mono text-slate-300 pl-2 border-l-2 border-blue-400 pt-1">
                         <span>W1: <strong class="text-white">${b.disbursedWeeks[1].size}</strong></span>
                         <span>W2: <strong class="text-white">${b.disbursedWeeks[2].size}</strong></span>
@@ -965,10 +969,18 @@ function renderBranchCards(branchMap) {
                         <span>W4: <strong class="text-white">${b.disbursedWeeks[4].size}</strong></span>
                         <span>W5: <strong class="text-white">${b.disbursedWeeks[5].size}</strong></span>
                     </div>
-                    <div class="flex items-center justify-between border-t border-[#16422d] pt-1">
-                        <span class="text-emerald-300 font-bold">New Loans (Month):</span>
+                    
+                    <!-- New Loans (Month) with Hover Tooltip displaying New Loan Amount and New Loan Size -->
+                    <div class="flex items-center justify-between border-t border-[#16422d] pt-1 relative group-new-loan cursor-pointer py-0.5">
+                        <span class="text-teal-300 font-bold">New Loans (Month):</span>
                         <span class="font-bold text-white font-mono">${branchNewLoanCount} clients</span>
+
+                        <div class="new-loan-hover-card absolute inset-0 bg-[#071a12] text-white px-3 flex flex-col justify-center items-center opacity-0 pointer-events-none transition-opacity duration-200 rounded border border-teal-400 z-20 shadow-xl">
+                            <span class="text-[9px] uppercase font-extrabold text-teal-200">New Loan Amt: ₱ ${b.newLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="text-[10px] font-black font-mono text-white mt-0.5">New Loan Size: ₱ ${newLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
                     </div>
+
                     <div class="flex items-center justify-between border-t border-[#16422d] pt-1">
                         <span class="text-emerald-400 font-bold">New Inclusions:</span>
                         <div class="font-mono text-right">
