@@ -690,7 +690,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
         olbTotals = sortedOfficers.map(o => officerMap[o].olb);
 
     } else {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> ACTIVE VS PAR ACCOUNTS`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions`;
 
         const branchMap = {};
         data.forEach(item => {
