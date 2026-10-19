@@ -65,13 +65,13 @@ function openBranchModal(branchName) {
     const bData = globalBranchMap[branchName];
     if (!bData) return;
 
-    document.getElementById('modalBranchTitle').innerText = `${branchName} - Trust Staff Summary`;
+    document.getElementById('modalBranchTitle').innerText = `${branchName} - TS Officer Summary`;
     const container = document.getElementById('modalOfficerList');
     container.innerHTML = '';
 
     const officerEntries = Object.entries(bData.officers);
     if (officerEntries.length === 0) {
-        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No TS records found.</div>`;
+        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No officer records found.</div>`;
     } else {
         officerEntries.forEach(([officerName, oStats]) => {
             const officerParRatio = oStats.glp > 0 ? (oStats.parAmount / oStats.glp) * 100 : 0;
@@ -256,7 +256,7 @@ function populateFilters(data) {
     }
 
     if (officerFilterEl) {
-        officerFilterEl.innerHTML = '<option value="ALL">All Trust Staff</option>';
+        officerFilterEl.innerHTML = '<option value="ALL">All Credit Officers / TS</option>';
         officers.forEach(o => officerFilterEl.innerHTML += `<option value="${o}">${o}</option>`);
     }
 
@@ -526,7 +526,7 @@ function renderDashboard(data) {
         portfolioHoverOverlay.innerHTML = `
             <span class="text-[10px] uppercase font-extrabold text-emerald-200">Portfolio Loan Size</span>
             <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <span class="text-[9px] text-emerald-300 mt-1">----------</span>
+            <span class="text-[9px] text-emerald-300 mt-1">GLP / Active Borrowers</span>
         `;
     }
 
@@ -626,7 +626,7 @@ function renderDailyDisbursementTable(data) {
         return;
     }
 
-    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Trust Staff' : 'Branch';
+    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
 
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
     sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
@@ -666,7 +666,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
     const maxDays = maxDaysForNewInclusion || new Date().getDate();
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> ACTIVE VS PAR ACCOUNTS: ${branchFilterValue} (By Officer)`;
 
         const officerMap = {};
         data.forEach(item => {
@@ -690,7 +690,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
         olbTotals = sortedOfficers.map(o => officerMap[o].olb);
 
     } else {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> ACTIVE VS PAR ACCOUNTS`;
 
         const branchMap = {};
         data.forEach(item => {
@@ -829,6 +829,10 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
         parCounts = sortedBranches.map(b => branchMap[b].count);
     }
 
+    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, '#f87171');
+    gradient.addColorStop(1, '#991b1b');
+
     parBreakdownChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -836,10 +840,11 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
             datasets: [{
                 label: 'PAR Amount',
                 data: parAmounts,
-                backgroundColor: '#c8102e',
-                borderRadius: 6,
-                borderWidth: 1,
-                borderColor: '#991b1b'
+                backgroundColor: gradient,
+                borderRadius: 8,
+                borderSkipped: false,
+                barThickness: 'flex',
+                maxBarThickness: 32
             }]
         },
         options: {
@@ -877,7 +882,7 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                 },
                 y: {
                     ticks: { color: '#64748b', font: { size: 10 } },
-                    grid: { color: '#f1f5f9' }
+                    grid: { color: '#f1f5f9', borderDash: [4, 4] }
                 }
             }
         }
@@ -1113,68 +1118,71 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
 
     const totalPortfolio = totals.reduce((acc, val) => acc + val, 0);
 
-    const vibrantColors = [
-        '#2d6a4f', 
-        '#3b82f6', 
-        '#f59e0b', 
-        '#ec4899', 
-        '#8b5cf6', 
-        '#06b6d4', 
-        '#10b981', 
-        '#f97316'  
-    ];
+    const radialGradient = ctx.createRadialGradient(140, 110, 10, 140, 110, 110);
+    radialGradient.addColorStop(0, 'rgba(45, 106, 79, 0.45)');
+    radialGradient.addColorStop(1, 'rgba(82, 183, 136, 0.15)');
 
     productChart = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'radar',
         data: {
             labels: categories,
             datasets: [{
+                label: 'OLB Principal (₱)',
                 data: totals,
-                backgroundColor: vibrantColors.slice(0, categories.length),
-                borderWidth: 2,
-                borderColor: '#071a12',
-                hoverOffset: 6
+                backgroundColor: radialGradient,
+                borderColor: '#16422d',
+                borderWidth: 2.5,
+                pointBackgroundColor: '#52b788',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { 
-                legend: { 
-                    position: 'right', 
-                    labels: { 
-                        boxWidth: 12, 
-                        color: '#475569', 
-                        font: { size: 10, weight: 'bold' },
-                        generateLabels: function(chart) {
-                            const data = chart.data;
-                            if (data.labels.length && data.datasets.length) {
-                                return data.labels.map((label, i) => {
-                                    const value = data.datasets[0].data[i];
-                                    const percentage = totalPortfolio > 0 ? ((value / totalPortfolio) * 100).toFixed(1) + '%' : '0%';
-                                    return {
-                                        text: `${label} (${percentage})`,
-                                        fillStyle: data.datasets[0].backgroundColor[i],
-                                        hidden: false,
-                                        index: i
-                                    };
-                                });
-                            }
-                            return [];
+            scales: {
+                r: {
+                    angleLines: {
+                        color: 'rgba(100, 116, 139, 0.2)',
+                        lineWidth: 1
+                    },
+                    grid: {
+                        color: 'rgba(100, 116, 139, 0.15)',
+                        circular: false
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 10,
+                            weight: 'bold'
+                        },
+                        color: '#334155'
+                    },
+                    ticks: {
+                        backdropColor: 'transparent',
+                        font: { size: 9 },
+                        color: '#64748b',
+                        callback: function(value) {
+                            if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                            if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
+                            return value;
                         }
-                    } 
-                },
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
                 tooltip: {
                     backgroundColor: '#071a12',
                     titleColor: '#52b788',
                     bodyColor: '#ffffff',
                     borderColor: '#52b788',
                     borderWidth: 1,
-                    padding: 10,
-                    boxPadding: 4,
+                    padding: 12,
                     callbacks: {
                         title: function(context) {
-                            return `Product: ${context[0].label}`;
+                            return `Product Category: ${context[0].label}`;
                         },
                         label: function(context) {
                             const idx = context.dataIndex;
@@ -1189,8 +1197,7 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
                         }
                     }
                 }
-            },
-            cutout: '55%'
+            }
         }
     });
 }
@@ -1326,7 +1333,7 @@ function renderBranchCards(branchMap) {
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Trust Staff</span>
+                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Officers / TS</span>
                         <span class="text-[10px] text-slate-400 font-mono block">Active Roster</span>
                     </div>
                 </div>
@@ -1395,7 +1402,7 @@ function renderBranchCards(branchMap) {
             </div>
 
             <div class="text-[11px] text-emerald-300 font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2 group-hover:text-emerald-200">
-                <span>View TS Breakdown</span>
+                <span>View TS Officer Breakdown</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
