@@ -70,10 +70,21 @@ function openBranchModal(branchName) {
     container.innerHTML = '';
 
     const officerEntries = Object.entries(bData.officers);
-    if (officerEntries.length === 0) {
-        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No officer records found.</div>`;
+    
+    // Filter out "Unknown Officer" and officers with absolutely no portfolio/activity data
+    const validOfficers = officerEntries.filter(([officerName, oStats]) => {
+        const cleanName = (officerName || '').trim().toLowerCase();
+        if (cleanName === 'unknown officer' || cleanName === 'unknown' || cleanName === '') {
+            return false;
+        }
+        const hasData = oStats.glp > 0 || oStats.parAmount > 0 || oStats.borrowerSet.size > 0 || oStats.disbursedCount > 0 || oStats.newInclusionsCount > 0;
+        return hasData;
+    });
+
+    if (validOfficers.length === 0) {
+        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No valid officer records found.</div>`;
     } else {
-        officerEntries.forEach(([officerName, oStats]) => {
+        validOfficers.forEach(([officerName, oStats]) => {
             const officerParRatio = oStats.glp > 0 ? (oStats.parAmount / oStats.glp) * 100 : 0;
             const officerPortfolioLoanSize = oStats.borrowerSet.size > 0 ? (oStats.glp / oStats.borrowerSet.size) : 0;
             const officerDisbLoanSize = oStats.disbursedCount > 0 ? (oStats.disbursedLoanAmount / oStats.disbursedCount) : 0;
@@ -83,10 +94,6 @@ function openBranchModal(branchName) {
             card.innerHTML = `
                 <div class="flex items-center justify-between pb-2 border-b border-slate-200 font-bold text-slate-800">
                     <span class="text-sm font-black text-bambooPrimary"><i data-lucide="user-check" class="w-4 h-4 inline mr-1"></i> ${officerName}</span>
-                    <div class="text-right">
-                        <span class="text-slate-700 font-mono font-bold">${oStats.borrowerSet.size} Borrowers</span>
-                        <span class="text-[10px] text-slate-500 font-mono block">₱ ${oStats.glp.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
-                    </div>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
                     <div class="bg-slate-50 p-2 rounded border border-slate-200">
@@ -114,7 +121,7 @@ function openBranchModal(branchName) {
                     <div class="flex items-center justify-between pt-1 border-t border-emerald-100/60">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-slate-900">${oStats.disbursedCount} Clients</span>
+                            <span class="font-bold text-slate-900">${oStats.disbursedCount} loans</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                         </div>
                     </div>
@@ -134,7 +141,7 @@ function openBranchModal(branchName) {
                         <span class="font-bold text-slate-900 font-mono">${oStats.newLoanSet.size} clients</span>
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
-                        <span class="text-bambooDark font-bold">New Inclusions FTM:</span>
+                        <span class="text-bambooDark font-bold">New Inclusions:</span>
                         <div class="font-mono text-right">
                             <span class="font-bold text-bambooDark">${oStats.newInclusionsCount} clients</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
@@ -151,7 +158,7 @@ function openBranchModal(branchName) {
 
 const maxDaysForNewInclusion = new Date().getDate();
 const badgeEl = document.getElementById('newInclusionsBadge');
-if (badgeEl) badgeEl.innerText = `New Inclusions FTM: Arrears ≤ ${maxDaysForNewInclusion} days`;
+if (badgeEl) badgeEl.innerText = `New Inclusions: Arrears ≤ ${maxDaysForNewInclusion} days`;
 
 const currentDateObj = new Date();
 const currentDateStr = formatYYYYMMDD(currentDateObj);
@@ -201,7 +208,6 @@ if (csvInput) {
                 }
 
                 renderDashboard(rawData);
-                if (typeof executePresetPrompt === 'function') executePresetPrompt('PAR_HOTSPOTS');
             }
         });
     });
@@ -242,7 +248,6 @@ if (resetFiltersEl) {
         if (disbStartEl) disbStartEl.value = currentDateStr;
         if (disbEndEl) disbEndEl.value = currentDateStr;
         renderDashboard(rawData);
-        if (typeof executePresetPrompt === 'function') executePresetPrompt('PAR_HOTSPOTS');
     });
 }
 
@@ -258,12 +263,6 @@ function populateFilters(data) {
     if (officerFilterEl) {
         officerFilterEl.innerHTML = '<option value="ALL">All Credit Officers / TS</option>';
         officers.forEach(o => officerFilterEl.innerHTML += `<option value="${o}">${o}</option>`);
-    }
-
-    const promptScopeSelect = document.getElementById('promptTargetScope');
-    if (promptScopeSelect) {
-        promptScopeSelect.innerHTML = '<option value="OVERALL">Overall Area (All Branches)</option>';
-        branches.forEach(b => promptScopeSelect.innerHTML += `<option value="${b}">${b}</option>`);
     }
 
     const monthMap = new Map();
@@ -313,11 +312,6 @@ function applyFilters() {
     });
 
     renderDashboard(filtered);
-    const promptScopeSelect = document.getElementById('promptTargetScope');
-    if (promptScopeSelect) {
-        promptScopeSelect.value = selectedBranch !== 'ALL' ? selectedBranch : 'OVERALL';
-    }
-    if (typeof executePresetPrompt === 'function') executePresetPrompt('PAR_HOTSPOTS');
 }
 
 function renderDashboard(data) {
@@ -526,7 +520,7 @@ function renderDashboard(data) {
         portfolioHoverOverlay.innerHTML = `
             <span class="text-[10px] uppercase font-extrabold text-emerald-200">Portfolio Loan Size</span>
             <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <span class="text-[9px] text-emerald-300 mt-1">LP / Total Clients</span>
+            <span class="text-[9px] text-emerald-300 mt-1">GLP / Active Borrowers</span>
         `;
     }
 
@@ -548,7 +542,7 @@ function renderDashboard(data) {
     if (kpiBorrowers) kpiBorrowers.innerText = filteredEligibleClients.size.toLocaleString();
     if (kpiBorrowersSub) kpiBorrowersSub.innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
     
-    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} Clients`;
+    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} loans`;
     if (kpiDisbursedTotalLoanHover) kpiDisbursedTotalLoanHover.innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
     const disbursedHoverContainer = kpiDisbursedCount ? kpiDisbursedCount.parentElement.querySelector('.absolute') : null;
@@ -597,7 +591,6 @@ function renderDailyDisbursementTable(data) {
         if (!dt) return;
 
         const dateKey = formatYYYYMMDD(dt);
-        
         if (startDateStr && dateKey < startDateStr) return;
         if (endDateStr && dateKey > endDateStr) return;
 
@@ -658,7 +651,6 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
     if (borrowerChart) borrowerChart.destroy();
 
     const titleEl = document.getElementById('newInclusionsChartTitle');
-    
     let labels = [];
     let counts = [];
     let olbTotals = [];
@@ -666,7 +658,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
     const maxDays = maxDaysForNewInclusion || new Date().getDate();
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions FTM: ${branchFilterValue} (By Officer)`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
 
         const officerMap = {};
         data.forEach(item => {
@@ -690,7 +682,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
         olbTotals = sortedOfficers.map(o => officerMap[o].olb);
 
     } else {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions FTM`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions`;
 
         const branchMap = {};
         data.forEach(item => {
@@ -759,14 +751,8 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
                 }
             },
             scales: {
-                x: {
-                    ticks: { color: '#64748b', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 },
-                    grid: { display: false }
-                },
-                y: {
-                    ticks: { color: '#64748b', font: { size: 10 }, precision: 0 },
-                    grid: { color: '#f1f5f9' }
-                }
+                x: { ticks: { color: '#64748b', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 }, grid: { display: false } },
+                y: { ticks: { color: '#64748b', font: { size: 10 }, precision: 0 }, grid: { color: '#f1f5f9' } }
             }
         }
     });
@@ -876,14 +862,8 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                 }
             },
             scales: {
-                x: {
-                    ticks: { color: '#64748b', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 },
-                    grid: { display: false }
-                },
-                y: {
-                    ticks: { color: '#64748b', font: { size: 10 } },
-                    grid: { color: '#f1f5f9', borderDash: [4, 4] }
-                }
+                x: { ticks: { color: '#64748b', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 }, grid: { display: false } },
+                y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#f1f5f9', borderDash: [4, 4] } }
             }
         }
     });
@@ -900,14 +880,7 @@ function renderParAgingBarChart(b1, b2, b3, b4, b5, b6, c1, c2, c3, c4, c5, c6) 
     const counts = [c1, c2, c3, c4, c5, c6];
     const totalPAR = amounts.reduce((acc, val) => acc + val, 0);
 
-    const professionalRiskColors = [
-        '#52b788', // 1-30 days
-        '#f59e0b', // 31-60 days
-        '#ef4444', // 61-90 days
-        '#991b1b', // 91-180 days
-        '#7f1d1d', // 181-365 days
-        '#0a2318'  // >365 days
-    ];
+    const professionalRiskColors = ['#52b788', '#f59e0b', '#ef4444', '#991b1b', '#7f1d1d', '#0a2318'];
 
     parAgingChart = new Chart(ctx, {
         type: 'doughnut',
@@ -958,9 +931,7 @@ function renderParAgingBarChart(b1, b2, b3, b4, b5, b6, c1, c2, c3, c4, c5, c6) 
                     padding: 10,
                     boxPadding: 4,
                     callbacks: {
-                        title: function(context) {
-                            return `PAR Bracket: ${context[0].label}`;
-                        },
+                        title: function(context) { return `PAR Bracket: ${context[0].label}`; },
                         label: function(context) {
                             const idx = context.dataIndex;
                             const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1010,7 +981,7 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
         if (branchFilterValue && branchFilterValue !== 'ALL' && branch !== branchFilterValue) return;
 
         const groupKey = (branchFilterValue && branchFilterValue !== 'ALL') ? officer : branch;
-        const weekNum = getCustomWeekOfMonth(dDate); // 1 to 5
+        const weekNum = getCustomWeekOfMonth(dDate);
 
         if (!groupMap[groupKey]) {
             groupMap[groupKey] = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
@@ -1026,11 +997,7 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
 
     const groupKeys = Object.keys(groupMap).sort();
     const weekLabels = ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'];
-
-    const professionalColors = [
-        '#2d6a4f', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', 
-        '#06b6d4', '#10b981', '#f97316', '#6366f1', '#14b8a6'
-    ];
+    const professionalColors = ['#2d6a4f', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#10b981', '#f97316', '#6366f1', '#14b8a6'];
 
     const datasets = groupKeys.map((key, idx) => {
         const weekData = [
@@ -1055,32 +1022,17 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
     });
 
     if (datasets.length === 0) {
-        datasets.push({
-            label: 'No Data',
-            data: [0, 0, 0, 0, 0],
-            borderColor: '#94a3b8',
-            backgroundColor: '#94a3b8'
-        });
+        datasets.push({ label: 'No Data', data: [0, 0, 0, 0, 0], borderColor: '#94a3b8', backgroundColor: '#94a3b8' });
     }
 
     weeklyChart = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: weekLabels,
-            datasets: datasets
-        },
+        data: { labels: weekLabels, datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 10,
-                        color: '#475569',
-                        font: { size: 9, weight: 'bold' }
-                    }
-                },
+                legend: { position: 'bottom', labels: { boxWidth: 10, color: '#475569', font: { size: 9, weight: 'bold' } } },
                 tooltip: {
                     backgroundColor: '#071a12',
                     titleColor: '#52b788',
@@ -1089,12 +1041,8 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
                     borderWidth: 1,
                     padding: 10,
                     callbacks: {
-                        title: function(context) {
-                            return `${context[0].label}`;
-                        },
-                        label: function(context) {
-                            return `${context.dataset.label}: ${context.raw} disbursed borrowers`;
-                        }
+                        title: function(context) { return `${context[0].label}`; },
+                        label: function(context) { return `${context.dataset.label}: ${context.raw} disbursed borrowers`; }
                     }
                 }
             },
@@ -1115,7 +1063,6 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
     const categories = Object.keys(productSummary);
     const totals = categories.map(c => productSummary[c]);
     const borrowerCounts = categories.map(c => productBorrowerSets[c] ? productBorrowerSets[c].size : 0);
-
     const totalPortfolio = totals.reduce((acc, val) => acc + val, 0);
 
     const radialGradient = ctx.createRadialGradient(140, 110, 10, 140, 110, 110);
@@ -1144,21 +1091,9 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
             maintainAspectRatio: false,
             scales: {
                 r: {
-                    angleLines: {
-                        color: 'rgba(100, 116, 139, 0.2)',
-                        lineWidth: 1
-                    },
-                    grid: {
-                        color: 'rgba(100, 116, 139, 0.15)',
-                        circular: false
-                    },
-                    pointLabels: {
-                        font: {
-                            size: 10,
-                            weight: 'bold'
-                        },
-                        color: '#334155'
-                    },
+                    angleLines: { color: 'rgba(100, 116, 139, 0.2)', lineWidth: 1 },
+                    grid: { color: 'rgba(100, 116, 139, 0.15)', circular: false },
+                    pointLabels: { font: { size: 10, weight: 'bold' }, color: '#334155' },
                     ticks: {
                         backdropColor: 'transparent',
                         font: { size: 9 },
@@ -1181,9 +1116,7 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
                     borderWidth: 1,
                     padding: 12,
                     callbacks: {
-                        title: function(context) {
-                            return `Product Category: ${context[0].label}`;
-                        },
+                        title: function(context) { return `Product Category: ${context[0].label}`; },
                         label: function(context) {
                             const idx = context.dataIndex;
                             const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1248,7 +1181,7 @@ function renderCbsPivotMatrix(data) {
         return;
     }
 
-    let html = `<thead><tr class="bg-slate-50 text-slate-700 border-b border-slate-200"><th class="p-2.5 pl-3 font-bold">Row Labels (${selectedBranch !== 'ALL' ? 'Credit Officer' : 'Branch'})</th>`;
+    let html = `<thead><tr class="bg-slate-100 text-slate-800 border-b border-slate-300"><th class="p-2.5 pl-3 font-bold">Row Labels (${selectedBranch !== 'ALL' ? 'Credit Officer' : 'Branch'})</th>`;
     allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
     html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
 
@@ -1257,7 +1190,7 @@ function renderCbsPivotMatrix(data) {
     let grandTotalOverall = new Set();
 
     ['Newloan', 'Reloan'].forEach(cat => {
-        html += `<tr class="bg-emerald-50/60 text-bambooDark font-extrabold"><td class="p-2 pl-3" colspan="${allStatuses.length + 2}">${cat}</td></tr>`;
+        html += `<tr class="bg-emerald-50/80 text-emerald-900 font-extrabold"><td class="p-2 pl-3" colspan="${allStatuses.length + 2}">${cat}</td></tr>`;
         
         const catColCounts = {};
         allStatuses.forEach(st => catColCounts[st] = new Set());
@@ -1265,7 +1198,7 @@ function renderCbsPivotMatrix(data) {
         sortedRowKeys.forEach(rowKey => {
             if (matrix[cat][rowKey]) {
                 let rowTot = 0;
-                html += `<tr class="border-b border-slate-100"><td class="p-2 pl-6 text-slate-700 font-semibold">${rowKey}</td>`;
+                html += `<tr class="border-b border-slate-200 hover:bg-slate-50 bg-white"><td class="p-2 pl-6 text-slate-900 font-semibold">${rowKey}</td>`;
                 allStatuses.forEach(st => {
                     const clientSet = matrix[cat][rowKey][st] || new Set();
                     const count = clientSet.size;
@@ -1277,29 +1210,27 @@ function renderCbsPivotMatrix(data) {
                         grandTotalOverall.add(c);
                     });
 
-                    html += `<td class="p-2 text-center text-slate-800 font-mono">${count || ''}</td>`;
+                    html += `<td class="p-2 text-center text-slate-950 font-mono font-bold">${count || ''}</td>`;
                 });
-                html += `<td class="p-2 text-center text-slate-900 font-mono font-bold">${rowTot}</td></tr>`;
+                html += `<td class="p-2 text-center text-slate-950 font-mono font-black">${rowTot}</td></tr>`;
             }
         });
 
-        html += `<tr class="bg-slate-100/80 font-bold border-b border-slate-200"><td class="p-2 pl-6 text-slate-900 uppercase">Total ${cat}</td>`;
+        html += `<tr class="bg-slate-200/90 font-bold border-b border-slate-300"><td class="p-2 pl-6 text-slate-950 uppercase">Total ${cat}</td>`;
         allStatuses.forEach(st => {
             const cCount = catColCounts[st].size;
-            html += `<td class="p-2 text-center text-slate-950 font-mono">${cCount || ''}</td>`;
+            html += `<td class="p-2 text-center text-slate-950 font-mono font-bold">${cCount || ''}</td>`;
         });
         let catUniqueTotal = 0;
-        allStatuses.forEach(st => {
-            catColCounts[st].forEach(c => catUniqueTotal++);
-        });
-        html += `<td class="p-2 text-center text-slate-950 font-mono font-bold">${catUniqueTotal}</td></tr>`;
+        allStatuses.forEach(st => { catColCounts[st].forEach(c => catUniqueTotal++); });
+        html += `<td class="p-2 text-center text-slate-950 font-mono font-black">${catUniqueTotal}</td></tr>`;
     });
 
-    html += `<tr class="bg-emerald-100/80 text-slate-950 font-black"><td class="p-3 pl-3 uppercase">Grand Total</td>`;
+    html += `<tr class="bg-[#004040] text-white font-black"><td class="p-3 pl-3 uppercase">Grand Total</td>`;
     allStatuses.forEach(st => {
-        html += `<td class="p-3 text-center font-mono text-slate-950">${grandTotalColCounts[st].size || ''}</td>`;
+        html += `<td class="p-3 text-center font-mono text-white">${grandTotalColCounts[st].size || ''}</td>`;
     });
-    html += `<td class="p-3 text-center font-mono text-slate-950">${grandTotalOverall.size}</td></tr>`;
+    html += `<td class="p-3 text-center font-mono text-white">${grandTotalOverall.size}</td></tr>`;
 
     html += `</tbody>`;
     table.innerHTML = html;
@@ -1329,79 +1260,75 @@ function renderBranchCards(branchMap) {
         card.innerHTML = `
             <div>
                 <div class="flex items-center justify-between pb-2 border-b border-[#16422d] mb-2">
-                    <h4 class="font-black text-white text-sm uppercase flex items-center gap-1.5">
+                    <h4 class="font-black text-sm uppercase flex items-center gap-1.5">
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Trust Staffs</span>
-                        <span class="text-[10px] text-slate-400 font-mono block">Active</span>
+                        <span class="text-xs font-mono font-bold">${totalOfficersCount} Officers / TS</span>
+                        <span class="text-[10px] block font-mono">Active Roster</span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 mb-2.5 font-mono">
-                    <div class="bg-[#113626]/70 p-2 rounded border border-[#16422d]">
-                        <span class="text-[10px] font-sans font-bold uppercase text-slate-400 block">Loan Portfolio</span>
-                        <span class="text-xs font-bold text-white">${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <div class="p-2 rounded border border-[#16422d]">
+                        <span class="text-[10px] font-sans font-bold uppercase block">Loan Portfolio</span>
+                        <span class="text-xs font-bold">${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
-                    <div class="bg-[#113626]/70 p-2 rounded border border-[#16422d]">
-                        <span class="text-[10px] font-sans font-bold uppercase text-slate-400 block">PAR Amount</span>
+                    <div class="p-2 rounded border border-[#16422d]">
+                        <span class="text-[10px] font-sans font-bold uppercase block">PAR Amount</span>
                         <span class="text-xs font-bold text-rose-400">${b.parAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
-                    <div class="bg-[#113626]/70 p-2 rounded border border-[#16422d]">
-                        <span class="text-[10px] font-sans font-bold uppercase text-slate-400 block">PAR Ratio</span>
+                    <div class="p-2 rounded border border-[#16422d]">
+                        <span class="text-[10px] font-sans font-bold uppercase block">PAR Ratio</span>
                         <span class="text-xs font-bold text-amber-400">${ratio.toFixed(2)}%</span>
                     </div>
-                    <div class="bg-[#113626]/70 p-2 rounded border border-[#16422d]">
-                        <span class="text-[10px] font-sans font-bold uppercase text-slate-400 block">Borrowers</span>
-                        <span class="text-xs font-bold text-emerald-300">${branchBorrowers.toLocaleString()}</span>
+                    <div class="p-2 rounded border border-[#16422d]">
+                        <span class="text-[10px] font-sans font-bold uppercase block">Borrowers</span>
+                        <span class="text-xs font-bold">${branchBorrowers.toLocaleString()}</span>
                     </div>
                 </div>
 
-                <div class="bg-[#113626]/50 border border-[#16422d] p-2.5 rounded-lg space-y-1.5 text-xs text-slate-200">
+                <div class="border border-[#16422d] p-2.5 rounded-lg space-y-1.5 text-xs">
                     <div class="flex items-center justify-between font-mono">
-                        <span class="text-slate-300 font-bold font-sans text-[10px] uppercase">Portfolio Loan Size:</span>
-                        <span class="font-bold text-white">₱ ${portfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span class="font-bold font-sans text-[10px] uppercase">Portfolio Loan Size:</span>
+                        <span class="font-bold">₱ ${portfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div class="flex items-center justify-between pt-1 border-t border-[#16422d]">
-                        <span class="text-blue-300 font-bold">Disbursed (Month):</span>
+                        <span class="font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-white">${branchDisbursedCount} loans</span>
-                            <span class="text-[10px] text-slate-400 block">₱ ${b.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="font-bold">${branchDisbursedCount} loans</span>
+                            <span class="text-[10px] block">₱ ${b.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                     </div>
                     <div class="flex items-center justify-between font-mono pt-1 border-t border-[#16422d]">
-                        <span class="text-blue-300 font-bold font-sans text-[10px] uppercase">Disbursement Loan Size:</span>
-                        <span class="font-bold text-blue-200">₱ ${disbursementLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span class="font-bold font-sans text-[10px] uppercase">Disbursement Loan Size:</span>
+                        <span class="font-bold">₱ ${disbursementLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
-                    <div class="flex items-center justify-between text-[11px] font-mono text-slate-300 pl-2 border-l-2 border-blue-400 pt-1">
-                        <span>W1: <strong class="text-white">${b.disbursedWeeks[1].size}</strong></span>
-                        <span>W2: <strong class="text-white">${b.disbursedWeeks[2].size}</strong></span>
-                        <span>W3: <strong class="text-white">${b.disbursedWeeks[3].size}</strong></span>
-                        <span>W4: <strong class="text-white">${b.disbursedWeeks[4].size}</strong></span>
-                        <span>W5: <strong class="text-white">${b.disbursedWeeks[5].size}</strong></span>
+                    <div class="flex items-center justify-between text-[11px] font-mono pl-2 border-l-2 border-blue-400 pt-1">
+                        <span>W1: <strong>${b.disbursedWeeks[1].size}</strong></span>
+                        <span>W2: <strong>${b.disbursedWeeks[2].size}</strong></span>
+                        <span>W3: <strong>${b.disbursedWeeks[3].size}</strong></span>
+                        <span>W4: <strong>${b.disbursedWeeks[4].size}</strong></span>
+                        <span>W5: <strong>${b.disbursedWeeks[5].size}</strong></span>
                     </div>
-                    
                     <div class="flex items-center justify-between border-t border-[#16422d] pt-1 relative group-new-loan cursor-pointer py-0.5">
-                        <span class="text-teal-300 font-bold">New Loans (Month):</span>
-                        <span class="font-bold text-white font-mono">${branchNewLoanCount} clients</span>
-
+                        <span class="font-bold">New Loans (Month):</span>
+                        <span class="font-bold font-mono">${branchNewLoanCount} clients</span>
                         <div class="new-loan-hover-card absolute inset-0 bg-[#071a12] text-white px-3 flex flex-col justify-center items-center opacity-0 pointer-events-none transition-opacity duration-200 rounded border border-teal-400 z-20 shadow-xl">
                             <span class="text-[9px] uppercase font-extrabold text-teal-200">New Loan Amt: ₱ ${b.newLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                             <span class="text-[10px] font-black font-mono text-white mt-0.5">New Loan Size: ₱ ${newLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                     </div>
-
                     <div class="flex items-center justify-between border-t border-[#16422d] pt-1">
-                        <span class="text-emerald-400 font-bold">New Inclusions:</span>
+                        <span class="font-bold">New Inclusions:</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-emerald-300">${b.newInclusionsCount} clients</span>
-                            <span class="text-[10px] text-slate-400 block">₱ ${b.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="font-bold">${b.newInclusionsCount} clients</span>
+                            <span class="text-[10px] block">₱ ${b.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="text-[11px] text-emerald-300 font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2 group-hover:text-emerald-200">
+            <div class="text-[11px] font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2">
                 <span>View TS Officer Breakdown</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
