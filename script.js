@@ -526,7 +526,7 @@ function renderDashboard(data) {
         portfolioHoverOverlay.innerHTML = `
             <span class="text-[10px] uppercase font-extrabold text-emerald-200">Portfolio Loan Size</span>
             <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <span class="text-[9px] text-emerald-300 mt-1">GLP / Active Borrowers</span>
+            <span class="text-[9px] text-emerald-300 mt-1">LP / Total Clients</span>
         `;
     }
 
@@ -1333,7 +1333,7 @@ function renderBranchCards(branchMap) {
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Trust Staff</span>
+                        <span class="text-xs text-emerald-200 font-mono font-bold">${totalOfficersCount} Trust Staffs</span>
                         <span class="text-[10px] text-slate-400 font-mono block">Active</span>
                     </div>
                 </div>
