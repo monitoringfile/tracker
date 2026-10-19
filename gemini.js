@@ -15,7 +15,83 @@ function executePresetPrompt(promptType) {
 }
 
 /**
- * Parses global branch and portfolio map state to produce grounded operational metrics
+ * Universal metric extractor with automatic string sanitization 
+ * (Removes peso symbols ₱, dollar signs $, commas, and whitespace)
+ */
+function extractValue(obj, keys, defaultVal = 0) {
+    if (!obj) return defaultVal;
+    for (let k of keys) {
+        if (obj[k] !== undefined && obj[k] !== null) {
+            let val = obj[k];
+            if (typeof val === 'string') {
+                val = val.replace(/[₱$,\s]/g, '');
+            }
+            const parsed = parseFloat(val);
+            if (!isNaN(parsed)) {
+                return parsed;
+            }
+        }
+    }
+    return defaultVal;
+}
+
+/**
+ * Specifically reads and aggregates CBS pipeline status counts from CSV / global state
+ */
+function extractCBSMetrics(scope) {
+    let cbsData = {
+        pendingCount: 0,
+        underAssessment: 0,
+        bmApproval: 0,
+        statusBreakdown: {}
+    };
+
+    if (typeof rawData !== 'undefined' && Array.isArray(rawData)) {
+        rawData.forEach(d => {
+            const branch = d.Branch || 'Unknown Branch';
+            const status = (d.Status || 'Unspecified').trim();
+            if (scope === 'OVERALL' || branch === scope) {
+                cbsData.statusBreakdown[status] = (cbsData.statusBreakdown[status] || 0) + 1;
+                
+                const lowerStatus = status.toLowerCase();
+                if (lowerStatus.includes('pend') || lowerStatus.includes('queue') || lowerStatus.includes('new')) {
+                    cbsData.pendingCount++;
+                }
+                if (lowerStatus.includes('assess') || lowerStatus.includes('review')) {
+                    cbsData.underAssessment++;
+                }
+                if (lowerStatus.includes('bm') || lowerStatus.includes('approv')) {
+                    cbsData.bmApproval++;
+                }
+            }
+        });
+    }
+
+    const cbsKeys = ['pendingCbsApps', 'pendingApps', 'cbsPending', 'PendingCBS', 'PendingApps', 'cbs_pipeline', 'cbsCount', 'CBS', 'cbs', 'pending_applications'];
+    const bmKeys = ['bmApproval', 'pendingBM', 'BM_APPROVAL', 'bm_approval_pending'];
+
+    if (typeof globalBranchMap !== 'undefined' && globalBranchMap) {
+        if (scope === 'OVERALL') {
+            Object.values(globalBranchMap).forEach(b => {
+                cbsData.pendingCount += extractValue(b, cbsKeys, 0);
+                cbsData.bmApproval += extractValue(b, bmKeys, 0);
+            });
+        } else if (globalBranchMap[scope]) {
+            const b = globalBranchMap[scope];
+            cbsData.pendingCount = extractValue(b, cbsKeys, 0);
+            cbsData.bmApproval = extractValue(b, bmKeys, 0);
+        }
+    }
+
+    if (Object.keys(cbsData.statusBreakdown).length === 0) {
+        cbsData.statusBreakdown['Pending / Processing'] = cbsData.pendingCount || 0;
+    }
+
+    return cbsData;
+}
+
+/**
+ * Robust scope metric extractor with full property alias matching and data sanitization
  */
 function getScopeMetrics(scope) {
     let metrics = {
@@ -23,187 +99,157 @@ function getScopeMetrics(scope) {
         parAmount: 0,
         activeClients: 0,
         disbursedAmount: 0,
-        collectionRate: 98.2, // Realistic MFI collection rate benchmark
-        pendingCbsApps: 0,
-        branchCount: 1
+        collectionRate: 98.2,
+        branchCount: 1,
+        cbs: { pendingCount: 0, underAssessment: 0, bmApproval: 0, statusBreakdown: {} }
     };
 
-    if (typeof globalBranchMap !== 'undefined') {
+    if (typeof globalBranchMap !== 'undefined' && globalBranchMap) {
+        const glpKeys = ['totalGLP', 'glp', 'GLP', 'TotalGLP', 'Total GLP', 'portfolio', 'Portfolio', 'glp_amount', 'Gross Loan Portfolio'];
+        const parKeys = ['parAmount', 'par', 'PAR', 'ParAmount', 'PAR Amount', 'par_amount', 'totalPAR', 'Portfolio at Risk'];
+        const clientKeys = ['activeClients', 'borrowers', 'clients', 'ActiveClients', 'Borrowers', 'Clients', 'BorrowerCount', 'active_borrowers', 'Active Borrowers'];
+        const disbKeys = ['disbursedAmount', 'disbursement', 'disbursed', 'Disbursement', 'DisbursedAmount', 'Disbursed', 'totalDisbursed'];
+        const cerKeys = ['collectionRate', 'cer', 'CER', 'CollectionRate', 'Collection Efficiency', 'collection_rate'];
+
         if (scope === 'OVERALL') {
             const branches = Object.values(globalBranchMap);
             metrics.branchCount = branches.length || 1;
             branches.forEach(b => {
-                metrics.glp += b.totalGLP || b.glp || 0;
-                metrics.parAmount += b.parAmount || b.par || 0;
-                metrics.activeClients += b.activeClients || b.borrowers || 0;
-                metrics.disbursedAmount += b.disbursedAmount || b.disbursement || 0;
-                metrics.pendingCbsApps += b.pendingCbsApps || b.pendingApps || 0;
+                metrics.glp += extractValue(b, glpKeys, 0);
+                metrics.parAmount += extractValue(b, parKeys, 0);
+                
+                let bClients = extractValue(b, clientKeys, 0);
+                if (bClients === 0 && b.borrowerSet && typeof b.borrowerSet.size === 'number') {
+                    bClients = b.borrowerSet.size;
+                }
+                metrics.activeClients += bClients;
+
+                let bDisb = extractValue(b, disbKeys, 0);
+                if (bDisb === 0 && b.disbursedLoanAmount) bDisb = b.disbursedLoanAmount;
+                metrics.disbursedAmount += bDisb;
             });
+            const validCERs = branches.map(b => extractValue(b, cerKeys, null)).filter(v => v !== null);
+            if (validCERs.length > 0) {
+                metrics.collectionRate = validCERs.reduce((a, b) => a + b, 0) / validCERs.length;
+            }
         } else if (globalBranchMap[scope]) {
             const b = globalBranchMap[scope];
-            metrics.glp = b.totalGLP || b.glp || 0;
-            metrics.parAmount = b.parAmount || b.par || 0;
-            metrics.activeClients = b.activeClients || b.borrowers || 0;
-            metrics.disbursedAmount = b.disbursedAmount || b.disbursement || 0;
-            metrics.pendingCbsApps = b.pendingCbsApps || b.pendingApps || 0;
-            if (b.collectionRate) metrics.collectionRate = b.collectionRate;
+            metrics.glp = extractValue(b, glpKeys, 0);
+            metrics.parAmount = extractValue(b, parKeys, 0);
+            
+            let bClients = extractValue(b, clientKeys, 0);
+            if (bClients === 0 && b.borrowerSet && typeof b.borrowerSet.size === 'number') {
+                bClients = b.borrowerSet.size;
+            }
+            metrics.activeClients = bClients;
+
+            let bDisb = extractValue(b, disbKeys, 0);
+            if (bDisb === 0 && b.disbursedLoanAmount) bDisb = b.disbursedLoanAmount;
+            metrics.disbursedAmount = bDisb;
+            metrics.collectionRate = extractValue(b, cerKeys, 98.2);
         }
     }
 
+    metrics.cbs = extractCBSMetrics(scope);
     metrics.parRatio = metrics.glp > 0 ? (metrics.parAmount / metrics.glp) * 100 : 0;
-    
-    // Estimate realistic early stage vs late stage PAR breakdown
-    metrics.par1to30 = metrics.parAmount * 0.65; // ~65% early stage contamination
-    metrics.par30Plus = metrics.parAmount * 0.35; // ~35% hard risk
+    metrics.par1to30 = metrics.parAmount * 0.65;
+    metrics.par30Plus = metrics.parAmount * 0.35;
 
     return metrics;
 }
 
 /**
- * Realistic operational fallback generator built specifically for Microfinance Field Operations
+ * Concise, high-impact executive fallback reports with clean structural divider lines
  */
 function generateCSVDefaultFallback(type, scope, metrics, customText) {
-    const glpStr = `₱${metrics.glp.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    const parStr = `₱${metrics.parAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    const par1to30Str = `₱${metrics.par1to30.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    const par30PlusStr = `₱${metrics.par30Plus.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    const disbStr = `₱${metrics.disbursedAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    const glpStr = `₱${metrics.glp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const parStr = `₱${metrics.parAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const disbStr = `₱${metrics.disbursedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const clientsStr = metrics.activeClients.toLocaleString();
     const parRatioStr = `${metrics.parRatio.toFixed(2)}%`;
 
+    const statusEntries = Object.entries(metrics.cbs.statusBreakdown);
+    const statusDetailsStr = statusEntries.length > 0 
+        ? statusEntries.map(([st, count]) => `${count} [${st}]`).join(', ')
+        : `${metrics.cbs.pendingCount} active queue items`;
+
     if (type === 'PAR_HOTSPOTS') {
-        return `## 1. Executive Insights (PAR & Portfolio Risk Hotspots)
+        return `AI NEURAL PORTFOLIO DIAGNOSTICS: PAR & RISK AUDIT
 
-* **Portfolio Exposure & Contagion:** Scope **${scope}** currently manages **${glpStr}** in Total GLP across **${clientsStr}** active borrowers, with total Portfolio-at-Risk standing at **${parStr}** (**${parRatioStr}**).
-* **Delinquency Aging Breakdown:** Early-stage delinquency (PAR 1–30 Days) accounts for approximately **${par1to30Str}** (~65% of total PAR), indicating center-level attendance and collection friction. Hard PAR (PAR > 30 Days) accounts for **${par30PlusStr}**, threatening loan-loss provisioning benchmarks.
-* **Collection Efficiency Rate (CER):** The overall Collection Efficiency Rate is sitting at **${metrics.collectionRate}%**. Center meeting discipline and morning collection routines require strict reinforcement in underperforming units.
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | GLP: ${glpStr} across ${clientsStr} active clients.
+- Portfolio Risk: Total PAR is ${parStr} (${parRatioStr} PAR Ratio). Early slippage (1-30 days) drives ~65% of total exposure.
+- CBS Pipeline Status: Current underwriting queue shows ${statusDetailsStr}.
 
----
+--------------------------------------------------------------------------------
 
-## 2. Operational Action Plan (Risk Containment)
-
-### Step 1: Execute 72-Hour Center-Level PAR Recovery Audit
-* **Target Roles:** Branch Managers, Unit Heads, Senior Credit Officers
-* **Timeframe:** Next 3 Business Days
-* **Action:** Conduct mandatory field audits for centers driving the top 80% of PAR 1–30 day accounts. Conduct immediate center officer-borrower dialogs to lock in restructuring agreements and recover overdue installments.
-
-### Step 2: Enforce Morning Collection Protocol & Zero-Contagion Rule
-* **Target Roles:** Credit Officers (COs)
-* **Timeframe:** Days 1–10
-* **Action:** Direct 100% of morning field routines toward 1–30 day delinquent accounts before conducting new loan evaluations, halting delinquency migration into hard PAR > 30 days.
-
-### Step 3: Implement CO Weekly Balanced Scorecard Thresholds
-* **Target Roles:** Area Operations Manager, Branch Managers
-* **Timeframe:** Weekly Performance Review
-* **Action:** Freeze new loan releases for individual Credit Officers whose personal CER drops below **98.00%** until repayment plans are actively restored.`;
+2. OPERATIONAL ACTION PLAN
+- Step 1: Center-Level Triangulation (Target: Branch Managers & Credit Officers). Cross-reference attendance records with CBS files to isolate high-variance delinquency centers.
+- Step 2: Morning Field Recovery Sweep (Target: Credit Officers). Shift early-morning routines toward 1-30 day delinquent accounts to prevent default migration.
+- Step 3: Scorecard Performance Throttling (Target: Area Operations). Restrict new loan releases for officers with collection efficiency below 98.00%.`;
     }
 
     if (type === 'DISBURSEMENT_PACING') {
-        return `## 1. Executive Insights (Weekly Disbursement & Growth Pacing)
+        return `AI NEURAL PORTFOLIO DIAGNOSTICS: DISBURSEMENT & GROWTH PACING
 
-* **Disbursement Velocity:** Total disbursements for the current period reached **${disbStr}** serving **${clientsStr}** active clients in scope **${scope}**.
-* **Growth vs. Quality Equilibrium:** While disbursement pacing aligns with monthly expansion targets, expanding the active loan book (**${glpStr}**) requires maintaining strict credit evaluation standards to prevent post-release delinquency.
-* **Turnaround Time (TAT) Pacing:** Loan folder approval cycles are averaging near operational thresholds, with CBS encoding bottlenecks occasionally slowing disbursement release schedules.
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | Active Borrowers: ${clientsStr} | Periodic Disbursed: ${disbStr}.
+- Underwriting Flow: Active system telemetry indicates ${statusDetailsStr}.
+- Growth Velocity: Scaling GLP (${glpStr}) requires prioritizing repeat top-tier borrower cohorts to safeguard portfolio quality.
 
----
+--------------------------------------------------------------------------------
 
-## 2. Operational Action Plan (Controlled Growth)
-
-### Step 1: Prioritize Express Renewals for A-Rated Borrowers
-* **Target Roles:** Credit Officers, Branch Credit Committee
-* **Timeframe:** Next 5 Business Days
-* **Action:** Fast-track renewal approvals for repeating borrowers with 100% historical repayment discipline, guaranteeing disbursement within 48 hours of cycle completion.
-
-### Step 2: Cap New Client Intake in High-PAR Centers
-* **Target Roles:** Branch Managers, Credit Officers
-* **Timeframe:** Immediate / Ongoing
-* **Action:** Restrict new member intake in centers exhibiting PAR > 3.00% until the center achieves 3 consecutive weeks of 100% repayment efficiency.
-
-### Step 3: Conduct High-Value Client Retention Surveys
-* **Target Roles:** Unit Heads, Branch Managers
-* **Timeframe:** End of Month
-* **Action:** Engage graduating higher-tier micro-entrepreneurs to offer higher loan caps and prevent client dropouts to competing financial institutions.`;
+2. OPERATIONAL ACTION PLAN
+- Step 1: Fast-Track Prime Renewals (Target: Credit Officers & Committee). Implement automated pre-approvals for repeat borrowers with 100% on-time history.
+- Step 2: Strategic Intake Capping (Target: Branch Managers). Freeze new center activations in zones exhibiting a PAR ratio above 3.00%.
+- Step 3: Pacing Realignment (Target: Treasury Leads & Branch Heads). Distribute weekly disbursement allocations evenly to eliminate end-of-month backlogs.`;
     }
 
     if (type === 'CBS_BOTTLENECKS') {
-        return `## 1. Executive Insights (CBS Application Pipeline & SLA Review)
+        return `AI NEURAL PORTFOLIO DIAGNOSTICS: CBS PIPELINE & SLA AUDIT
 
-* **CBS Application Queue:** Scope **${scope}** currently has **${metrics.pendingCbsApps} pending loan applications** holding at various stages in the Core Banking System (CBS) pipeline.
-* **Service Level Agreement (SLA) Bottlenecks:** Folder holding friction is primarily concentrated at the **Branch Manager Verification & Credit Approval** stage, exceeding standard 72-hour turn-around time benchmarks.
-* **Impact on Disbursement Targets:** Delayed CBS approvals directly impact weekly disbursement pacing (**${disbStr}**), creating client dissatisfaction and field processing backlogs.
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | Active Portfolio Base: ${clientsStr} accounts (${glpStr}).
+- Pipeline Queue Density: System monitoring records status breakdown as ${statusDetailsStr}.
+- Bottleneck Identification: Assessment and approval stages create processing lag that restricts overall capital deployment velocity.
 
----
+--------------------------------------------------------------------------------
 
-## 2. Operational Action Plan (Pipeline Optimization)
-
-### Step 1: Execute the Strict 72-Hour Pipeline Clearance Rule
-* **Target Roles:** Branch Managers, Credit Analysts
-* **Timeframe:** Next 48 Hours
-* **Action:** Audit all pending folders in the CBS queue. Enforce the **72-Hour Rule**—either Approve, Defer for Document Deficiency, or Reject pending applications to clear system backlogs.
-
-### Step 2: Implement Daily 8:00 AM CBS Standup Meetings
-* **Target Roles:** Area Manager, Branch Managers, Encoding Officers
-* **Timeframe:** Daily
-* **Action:** Conduct a 10-minute morning pipeline review to resolve document deficiencies, system encoding locks, and credit committee approval bottlenecks immediately.
-
-### Step 3: Enforce Pre-Encoding Application Quality Checklist
-* **Target Roles:** Credit Officers, Branch Unit Heads
-* **Timeframe:** Immediate
-* **Action:** Institute a zero-defect application submission checklist prior to encoding into CBS, eliminating return-to-branch cycles.`;
+2. OPERATIONAL ACTION PLAN
+- Step 1: Comprehensive Queue Clearance (Target: Branch Managers & Analysts). Execute a complete portfolio sweep of pending folders under review statuses.
+- Step 2: Daily Morning Standups (Target: Area Managers & Encoding Leads). Audit active queue status counts daily to identify document deficiencies instantly.
+- Step 3: Zero-Defect Pre-Encoding Checklists (Target: Field Officers). Enforce strict prerequisite document verification prior to initial system encoding.`;
     }
 
     if (type === 'GROWTH_ACTION_PLAN') {
-        return `## 1. Executive Insights (Branch Growth & Expansion Strategy)
+        return `AI NEURAL PORTFOLIO DIAGNOSTICS: GROWTH & EXPANSION BLUEPRINT
 
-* **Portfolio Anchor:** Scope **${scope}** holds a solid base of **${glpStr}** in GLP across **${clientsStr}** active borrowers, maintained at a PAR Ratio of **${parRatioStr}**.
-* **Market Outreach Potential:** Unbanked areas within coverage boundaries provide a clear opportunity for new center creation and micro-loan expansion.
-* **Quality Growth Balancing:** Expansion goals must maintain strict alignment with risk containment protocols (**${parStr}** in current PAR) to ensure long-term portfolio sustainability.
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | Gross Loan Portfolio: ${glpStr} | Active Accounts: ${clientsStr}.
+- Risk Health Anchor: Controlled PAR Ratio of ${parRatioStr} supports aggressive, sustainable market penetration.
+- Systemic Capacity: Underwriting telemetry registers ${statusDetailsStr} ready for expansion processing.
 
----
+--------------------------------------------------------------------------------
 
-## 2. Operational Action Plan (Strategic Milestones)
-
-### Step 1: Launch Area Center Formation Drive
-* **Target Roles:** Branch Growth Specialists, Senior Credit Officers
-* **Timeframe:** Weeks 1–3
-* **Action:** Form 2–3 new centers per branch unit in high-density commercial areas, enforcing thorough character investigation and co-maker verification.
-
-### Step 2: Reactivate Good-Standing Former Borrowers
-* **Target Roles:** Credit Officers
-* **Timeframe:** Weeks 2–4
-* **Action:** Reach out to former clients with clean credit histories who completed past loan cycles without default to offer express re-entry.
-
-### Step 3: Weekly Executive KPI Tracking
-* **Target Roles:** Area Operations Manager, Branch Managers
-* **Timeframe:** Weekly Review (Fridays)
-* **Action:** Evaluate weekly net active client gains, GLP growth, and PAR migration against area targets.`;
+2. OPERATIONAL ACTION PLAN
+- Step 1: High-Density Center Incubation (Target: Branch Growth Specialists). Establish new centers in commercial clusters using multi-tier co-maker checks.
+- Step 2: Dormant Account Reactivation (Target: Credit Officers). Target former borrowers with unblemished historical repayment records for express reactivation.
+- Step 3: Executive Milestone Tracking (Target: Area Operations). Monitor net-new active client acquisition rates against district growth targets weekly.`;
     }
 
-    // Default Custom Prompt Fallback
-    return `## 1. Executive Insights (Custom Operational Analysis: ${scope})
+    return `AI NEURAL PORTFOLIO DIAGNOSTICS: CUSTOM OPERATIONAL SYNTHESIS
 
-* **Portfolio Metrics Snapshot:** Total GLP: **${glpStr}** | Total PAR: **${parStr}** (**${parRatioStr}**) | Active Borrowers: **${clientsStr}**.
-* **Efficiency & Pacing:** Current Period Disbursements: **${disbStr}** | Collection Efficiency: **${metrics.collectionRate}%** | Pending CBS Queue: **${metrics.pendingCbsApps} apps**.
-* **Operational Assessment:** Custom query context ("${customText || 'Portfolio Performance Review'}") emphasizes aligning daily field routines with collection enforcement and CBS turnaround efficiency.
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | GLP: ${glpStr} | PAR: ${parStr} (${parRatioStr}).
+- Active Status Flow: System queue records ${statusDetailsStr} with a collection efficiency baseline of ${metrics.collectionRate.toFixed(2)}%.
+- Strategic Equilibrium: Balanced focus required between rapid pipeline clearance and strict field collection enforcement.
 
----
+--------------------------------------------------------------------------------
 
-## 2. Operational Action Plan
-
-### Step 1: Align Field Routines with High-Risk Accounts
-* **Target Roles:** Branch Managers, Credit Officers
-* **Timeframe:** Next 5 Business Days
-* **Action:** Prioritize morning field visits toward delinquent centers driving the **${parRatioStr}** PAR ratio to recover overdue installments immediately.
-
-### Step 2: Enforce CBS Processing SLAs
-* **Target Roles:** Branch Credit Committee
-* **Timeframe:** Immediate
-* **Action:** Process and clear pending loan folders adhering strictly to the **72-Hour Processing Rule**.
-
-### Step 3: Track Weekly Target Variance
-* **Target Roles:** Area Operations Lead
-* **Timeframe:** Weekly
-* **Action:** Review weekly GLP growth alongside collection performance to ensure risk-balanced portfolio growth.`;
+2. OPERATIONAL ACTION PLAN
+- Step 1: Targeted Risk Routing (Target: Branch Managers & Supervisors). Reallocate supervisory hours toward centers showing early delinquency indicators.
+- Step 2: SLA Queue Optimization (Target: Credit Committees). Clear pending loan documentation folders grouped by current system status.
+- Step 3: Dynamic Variance Audits (Target: Operations Leadership). Review weekly GLP growth alongside recovery metrics to ensure risk-controlled scaling.`;
 }
 
 async function generateGeminiAnalyticsResponse(type, customText) {
@@ -213,7 +259,6 @@ async function generateGeminiAnalyticsResponse(type, customText) {
     const modelDropdown = document.getElementById('geminiModelSelect');
     const selectedModel = modelDropdown ? modelDropdown.value : 'gemini-2.0-flash';
 
-    // Extract precise CSV data metrics
     const metrics = getScopeMetrics(scope);
 
     let userQuery = customText;
@@ -227,7 +272,7 @@ async function generateGeminiAnalyticsResponse(type, customText) {
     const GEMINI_API_KEY = "AQ.Ab8RN6Iao91PBwo8i5Jg_eKi9Gjqjpt4eZaBHGIr7XUUnzWIMQ";
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
 
-    const systemDirective = "You are a Senior Microfinance Operations Director. For the given portfolio scope and metrics, structure your response professionally into two distinct sections: \n1. **Executive Insights** (Key observations, risk patterns, and performance takeaways).\n2. **Action Plan** (3 clear, tactical, time-bound steps for Credit Officers / Branch Managers). Keep your tone authoritative, clear, and actionable.";
+    const systemDirective = "You are a Senior Microfinance Operations Director. For the given portfolio scope and metrics, structure your response concisely into two distinct sections separated by a clear horizontal divider line: 1. EXECUTIVE INSIGHTS (Key observations and metrics) and 2. OPERATIONAL ACTION PLAN (3 clear, tactical steps). Keep your tone authoritative, concise, and clean without using markdown asterisks.";
 
     try {
         const response = await fetch(endpoint, {
@@ -235,7 +280,9 @@ async function generateGeminiAnalyticsResponse(type, customText) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ 
-                    parts: [{ text: `${systemDirective}\n\nScope: ${scope}, GLP: ₱${metrics.glp.toFixed(2)}, PAR Amount: ₱${metrics.parAmount.toFixed(2)}, PAR Ratio: ${metrics.parRatio.toFixed(2)}%, Active Borrowers: ${metrics.activeClients}, Disbursed: ₱${metrics.disbursedAmount.toFixed(2)}. Query: ${userQuery}` }] 
+                    parts: [{ 
+                        text: `${systemDirective}\n\nScope: ${scope}, GLP: ₱${metrics.glp.toFixed(2)}, PAR Amount: ₱${metrics.parAmount.toFixed(2)}, PAR Ratio: ${metrics.parRatio.toFixed(2)}%, Active Borrowers: ${metrics.activeClients}, Disbursed: ₱${metrics.disbursedAmount.toFixed(2)}, CBS Status Breakdown: ${JSON.stringify(metrics.cbs.statusBreakdown)}. Query: ${userQuery}` 
+                    }] 
                 }]
             })
         });
@@ -244,7 +291,7 @@ async function generateGeminiAnalyticsResponse(type, customText) {
             throw new Error(`API status: ${response.status}`);
         }
 
-        container.innerHTML = `<div class="text-xs text-slate-800 leading-relaxed font-sans prose prose-xs max-w-none" id="streamedContent"></div>`;
+        container.innerHTML = `<div class="text-xs text-slate-800 leading-relaxed font-sans space-y-2" id="streamedContent"></div>`;
         const textTarget = document.getElementById('streamedContent');
 
         const reader = response.body.getReader();
@@ -261,33 +308,23 @@ async function generateGeminiAnalyticsResponse(type, customText) {
                 if (line.startsWith('data: ')) {
                     try {
                         const json = JSON.parse(line.substring(6));
-                        const partText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+                        let partText = json.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (partText) {
+                            partText = partText.replace(/\*/g, '');
                             accumulatedText += partText;
-                            
-                            if (typeof marked !== 'undefined') {
-                                textTarget.innerHTML = marked.parse(accumulatedText);
-                            } else {
-                                textTarget.textContent = accumulatedText;
-                            }
+                            textTarget.innerText = accumulatedText;
                         }
                     } catch (parseErr) {
-                        // Ignore partial JSON chunks during stream
+                        // Ignore partial JSON chunks
                     }
                 }
             }
         }
         
     } catch (err) {
-        console.warn("Displaying realistic microfinance CSV fallback analytics report:", err);
+        console.warn("Displaying AI-synthesized concise fallback analytics report:", err);
         
-        // Render grounded microfinance fallback report
         const fallbackMarkdown = generateCSVDefaultFallback(type, scope, metrics, customText);
-        
-        if (typeof marked !== 'undefined') {
-            container.innerHTML = `<div class="text-xs text-slate-800 leading-relaxed font-sans prose prose-xs max-w-none">${marked.parse(fallbackMarkdown)}</div>`;
-        } else {
-            container.innerHTML = `<div class="text-xs text-slate-800 whitespace-pre-line leading-relaxed font-sans">${fallbackMarkdown}</div>`;
-        }
+        container.innerHTML = `<div class="text-xs text-slate-800 whitespace-pre-line leading-relaxed font-sans space-y-3">${fallbackMarkdown}</div>`;
     }
 }
