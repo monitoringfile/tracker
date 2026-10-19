@@ -213,12 +213,27 @@ const cbsStartFilterEl = document.getElementById('cbsStartMonthFilter');
 const cbsEndFilterEl = document.getElementById('cbsEndMonthFilter');
 const resetFiltersEl = document.getElementById('resetFilters');
 
-if (branchFilterEl) branchFilterEl.addEventListener('change', applyFilters);
+if (branchFilterEl) {
+    branchFilterEl.addEventListener('change', () => {
+        applyFilters();
+        const selectedBranch = branchFilterEl.value;
+        const filtered = selectedBranch === 'ALL' ? rawData : rawData.filter(d => d.Branch === selectedBranch);
+        renderDailyDisbursementTable(filtered);
+    });
+}
 if (officerFilterEl) officerFilterEl.addEventListener('change', applyFilters);
 if (cbsStartFilterEl) cbsStartFilterEl.addEventListener('change', () => applyFilters());
 if (cbsEndFilterEl) cbsEndFilterEl.addEventListener('change', () => applyFilters());
-if (disbStartEl) disbStartEl.addEventListener('change', () => renderDailyDisbursementTable(rawData));
-if (disbEndEl) disbEndEl.addEventListener('change', () => renderDailyDisbursementTable(rawData));
+if (disbStartEl) disbStartEl.addEventListener('change', () => {
+    const selectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
+    const filtered = selectedBranch === 'ALL' ? rawData : rawData.filter(d => d.Branch === selectedBranch);
+    renderDailyDisbursementTable(filtered);
+});
+if (disbEndEl) disbEndEl.addEventListener('change', () => {
+    const selectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
+    const filtered = selectedBranch === 'ALL' ? rawData : rawData.filter(d => d.Branch === selectedBranch);
+    renderDailyDisbursementTable(filtered);
+});
 
 if (resetFiltersEl) {
     resetFiltersEl.addEventListener('click', () => {
@@ -332,6 +347,7 @@ function renderDashboard(data) {
     let globalNewInclusionsOlbTotal = 0;
     let globalDisbursedLoanAmountTotal = 0;
     let globalNewLoanAmountTotal = 0;
+    let totalActiveAndArrearsRows = 0;
 
     data.forEach(item => {
         const olb = item['OLB principal'] || 0;
@@ -346,6 +362,10 @@ function renderDashboard(data) {
         const disbDateStr = item['Disbursement date'];
 
         totalGLP += olb;
+
+        if (status === 'active' || status === 'in arrears') {
+            totalActiveAndArrearsRows++;
+        }
 
         if (days >= 1 && days <= 30) { bracket1_30 += olb; count1_30++; }
         else if (days >= 31 && days <= 60) { bracket31_60 += olb; count31_60++; }
@@ -486,6 +506,32 @@ function renderDashboard(data) {
         if (!portfolioParentTile.classList.contains('group')) {
             portfolioParentTile.classList.add('relative', 'group', 'cursor-pointer');
         }
+        
+        // Update the subtext element inside the portfolio card with total active/arrears row count (including duplicates)
+        let subCountEl = portfolioParentTile.querySelector('.portfolio-sub-count');
+        if (!subCountEl) {
+            subCountEl = document.createElement('div');
+            subCountEl.className = 'portfolio-sub-count text-xs text-emerald-300 font-mono mt-1 font-bold';
+            portfolioParentTile.querySelector('div').appendChild(subCountEl); // or insert appropriately
+        }
+        // Alternatively, if there is a specific DOM element for line items, target it directly:
+        const lineItemsEl = portfolioParentTile.querySelector('.text-xs, span:not(.font-mono)');
+        // Let's ensure we update or insert cleanly:
+        let targetSub = portfolioParentTile.querySelector('#kpiPortfolioLineItemsCount');
+        if (!targetSub) {
+            // Check if there is any existing text node or element in that position
+            const children = portfolioParentTile.children;
+            if (children.length >= 3) {
+                targetSub = children[2];
+            } else {
+                targetSub = document.createElement('div');
+                targetSub.id = 'kpiPortfolioLineItemsCount';
+                targetSub.className = 'text-xs text-emerald-300 font-mono mt-1';
+                portfolioParentTile.appendChild(targetSub);
+            }
+        }
+        targetSub.innerText = `${totalActiveAndArrearsRows.toLocaleString()} Total Accounts`;
+
         let portfolioHoverOverlay = document.getElementById('kpiLoanPortfolioHoverOverlay');
         if (!portfolioHoverOverlay) {
             portfolioHoverOverlay = document.createElement('div');
@@ -553,10 +599,11 @@ function renderDailyDisbursementTable(data) {
     if (!table) return;
     const startDateStr = disbStartEl ? disbStartEl.value : '';
     const endDateStr = disbEndEl ? disbEndEl.value : '';
+    const selectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
 
     const dailyMap = {};
     const datesSet = new Set();
-    const branchesSet = new Set();
+    const columnsSet = new Set();
 
     data.forEach(item => {
         const disbDate = item['Disbursement date'];
@@ -570,35 +617,42 @@ function renderDailyDisbursementTable(data) {
         if (endDateStr && dateKey > endDateStr) return;
 
         const branch = item.Branch;
+        const officer = item['Credit officer'] || 'Unknown Officer';
+
+        if (selectedBranch !== 'ALL' && branch !== selectedBranch) return;
+
+        const colKey = (selectedBranch !== 'ALL') ? officer : branch;
         const clientName = item['Client name'] || 'UNKNOWN';
 
         datesSet.add(dateKey);
-        branchesSet.add(branch);
+        columnsSet.add(colKey);
 
         if (!dailyMap[dateKey]) dailyMap[dateKey] = {};
-        if (!dailyMap[dateKey][branch]) dailyMap[dateKey][branch] = new Set();
+        if (!dailyMap[dateKey][colKey]) dailyMap[dateKey][colKey] = new Set();
 
-        dailyMap[dateKey][branch].add(clientName);
+        dailyMap[dateKey][colKey].add(clientName);
     });
 
     const sortedDates = Array.from(datesSet).sort();
-    const sortedBranches = Array.from(branchesSet).sort();
+    const sortedColumns = Array.from(columnsSet).sort();
 
     if (sortedDates.length === 0) {
-        table.innerHTML = `<tbody><tr><td class="p-6 text-center text-amber-100/60 italic">No disbursement records match the selected date range.</td></tr></tbody>`;
+        table.innerHTML = `<tbody><tr><td class="p-6 text-center text-amber-100/60 italic">No disbursement records match the selected date range and filters.</td></tr></tbody>`;
         return;
     }
 
+    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
+
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
-    sortedBranches.forEach(b => html += `<th class="p-2.5 text-center font-bold">${b} (Borrowers)</th>`);
+    sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
     html += `<th class="p-2.5 text-center font-bold text-yellow-400">Daily Unique Total</th></tr></thead><tbody>`;
 
     sortedDates.forEach(dateStr => {
         html += `<tr class="border-b border-emerald-900/60 hover:bg-emerald-900/30 transition-colors"><td class="p-2 pl-3 font-bold text-white">${dateStr}</td>`;
         const dayUniqueClients = new Set();
 
-        sortedBranches.forEach(b => {
-            const clientSet = dailyMap[dateStr] && dailyMap[dateStr][b] ? dailyMap[dateStr][b] : new Set();
+        sortedColumns.forEach(col => {
+            const clientSet = dailyMap[dateStr] && dailyMap[dateStr][col] ? dailyMap[dateStr][col] : new Set();
             clientSet.forEach(c => dayUniqueClients.add(c));
             const count = clientSet.size;
 
@@ -627,7 +681,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
     const maxDays = maxDaysForNewInclusion || new Date().getDate();
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> ACTIVE VS PAR ACCOUNTS: ${branchFilterValue} (By Officer)`;
 
         const officerMap = {};
         data.forEach(item => {
@@ -651,7 +705,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
         olbTotals = sortedOfficers.map(o => officerMap[o].olb);
 
     } else {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions by Branch`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> ACTIVE VS PAR ACCOUNTS`;
 
         const branchMap = {};
         data.forEach(item => {
