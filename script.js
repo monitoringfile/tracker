@@ -1,6 +1,6 @@
 let rawData = [];
 let globalBranchMap = {};
-let borrowerChart = null, parAgingChart = null, weeklyChart = null, productChart = null;
+let borrowerChart = null, parAgingChart = null, parBreakdownChart = null, weeklyChart = null, productChart = null;
 
 lucide.createIcons();
 
@@ -568,8 +568,9 @@ function renderDashboard(data) {
 
     const currentSelectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
     renderNewInclusionsLineChart(rawData, currentSelectedBranch);
+    renderParBreakdownBarChart(rawData, currentSelectedBranch);
     renderParAgingBarChart(bracket1_30, bracket31_60, bracket61_90, bracket91_180, bracket181_365, bracket365Plus, count1_30, count31_60, count61_90, count91_180, count181_365, count365Plus);
-    renderWeeklyPacingLineChart(globalDisbursedWeeks, globalNewLoanWeeks);
+    renderWeeklyPacingLineChart(rawData, currentSelectedBranch);
     renderProductBarChart(productSummary, productBorrowerSets);
     renderDailyDisbursementTable(data);
     renderCbsPivotMatrix(data);
@@ -665,7 +666,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
     const maxDays = maxDaysForNewInclusion || new Date().getDate();
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> ACTIVE VS PAR ACCOUNTS: ${branchFilterValue} (By Officer)`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
 
         const officerMap = {};
         data.forEach(item => {
@@ -772,91 +773,329 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
     lucide.createIcons();
 }
 
+function renderParBreakdownBarChart(data, branchFilterValue) {
+    const canvas = document.getElementById('parBreakdownBarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (parBreakdownChart) parBreakdownChart.destroy();
+
+    const subtitleEl = document.getElementById('parBarChartSubtitle');
+    let labels = [];
+    let parAmounts = [];
+    let parCounts = [];
+
+    if (branchFilterValue && branchFilterValue !== 'ALL') {
+        if (subtitleEl) subtitleEl.innerText = `Branch: ${branchFilterValue} (By Credit Officer)`;
+
+        const officerMap = {};
+        data.forEach(item => {
+            if (item.Branch === branchFilterValue) {
+                const officer = item['Credit officer'] || 'Unknown Officer';
+                const days = item['Days in arrears'] || 0;
+                const olb = item['OLB principal'] || 0;
+
+                if (!officerMap[officer]) officerMap[officer] = { amount: 0, count: 0 };
+                if (days > 0) {
+                    officerMap[officer].amount += olb;
+                    officerMap[officer].count += 1;
+                }
+            }
+        });
+
+        const sortedOfficers = Object.keys(officerMap).sort();
+        labels = sortedOfficers;
+        parAmounts = sortedOfficers.map(o => officerMap[o].amount);
+        parCounts = sortedOfficers.map(o => officerMap[o].count);
+
+    } else {
+        if (subtitleEl) subtitleEl.innerText = `All Branches (By Branch)`;
+
+        const branchMap = {};
+        data.forEach(item => {
+            const branch = item.Branch || 'Unknown Branch';
+            const days = item['Days in arrears'] || 0;
+            const olb = item['OLB principal'] || 0;
+
+            if (!branchMap[branch]) branchMap[branch] = { amount: 0, count: 0 };
+            if (days > 0) {
+                branchMap[branch].amount += olb;
+                branchMap[branch].count += 1;
+            }
+        });
+
+        const sortedBranches = Object.keys(branchMap).sort();
+        labels = sortedBranches;
+        parAmounts = sortedBranches.map(b => branchMap[b].amount);
+        parCounts = sortedBranches.map(b => branchMap[b].count);
+    }
+
+    parBreakdownChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'PAR Amount',
+                data: parAmounts,
+                backgroundColor: '#c8102e',
+                borderRadius: 6,
+                borderWidth: 1,
+                borderColor: '#991b1b'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#071a12',
+                    titleColor: '#f87171',
+                    bodyColor: '#ffffff',
+                    borderColor: '#f87171',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        title: function(context) {
+                            return (branchFilterValue && branchFilterValue !== 'ALL' ? 'Officer: ' : 'Branch: ') + context[0].label;
+                        },
+                        label: function(context) {
+                            const idx = context.dataIndex;
+                            const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            const count = parCounts[idx].toLocaleString();
+                            return [
+                                `PAR Amount: ₱ ${amt}`,
+                                `PAR Accounts: ${count}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#64748b', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 },
+                    grid: { display: false }
+                },
+                y: {
+                    ticks: { color: '#64748b', font: { size: 10 } },
+                    grid: { color: '#f1f5f9' }
+                }
+            }
+        }
+    });
+    lucide.createIcons();
+}
+
 function renderParAgingBarChart(b1, b2, b3, b4, b5, b6, c1, c2, c3, c4, c5, c6) {
     const canvas = document.getElementById('parAgingBarChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (parAgingChart) parAgingChart.destroy();
 
+    const amounts = [b1, b2, b3, b4, b5, b6];
     const counts = [c1, c2, c3, c4, c5, c6];
+    const totalPAR = amounts.reduce((acc, val) => acc + val, 0);
+
+    const professionalRiskColors = [
+        '#52b788', // 1-30 days
+        '#f59e0b', // 31-60 days
+        '#ef4444', // 61-90 days
+        '#991b1b', // 91-180 days
+        '#7f1d1d', // 181-365 days
+        '#0a2318'  // >365 days
+    ];
 
     parAgingChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
-            labels: ['1-30', '31-60', '61-90', '91-180', '181-365', '>365'],
+            labels: ['1-30 Days', '31-60 Days', '61-90 Days', '91-180 Days', '181-365 Days', '>365 Days'],
             datasets: [{
-                label: 'OLB Principal',
-                data: [b1, b2, b3, b4, b5, b6],
-                backgroundColor: ['#52b788', '#d97706', '#c8102e', '#991b1b', '#7f1d1d', '#1b4332'],
-                borderRadius: 6
+                data: amounts,
+                backgroundColor: professionalRiskColors,
+                borderWidth: 2,
+                borderColor: '#ffffff',
+                hoverOffset: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { 
-                legend: { display: false },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12,
+                        color: '#475569',
+                        font: { size: 10, weight: 'bold' },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const value = data.datasets[0].data[i];
+                                    const percentage = totalPAR > 0 ? ((value / totalPAR) * 100).toFixed(1) + '%' : '0%';
+                                    return {
+                                        text: `${label} (${percentage})`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
                 tooltip: {
+                    backgroundColor: '#071a12',
+                    titleColor: '#52b788',
+                    bodyColor: '#ffffff',
+                    borderColor: '#52b788',
+                    borderWidth: 1,
+                    padding: 10,
+                    boxPadding: 4,
                     callbacks: {
+                        title: function(context) {
+                            return `PAR Bracket: ${context[0].label}`;
+                        },
                         label: function(context) {
                             const idx = context.dataIndex;
                             const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            const percentage = totalPAR > 0 ? ((context.raw / totalPAR) * 100).toFixed(2) + '%' : '0%';
                             const accCount = counts[idx].toLocaleString();
-                            return [`OLB Principal: ${amt}`, `Account Count: ${accCount}`];
+                            return [
+                                `PAR Principal: ₱ ${amt}`,
+                                `Portfolio Share: ${percentage}`,
+                                `Account Count: ${accCount} accounts`
+                            ];
                         }
                     }
                 }
             },
-            scales: {
-                x: { ticks: { color: '#64748b', font: { size: 10, weight: 'bold' } }, grid: { display: false } },
-                y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#f1f5f9' } }
-            }
+            cutout: '55%'
         }
     });
 }
 
-function renderWeeklyPacingLineChart(disbWeeks, newWeeks) {
+function renderWeeklyPacingLineChart(data, branchFilterValue) {
     const canvas = document.getElementById('weeklyPacingBarChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (weeklyChart) weeklyChart.destroy();
 
+    const subtitleEl = document.getElementById('weeklyTrendSubtitle');
+    let referenceDate = new Date();
+    const validDisbDates = data.map(d => parseLocalDateString(d['Disbursement date'])).filter(Boolean);
+    if (validDisbDates.length > 0) {
+        validDisbDates.sort((a,b) => b - a);
+        referenceDate = validDisbDates[0];
+    }
+    const currentYear = referenceDate.getFullYear();
+    const currentMonth = referenceDate.getMonth();
+
+    const groupMap = {};
+
+    data.forEach(item => {
+        const disbDateStr = item['Disbursement date'];
+        if (!disbDateStr) return;
+        const dDate = parseLocalDateString(disbDateStr);
+        if (!dDate || dDate.getFullYear() !== currentYear || dDate.getMonth() !== currentMonth) return;
+
+        const branch = item.Branch || 'Unknown Branch';
+        const officer = item['Credit officer'] || 'Unknown Officer';
+
+        if (branchFilterValue && branchFilterValue !== 'ALL' && branch !== branchFilterValue) return;
+
+        const groupKey = (branchFilterValue && branchFilterValue !== 'ALL') ? officer : branch;
+        const weekNum = getCustomWeekOfMonth(dDate); // 1 to 5
+
+        if (!groupMap[groupKey]) {
+            groupMap[groupKey] = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
+        }
+        groupMap[groupKey][weekNum].add(item['Client name'] || 'UNKNOWN');
+    });
+
+    if (subtitleEl) {
+        subtitleEl.innerText = (branchFilterValue && branchFilterValue !== 'ALL') 
+            ? `Weekly Trend: ${branchFilterValue} (By Officer)` 
+            : `Weekly Trend (By Branch)`;
+    }
+
+    const groupKeys = Object.keys(groupMap).sort();
+    const weekLabels = ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'];
+
+    const professionalColors = [
+        '#2d6a4f', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', 
+        '#06b6d4', '#10b981', '#f97316', '#6366f1', '#14b8a6'
+    ];
+
+    const datasets = groupKeys.map((key, idx) => {
+        const weekData = [
+            groupMap[key][1].size,
+            groupMap[key][2].size,
+            groupMap[key][3].size,
+            groupMap[key][4].size,
+            groupMap[key][5].size
+        ];
+        const color = professionalColors[idx % professionalColors.length];
+        return {
+            label: key,
+            data: weekData,
+            borderColor: color,
+            backgroundColor: color,
+            borderWidth: 2.5,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: color,
+            fill: false
+        };
+    });
+
+    if (datasets.length === 0) {
+        datasets.push({
+            label: 'No Data',
+            data: [0, 0, 0, 0, 0],
+            borderColor: '#94a3b8',
+            backgroundColor: '#94a3b8'
+        });
+    }
+
     weeklyChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'],
-            datasets: [
-                { 
-                    label: 'Disbursed', 
-                    data: [disbWeeks[1].size, disbWeeks[2].size, disbWeeks[3].size, disbWeeks[4].size, disbWeeks[5].size], 
-                    borderColor: '#2d6a4f', 
-                    backgroundColor: 'rgba(45, 106, 79, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#2d6a4f'
-                },
-                { 
-                    label: 'New Loans', 
-                    data: [newWeeks[1].size, newWeeks[2].size, newWeeks[3].size, newWeeks[4].size, newWeeks[5].size], 
-                    borderColor: '#52b788', 
-                    backgroundColor: 'rgba(82, 183, 136, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#52b788'
-                }
-            ]
+            labels: weekLabels,
+            datasets: datasets
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'top', labels: { boxWidth: 10, color: '#475569', font: { size: 10, weight: 'bold' } } } },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 10,
+                        color: '#475569',
+                        font: { size: 9, weight: 'bold' }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#071a12',
+                    titleColor: '#52b788',
+                    bodyColor: '#ffffff',
+                    borderColor: '#52b788',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        title: function(context) {
+                            return `${context[0].label}`;
+                        },
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw} disbursed borrowers`;
+                        }
+                    }
+                }
+            },
             scales: {
                 x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { display: false } },
-                y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#f1f5f9' } }
+                y: { ticks: { color: '#64748b', font: { size: 10 }, precision: 0 }, grid: { color: '#f1f5f9' } }
             }
         }
     });
