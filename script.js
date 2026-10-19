@@ -134,7 +134,7 @@ function openBranchModal(branchName) {
                         <span class="font-bold text-slate-900 font-mono">${oStats.newLoanSet.size} clients</span>
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
-                        <span class="text-bambooDark font-bold">New Inclusions:</span>
+                        <span class="text-bambooDark font-bold">New Inclusions FTM:</span>
                         <div class="font-mono text-right">
                             <span class="font-bold text-bambooDark">${oStats.newInclusionsCount} clients</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
@@ -151,7 +151,7 @@ function openBranchModal(branchName) {
 
 const maxDaysForNewInclusion = new Date().getDate();
 const badgeEl = document.getElementById('newInclusionsBadge');
-if (badgeEl) badgeEl.innerText = `New Inclusions: Arrears ≤ ${maxDaysForNewInclusion} days`;
+if (badgeEl) badgeEl.innerText = `New Inclusions FTM: Arrears ≤ ${maxDaysForNewInclusion} days`;
 
 const currentDateObj = new Date();
 const currentDateStr = formatYYYYMMDD(currentDateObj);
@@ -666,7 +666,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
     const maxDays = maxDaysForNewInclusion || new Date().getDate();
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions FTM: ${branchFilterValue} (By Officer)`;
 
         const officerMap = {};
         data.forEach(item => {
@@ -690,7 +690,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
         olbTotals = sortedOfficers.map(o => officerMap[o].olb);
 
     } else {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions FTM`;
 
         const branchMap = {};
         data.forEach(item => {
