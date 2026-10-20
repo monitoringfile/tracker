@@ -269,7 +269,7 @@ async function generateGeminiAnalyticsResponse(type, customText) {
 
     container.innerHTML = `<div class="text-center py-3 text-xs text-emerald-300 font-bold animate-pulse">Connecting to Gemini (${selectedModel})...</div>`;
 
-    const GEMINI_API_KEY = "AQ.Ab8RN6Iao91PBwo8i5Jg_eKi9Gjqjpt4eZaBHGIr7XUUnzWIMQ";
+    const GEMINI_API_KEY = "apihere";
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
 
     const systemDirective = "You are a Senior Microfinance Operations Director. For the given portfolio scope and metrics, structure your response concisely into two distinct sections separated by a clear horizontal divider line: 1. EXECUTIVE INSIGHTS (Key observations and metrics) and 2. OPERATIONAL ACTION PLAN (3 clear, tactical steps). Keep your tone authoritative, concise, and clean without using markdown asterisks.";
