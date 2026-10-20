@@ -1181,7 +1181,7 @@ function renderCbsPivotMatrix(data) {
         return;
     }
 
-    let html = `<thead><tr class="bg-slate-100 text-slate-800 border-b border-slate-300"><th class="p-2.5 pl-3 font-bold">Row Labels (${selectedBranch !== 'ALL' ? 'Credit Officer' : 'Branch'})</th>`;
+    let html = `<thead><tr class="bg-slate-100 text-slate-800 border-b border-slate-300"><th class="p-2.5 pl-3 font-bold">Loan Type(${selectedBranch !== 'ALL' ? 'Credit Officer' : 'Branch'})</th>`;
     allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
     html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
 
