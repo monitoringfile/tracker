@@ -261,7 +261,7 @@ function populateFilters(data) {
     }
 
     if (officerFilterEl) {
-        officerFilterEl.innerHTML = '<option value="ALL">All Credit Officers / TS</option>';
+        officerFilterEl.innerHTML = '<option value="ALL">All Trust Staffs</option>';
         officers.forEach(o => officerFilterEl.innerHTML += `<option value="${o}">${o}</option>`);
     }
 
@@ -619,11 +619,11 @@ function renderDailyDisbursementTable(data) {
         return;
     }
 
-    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
+    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Trust Staff' : 'Branch';
 
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
     sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
-    html += `<th class="p-2.5 text-center font-bold text-yellow-400">Daily Unique Total</th></tr></thead><tbody>`;
+    html += `<th class="p-2.5 text-center font-bold text-yellow-400">Area Daily Total</th></tr></thead><tbody>`;
 
     sortedDates.forEach(dateStr => {
         html += `<tr class="border-b border-emerald-900/60 hover:bg-emerald-900/30 transition-colors"><td class="p-2 pl-3 font-bold text-white">${dateStr}</td>`;
