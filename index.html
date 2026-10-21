@@ -187,34 +187,51 @@
 
             <!-- MULTI-SECTION PERFORMANCE DASHBOARDS -->
             <div class="space-y-5">
-                <!-- Section 1: Portfolio & Risk Distribution (Full Width with 3 Wider Charts) -->
+                <!-- Section 1: Portfolio & Risk Distribution (3 Horizontal Side-by-Side Frames with White Background & Dark Borders) -->
                 <div class="kpi-card">
                     <div class="section-header-bamboo px-4 py-2.5 flex items-center justify-between border-b-2 border-[#092015]">
                         <div class="flex items-center gap-2 font-bold text-xs uppercase tracking-wide">
                             <i data-lucide="pie-chart" class="w-4 h-4"></i>
                             <span>1. Portfolio & Risk Distribution</span>
                         </div>
-                        <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono">Infographic Analysis</span>
+                        <span id="newInclusionsBadge" class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono">Infographic Analysis</span>
                     </div>
-                    <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <div class="relative">
-                            <h4 id="newInclusionsChartTitle" class="text-xs font-bold text-slate-700 uppercase mb-2 truncate">New Inclusion Chart</h4>
-                            <div class="h-56 relative flex items-center justify-center">
+                    <div class="p-4 grid grid-cols-1 lg:grid-cols-3 gap-5">
+                        <!-- New Inclusions -->
+                        <div class="bg-white border-2 border-[#16422d] p-4 rounded-xl flex flex-col justify-between shadow-sm">
+                            <div class="mb-2">
+                                <h4 id="newInclusionsChartTitle" class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="trending-up" class="w-4 h-4 text-emerald-700"></i> New Inclusions
+                                </h4>
+                            </div>
+                            <div class="relative w-full h-[280px]">
                                 <canvas id="borrowerDoughnutChart"></canvas>
                             </div>
                         </div>
-                        <div>
-                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2 truncate flex items-center justify-between">
-                                <span>PAR Breakdown</span>
-                                <span id="parBarChartSubtitle" class="text-[9px] text-slate-500 font-mono">₱ Amount</span>
-                            </h4>
-                            <div class="h-56 relative flex items-center justify-center">
+
+                        <!-- PAR Breakdown -->
+                        <div class="bg-white border-2 border-[#16422d] p-4 rounded-xl flex flex-col justify-between shadow-sm">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-700"></i> PAR Breakdown
+                                </h4>
+                                <span id="parBarChartSubtitle" class="text-[10px] text-slate-500 font-mono">All Branches (By Branch)</span>
+                            </div>
+                            <div class="relative w-full h-[280px]">
                                 <canvas id="parBreakdownBarChart"></canvas>
                             </div>
                         </div>
-                        <div>
-                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2 truncate">PAR Risk Aging Brackets</h4>
-                            <div class="h-56"><canvas id="parAgingBarChart"></canvas></div>
+
+                        <!-- PAR Risk Aging Brackets -->
+                        <div class="bg-white border-2 border-[#16422d] p-4 rounded-xl flex flex-col justify-between shadow-sm">
+                            <div class="mb-2">
+                                <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-700"></i> PAR Risk Aging Brackets
+                                </h4>
+                            </div>
+                            <div class="relative w-full h-[280px]">
+                                <canvas id="parAgingBarChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -229,13 +246,13 @@
                         <span id="weeklyTrendSubtitle" class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono">Weekly Trend (By Branch)</span>
                     </div>
                     <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">Weekly Disbursement Trend</h4>
-                            <div class="h-56"><canvas id="weeklyPacingBarChart"></canvas></div>
+                        <div class="bg-white border-2 border-[#16422d] p-4 rounded-xl shadow-sm">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase mb-2">Weekly Disbursement Trend</h4>
+                            <div class="h-[280px] relative"><canvas id="weeklyPacingBarChart"></canvas></div>
                         </div>
-                        <div>
-                            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">OLB Principal by Product ID (Hexagon Graph)</h4>
-                            <div class="h-56"><canvas id="productBarChart"></canvas></div>
+                        <div class="bg-white border-2 border-[#16422d] p-4 rounded-xl shadow-sm">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase mb-2">OLB Principal by Product ID (Hexagon Graph)</h4>
+                            <div class="h-[280px] relative"><canvas id="productBarChart"></canvas></div>
                         </div>
                     </div>
                 </div>
@@ -341,7 +358,6 @@
             <div class="space-y-3">
                 <div class="flex items-center justify-between">
                     <h3 class="font-black text-sm text-white uppercase tracking-wide drop-shadow">BRANCH PERFORMANCE SUMMARIES</h3>
-                    <div id="newInclusionsBadge" class="text-xs font-bold text-emerald-200 bg-[#071a12] px-3 py-1 rounded-lg border border-[#16422d] shadow"></div>
                 </div>
                 <div id="branchCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
