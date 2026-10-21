@@ -16,6 +16,44 @@ modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); }
 
 function closeModal() { modal.classList.add('hidden'); }
 
+// CBS Drilldown Modal Setup
+const cbsClientModal = document.getElementById('cbsClientModal');
+document.getElementById('closeCbsModalBtn').addEventListener('click', closeCbsModal);
+document.getElementById('closeCbsModalFooterBtn').addEventListener('click', closeCbsModal);
+cbsClientModal.addEventListener('click', (e) => { if (e.target === cbsClientModal) closeCbsModal(); });
+
+function closeCbsModal() { cbsClientModal.classList.add('hidden'); }
+
+function openCbsClientModal(title, subtitle, clientsArray) {
+    document.getElementById('cbsModalTitle').innerText = title;
+    document.getElementById('cbsModalSubtitle').innerText = subtitle;
+    document.getElementById('cbsModalCount').innerText = `Total Clients: ${clientsArray.length}`;
+
+    const tbody = document.getElementById('cbsClientTableBody');
+    tbody.innerHTML = '';
+
+    if (clientsArray.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 italic">No client records found.</td></tr>`;
+    } else {
+        // Alphabetical sorting of the client rows
+        clientsArray.sort((a, b) => a['Client name'].localeCompare(b['Client name'])).forEach(c => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50 transition-colors';
+            tr.innerHTML = `
+                <td class="p-2.5 pl-3 font-bold text-slate-900">${c['Client name']}</td>
+                <td class="p-2.5 text-slate-700">${c.Branch}</td>
+                <td class="p-2.5 text-slate-700">${c['Credit officer']}</td>
+                <td class="p-2.5 font-mono text-emerald-800">${c['Product ID']}</td>
+                <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">${c.Status}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    cbsClientModal.classList.remove('hidden');
+    lucide.createIcons();
+}
+
 function getProductCategory(productId) {
     if (!productId) return 'Other';
     const clean = productId.toString().trim().replaceAll(' ', '').toUpperCase();
@@ -128,7 +166,7 @@ function openBranchModal(branchName) {
                     <div class="flex items-center justify-between pt-1 border-t border-emerald-100/60">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-slate-900">${oStats.disbursedCount} Folders</span>
+                            <span class="font-bold text-slate-900">${oStats.disbursedCount} loans</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                         </div>
                     </div>
@@ -348,10 +386,13 @@ function renderDashboard(data) {
 
     const globalDisbursedWeeks = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
     const globalNewLoanWeeks = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
-    const globalNewInclusionsSet = new Set();
+    
+    const globalNewInclusionsBorrowersSet = new Set();
+    const globalNewLoanBorrowersSet = new Set();
     
     let globalDisbursedCountTotal = 0;
     let globalNewInclusionsOlbTotal = 0;
+    let globalNewInclusionsAccountsTotal = 0;
     let globalDisbursedLoanAmountTotal = 0;
     let globalNewLoanAmountTotal = 0;
     let totalActiveAndArrearsRows = 0;
@@ -388,8 +429,9 @@ function renderDashboard(data) {
 
         const isNewInclusion = (days > 0 && days <= maxDaysForNewInclusion);
         if (isNewInclusion) {
-            globalNewInclusionsSet.add(clientName);
+            globalNewInclusionsBorrowersSet.add(clientName);
             globalNewInclusionsOlbTotal += olb;
+            globalNewInclusionsAccountsTotal += 1;
         }
 
         let isCurrentMonthDisbursement = false;
@@ -407,6 +449,7 @@ function renderDashboard(data) {
 
                 if (categoryProd === 'Newloan') {
                     isMonthlyNewLoan = true;
+                    globalNewLoanBorrowersSet.add(clientName);
                     globalNewLoanWeeks[disbWeek].add(clientName);
                     globalNewLoanAmountTotal += loanAmount;
                 }
@@ -510,6 +553,7 @@ function renderDashboard(data) {
     
     const globalPortfolioLoanSize = filteredEligibleClients.size > 0 ? (totalGLP / filteredEligibleClients.size) : 0;
     const globalDisbursedLoanSize = globalDisbursedCountTotal > 0 ? (globalDisbursedLoanAmountTotal / globalDisbursedCountTotal) : 0;
+    const globalNewLoanSize = globalNewLoanBorrowersSet.size > 0 ? (globalNewLoanAmountTotal / globalNewLoanBorrowersSet.size) : 0;
 
     const kpiLoanPortfolio = document.getElementById('kpiLoanPortfolio');
     if (kpiLoanPortfolio) kpiLoanPortfolio.innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -549,10 +593,14 @@ function renderDashboard(data) {
     const kpiBorrowersSub = document.getElementById('kpiBorrowersSub');
     const kpiDisbursedCount = document.getElementById('kpiDisbursedCount');
     const kpiDisbursedTotalLoanHover = document.getElementById('kpiDisbursedTotalLoanHover');
+    
     const kpiNewLoanCount = document.getElementById('kpiNewLoanCount');
     const kpiNewLoanTotalLoanHover = document.getElementById('kpiNewLoanTotalLoanHover');
+    const kpiNewLoanSizeHover = document.getElementById('kpiNewLoanSizeHover');
+    
     const kpiNewInclusionsCount = document.getElementById('kpiNewInclusionsCount');
     const kpiNewInclusionsOlbHover = document.getElementById('kpiNewInclusionsOlbHover');
+    const kpiNewInclusionsAccountsHover = document.getElementById('kpiNewInclusionsAccountsHover');
 
     if (kpiParAmount) kpiParAmount.innerText = totalPARAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     if (kpiParAmountSub) kpiParAmountSub.innerText = `${parBorrowersCount.toLocaleString()} In Arrears`;
@@ -592,10 +640,13 @@ function renderDashboard(data) {
         `;
     }
 
-    if (kpiNewLoanCount) kpiNewLoanCount.innerText = globalNewLoanSet.size.toLocaleString();
+    if (kpiNewLoanCount) kpiNewLoanCount.innerText = globalNewLoanBorrowersSet.size.toLocaleString();
     if (kpiNewLoanTotalLoanHover) kpiNewLoanTotalLoanHover.innerText = '₱ ' + globalNewLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    if (kpiNewInclusionsCount) kpiNewInclusionsCount.innerText = globalNewInclusionsSet.size.toLocaleString();
+    if (kpiNewLoanSizeHover) kpiNewLoanSizeHover.innerText = 'Size: ₱ ' + globalNewLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+    if (kpiNewInclusionsCount) kpiNewInclusionsCount.innerText = globalNewInclusionsBorrowersSet.size.toLocaleString();
     if (kpiNewInclusionsOlbHover) kpiNewInclusionsOlbHover.innerText = '₱ ' + globalNewInclusionsOlbTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (kpiNewInclusionsAccountsHover) kpiNewInclusionsAccountsHover.innerText = `${globalNewInclusionsAccountsTotal} Total Accounts`;
 
     const currentSelectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
     renderNewInclusionsLineChart(rawData, currentSelectedBranch);
@@ -1290,6 +1341,7 @@ function renderCbsPivotMatrix(data) {
 
     const matrix = { Newloan: {}, Reloan: {} };
     const rowKeysSet = new Set();
+    const lookupMap = {};
 
     filteredData.forEach(d => {
         const category = getProductCategory(d['Product ID']) === 'Newloan' ? 'Newloan' : 'Reloan';
@@ -1303,8 +1355,12 @@ function renderCbsPivotMatrix(data) {
         rowKeysSet.add(rowKey);
 
         if (!matrix[category][rowKey]) matrix[category][rowKey] = {};
-        if (!matrix[category][rowKey][status]) matrix[category][rowKey][status] = new Set();
-        matrix[category][rowKey][status].add(d['Client name']);
+        if (!matrix[category][rowKey][status]) matrix[category][rowKey][status] = [];
+        matrix[category][rowKey][status].push(d);
+
+        const lookupKey = `${category}_${rowKey}_${status}`;
+        if (!lookupMap[lookupKey]) lookupMap[lookupKey] = [];
+        lookupMap[lookupKey].push(d);
     });
 
     const sortedRowKeys = Array.from(rowKeysSet).sort();
@@ -1321,52 +1377,52 @@ function renderCbsPivotMatrix(data) {
     allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
     html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
 
-    const grandTotalColCounts = {};
-    allStatuses.forEach(st => grandTotalColCounts[st] = new Set());
-    let grandTotalOverall = new Set();
+    const grandTotalColLists = {};
+    allStatuses.forEach(st => grandTotalColLists[st] = []);
+    let grandTotalOverallList = [];
 
     ['Newloan', 'Reloan'].forEach(cat => {
         html += `<tr class="bg-emerald-50/80 text-emerald-900 font-extrabold"><td class="p-2 pl-3" colspan="${allStatuses.length + 2}">${cat}</td></tr>`;
-        
-        const catColCounts = {};
-        allStatuses.forEach(st => catColCounts[st] = new Set());
 
         sortedRowKeys.forEach(rowKey => {
             if (matrix[cat][rowKey]) {
                 let rowTot = 0;
+                let rowClients = [];
                 html += `<tr class="border-b border-slate-200 hover:bg-slate-50 bg-white"><td class="p-2 pl-6 text-slate-900 font-semibold">${rowKey}</td>`;
                 allStatuses.forEach(st => {
-                    const clientSet = matrix[cat][rowKey][st] || new Set();
-                    const count = clientSet.size;
+                    const clientList = matrix[cat][rowKey][st] || [];
+                    const count = clientList.length;
                     rowTot += count;
+                    rowClients = rowClients.concat(clientList);
 
-                    clientSet.forEach(c => {
-                        catColCounts[st].add(c);
-                        grandTotalColCounts[st].add(c);
-                        grandTotalOverall.add(c);
+                    clientList.forEach(c => {
+                        grandTotalColLists[st].push(c);
+                        grandTotalOverallList.push(c);
                     });
 
-                    html += `<td class="p-2 text-center text-slate-950 font-mono font-bold">${count || ''}</td>`;
+                    if (count > 0) {
+                        html += `<td class="p-2 text-center font-mono font-bold text-emerald-800"><button onclick='openCbsClientModal("${cat} - ${rowKey} (${st})", "Status: ${st}", ${JSON.stringify(clientList)})' class="hover:underline hover:text-emerald-900 px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200">${count}</button></td>`;
+                    } else {
+                        html += `<td class="p-2 text-center text-slate-300 font-mono">-</td>`;
+                    }
                 });
-                html += `<td class="p-2 text-center text-slate-950 font-mono font-black">${rowTot}</td></tr>`;
+                html += `<td class="p-2 text-center font-mono font-black text-slate-950"><button onclick='openCbsClientModal("${cat} - ${rowKey} (Total)", "All Statuses", ${JSON.stringify(rowClients)})' class="hover:underline px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300">${rowTot}</button></td></tr>`;
             }
         });
-
-        html += `<tr class="bg-slate-200/90 font-bold border-b border-slate-300"><td class="p-2 pl-6 text-slate-950 uppercase">Total ${cat}</td>`;
-        allStatuses.forEach(st => {
-            const cCount = catColCounts[st].size;
-            html += `<td class="p-2 text-center text-slate-950 font-mono font-bold">${cCount || ''}</td>`;
-        });
-        let catUniqueTotal = 0;
-        allStatuses.forEach(st => { catColCounts[st].forEach(c => catUniqueTotal++); });
-        html += `<td class="p-2 text-center text-slate-950 font-mono font-black">${catUniqueTotal}</td></tr>`;
     });
 
+    // Grand Total Row
     html += `<tr class="bg-[#004040] text-white font-black"><td class="p-3 pl-3 uppercase">Grand Total</td>`;
     allStatuses.forEach(st => {
-        html += `<td class="p-3 text-center font-mono text-white">${grandTotalColCounts[st].size || ''}</td>`;
+        const colList = grandTotalColLists[st];
+        const count = colList.length;
+        if (count > 0) {
+            html += `<td class="p-3 text-center font-mono"><button onclick='openCbsClientModal("Grand Total (${st})", "All Branches / Officers - Status: ${st}", ${JSON.stringify(colList)})' class="hover:underline text-yellow-300 px-2 py-1 rounded bg-black/20 border border-white/20">${count}</button></td>`;
+        } else {
+            html += `<td class="p-3 text-center font-mono text-white/50">-</td>`;
+        }
     });
-    html += `<td class="p-3 text-center font-mono text-white">${grandTotalOverall.size}</td></tr>`;
+    html += `<td class="p-3 text-center font-mono text-yellow-300"><button onclick='openCbsClientModal("Grand Total (Overall)", "All Statuses & Categories", ${JSON.stringify(grandTotalOverallList)})' class="hover:underline px-2 py-1 rounded bg-black/20 border border-white/20">${grandTotalOverallList.length}</button></td></tr>`;
 
     html += `</tbody>`;
     table.innerHTML = html;
