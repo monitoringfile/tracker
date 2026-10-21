@@ -1,3 +1,8 @@
+/* Register Chart.js DataLabels Plugin globally */
+if (typeof ChartDataLabels !== 'undefined') {
+    Chart.register(ChartDataLabels);
+}
+
 let rawData = [];
 let globalBranchMap = {};
 let borrowerChart = null, parAgingChart = null, parBreakdownChart = null, weeklyChart = null, productChart = null;
@@ -65,20 +70,15 @@ function openBranchModal(branchName) {
     const bData = globalBranchMap[branchName];
     if (!bData) return;
 
-    document.getElementById('modalBranchTitle').innerText = `${branchName} - Trust Staff Summary`;
+    document.getElementById('modalBranchTitle').innerText = `${branchName} - TS Officer Summary`;
     const container = document.getElementById('modalOfficerList');
     container.innerHTML = '';
 
     const officerEntries = Object.entries(bData.officers);
-    
-    // Filter out "Unknown Officer" and officers with absolutely no portfolio/activity data
     const validOfficers = officerEntries.filter(([officerName, oStats]) => {
         const cleanName = (officerName || '').trim().toLowerCase();
-        if (cleanName === 'unknown officer' || cleanName === 'unknown' || cleanName === '') {
-            return false;
-        }
-        const hasData = oStats.glp > 0 || oStats.parAmount > 0 || oStats.borrowerSet.size > 0 || oStats.disbursedCount > 0 || oStats.newInclusionsCount > 0;
-        return hasData;
+        if (cleanName === 'unknown officer' || cleanName === 'unknown' || cleanName === '') return false;
+        return oStats.glp > 0 || oStats.parAmount > 0 || oStats.borrowerSet.size > 0 || oStats.disbursedCount > 0 || oStats.newInclusionsCount > 0;
     });
 
     if (validOfficers.length === 0) {
@@ -90,10 +90,10 @@ function openBranchModal(branchName) {
             const officerDisbLoanSize = oStats.disbursedCount > 0 ? (oStats.disbursedLoanAmount / oStats.disbursedCount) : 0;
             
             const card = document.createElement('div');
-            card.className = 'bg-white border border-slate-300 border-l-4 border-l-bambooPrimary p-4 rounded-xl space-y-3 text-xs shadow-sm';
+            card.className = 'bg-white border border-slate-300 border-l-4 border-l-emerald-700 p-4 rounded-xl space-y-3 text-xs shadow-sm';
             card.innerHTML = `
                 <div class="flex items-center justify-between pb-2 border-b border-slate-200 font-bold text-slate-800">
-                    <span class="text-sm font-black text-bambooPrimary"><i data-lucide="user-check" class="w-4 h-4 inline mr-1"></i> ${officerName}</span>
+                    <span class="text-sm font-black text-emerald-800"><i data-lucide="user-check" class="w-4 h-4 inline mr-1"></i> ${officerName}</span>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
                     <div class="bg-slate-50 p-2 rounded border border-slate-200">
@@ -121,7 +121,7 @@ function openBranchModal(branchName) {
                     <div class="flex items-center justify-between pt-1 border-t border-emerald-100/60">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-slate-900">${oStats.disbursedCount} Folders</span>
+                            <span class="font-bold text-slate-900">${oStats.disbursedCount} loans</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                         </div>
                     </div>
@@ -141,9 +141,9 @@ function openBranchModal(branchName) {
                         <span class="font-bold text-slate-900 font-mono">${oStats.newLoanSet.size} clients</span>
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
-                        <span class="text-bambooDark font-bold">New Inclusions:</span>
+                        <span class="text-emerald-900 font-bold">New Inclusions:</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-bambooDark">${oStats.newInclusionsCount} clients</span>
+                            <span class="font-bold text-emerald-900">${oStats.newInclusionsCount} clients</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                         </div>
                     </div>
@@ -261,8 +261,14 @@ function populateFilters(data) {
     }
 
     if (officerFilterEl) {
-        officerFilterEl.innerHTML = '<option value="ALL">All Trust Staffs</option>';
+        officerFilterEl.innerHTML = '<option value="ALL">All Credit Officers / TS</option>';
         officers.forEach(o => officerFilterEl.innerHTML += `<option value="${o}">${o}</option>`);
+    }
+
+    const scopeSelect = document.getElementById('promptTargetScope');
+    if (scopeSelect) {
+        scopeSelect.innerHTML = '<option value="OVERALL">Overall District Operations</option>';
+        branches.forEach(b => scopeSelect.innerHTML += `<option value="${b}">${b} Branch</option>`);
     }
 
     const monthMap = new Map();
@@ -410,8 +416,8 @@ function renderDashboard(data) {
 
         if (!globalBranchMap[branch]) {
             globalBranchMap[branch] = { 
-                totalGLP: 0, parAmount: 0, newInclusionsCount: 0, newInclusionsOlb: 0,
-                disbursedCount: 0, newLoanSet: new Set(), borrowerSet: new Set(), 
+                totalGLP: 0, glp: 0, parAmount: 0, newInclusionsCount: 0, newInclusionsOlb: 0,
+                disbursedCount: 0, disbursedAmount: 0, newLoanSet: new Set(), borrowerSet: new Set(), activeClients: 0,
                 disbursedBorrowerSet: new Set(), disbursedLoanAmount: 0, newLoanAmount: 0,
                 disbursedWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
                 newLoanWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
@@ -419,7 +425,11 @@ function renderDashboard(data) {
             };
         }
         globalBranchMap[branch].totalGLP += olb;
-        if (status === 'active' || status === 'in arrears') globalBranchMap[branch].borrowerSet.add(clientName);
+        globalBranchMap[branch].glp = globalBranchMap[branch].totalGLP;
+        if (status === 'active' || status === 'in arrears') {
+            globalBranchMap[branch].borrowerSet.add(clientName);
+        }
+        globalBranchMap[branch].activeClients = globalBranchMap[branch].borrowerSet.size;
         if (days > 0) globalBranchMap[branch].parAmount += olb;
         if (isNewInclusion) {
             globalBranchMap[branch].newInclusionsCount += 1;
@@ -429,6 +439,7 @@ function renderDashboard(data) {
             globalBranchMap[branch].disbursedCount += 1;
             globalBranchMap[branch].disbursedBorrowerSet.add(clientName);
             globalBranchMap[branch].disbursedLoanAmount += loanAmount;
+            globalBranchMap[branch].disbursedAmount = globalBranchMap[branch].disbursedLoanAmount;
             globalBranchMap[branch].disbursedWeeks[disbWeek].add(clientName);
         }
         if (isMonthlyNewLoan) {
@@ -542,7 +553,7 @@ function renderDashboard(data) {
     if (kpiBorrowers) kpiBorrowers.innerText = filteredEligibleClients.size.toLocaleString();
     if (kpiBorrowersSub) kpiBorrowersSub.innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
     
-    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} folders`;
+    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} loans`;
     if (kpiDisbursedTotalLoanHover) kpiDisbursedTotalLoanHover.innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
     const disbursedHoverContainer = kpiDisbursedCount ? kpiDisbursedCount.parentElement.querySelector('.absolute') : null;
@@ -619,11 +630,11 @@ function renderDailyDisbursementTable(data) {
         return;
     }
 
-    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Trust Staff' : 'Branch';
+    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
 
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
     sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
-    html += `<th class="p-2.5 text-center font-bold text-yellow-400">Area Daily Total</th></tr></thead><tbody>`;
+    html += `<th class="p-2.5 text-center font-bold text-yellow-400">Daily Unique Total</th></tr></thead><tbody>`;
 
     sortedDates.forEach(dateStr => {
         html += `<tr class="border-b border-emerald-900/60 hover:bg-emerald-900/30 transition-colors"><td class="p-2 pl-3 font-bold text-white">${dateStr}</td>`;
@@ -725,8 +736,21 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: { top: 20 }
+            },
             plugins: {
                 legend: { display: false },
+                datalabels: {
+                    display: true,
+                    align: 'top',
+                    anchor: 'end',
+                    color: '#1b4332',
+                    font: { weight: 'bold', size: 11 },
+                    formatter: function(value) {
+                        return value > 0 ? value : '';
+                    }
+                },
                 tooltip: {
                     backgroundColor: '#071a12',
                     titleColor: '#52b788',
@@ -768,6 +792,7 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
     const subtitleEl = document.getElementById('parBarChartSubtitle');
     let labels = [];
     let parAmounts = [];
+    let glpAmounts = [];
     let parCounts = [];
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
@@ -780,9 +805,10 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                 const days = item['Days in arrears'] || 0;
                 const olb = item['OLB principal'] || 0;
 
-                if (!officerMap[officer]) officerMap[officer] = { amount: 0, count: 0 };
+                if (!officerMap[officer]) officerMap[officer] = { parAmount: 0, glpAmount: 0, count: 0 };
+                officerMap[officer].glpAmount += olb;
                 if (days > 0) {
-                    officerMap[officer].amount += olb;
+                    officerMap[officer].parAmount += olb;
                     officerMap[officer].count += 1;
                 }
             }
@@ -790,7 +816,8 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
 
         const sortedOfficers = Object.keys(officerMap).sort();
         labels = sortedOfficers;
-        parAmounts = sortedOfficers.map(o => officerMap[o].amount);
+        parAmounts = sortedOfficers.map(o => officerMap[o].parAmount);
+        glpAmounts = sortedOfficers.map(o => officerMap[o].glpAmount);
         parCounts = sortedOfficers.map(o => officerMap[o].count);
 
     } else {
@@ -802,47 +829,101 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
             const days = item['Days in arrears'] || 0;
             const olb = item['OLB principal'] || 0;
 
-            if (!branchMap[branch]) branchMap[branch] = { amount: 0, count: 0 };
+            if (!branchMap[branch]) branchMap[branch] = { parAmount: 0, glpAmount: 0, count: 0 };
+            branchMap[branch].glpAmount += olb;
             if (days > 0) {
-                branchMap[branch].amount += olb;
+                branchMap[branch].parAmount += olb;
                 branchMap[branch].count += 1;
             }
         });
 
         const sortedBranches = Object.keys(branchMap).sort();
         labels = sortedBranches;
-        parAmounts = sortedBranches.map(b => branchMap[b].amount);
+        parAmounts = sortedBranches.map(b => branchMap[b].parAmount);
+        glpAmounts = sortedBranches.map(b => branchMap[b].glpAmount);
         parCounts = sortedBranches.map(b => branchMap[b].count);
     }
 
-    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-    gradient.addColorStop(0, '#f87171');
-    gradient.addColorStop(1, '#991b1b');
+    const parGradient = ctx.createLinearGradient(0, 0, 0, 200);
+    parGradient.addColorStop(0, '#f87171');
+    parGradient.addColorStop(1, '#991b1b');
+
+    const glpGradient = ctx.createLinearGradient(0, 0, 0, 200);
+    glpGradient.addColorStop(0, '#34d399');
+    glpGradient.addColorStop(1, '#065f46');
 
     parBreakdownChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'PAR Amount',
-                data: parAmounts,
-                backgroundColor: gradient,
-                borderRadius: 8,
-                borderSkipped: false,
-                barThickness: 'flex',
-                maxBarThickness: 32
-            }]
+            datasets: [
+                {
+                    label: 'OLB Principal (GLP)',
+                    data: glpAmounts,
+                    backgroundColor: glpGradient,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barThickness: 'flex',
+                    maxBarThickness: 24
+                },
+                {
+                    label: 'PAR Amount',
+                    data: parAmounts,
+                    backgroundColor: parGradient,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barThickness: 'flex',
+                    maxBarThickness: 24
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: { top: 25 }
+            },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        color: '#475569',
+                        font: { size: 10, weight: 'bold' }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    align: 'top',
+                    anchor: 'end',
+                    font: { weight: 'bold', size: 9 },
+                    formatter: function(value, context) {
+                        if (!value || value === 0) return '';
+                        
+                        let formattedVal = '';
+                        if (value >= 1000000) formattedVal = (value / 1000000).toFixed(1) + 'M';
+                        else if (value >= 1000) formattedVal = (value / 1000).toFixed(0) + 'k';
+                        else formattedVal = value.toLocaleString();
+
+                        // If it's the PAR Amount dataset (index 1), append PAR ratio percentage
+                        if (context.datasetIndex === 1) {
+                            const glpVal = glpAmounts[context.dataIndex];
+                            const ratio = glpVal > 0 ? ((value / glpVal) * 100).toFixed(1) + '%' : '0.0%';
+                            return `${formattedVal} (${ratio})`;
+                        }
+
+                        return formattedVal;
+                    },
+                    color: function(context) {
+                        return context.datasetIndex === 0 ? '#065f46' : '#991b1b';
+                    }
+                },
                 tooltip: {
                     backgroundColor: '#071a12',
-                    titleColor: '#f87171',
+                    titleColor: '#52b788',
                     bodyColor: '#ffffff',
-                    borderColor: '#f87171',
+                    borderColor: '#52b788',
                     borderWidth: 1,
                     padding: 10,
                     callbacks: {
@@ -851,12 +932,19 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                         },
                         label: function(context) {
                             const idx = context.dataIndex;
+                            const datasetLabel = context.dataset.label;
                             const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                            const count = parCounts[idx].toLocaleString();
-                            return [
-                                `PAR Amount: ₱ ${amt}`,
-                                `PAR Accounts: ${count}`
-                            ];
+                            if (datasetLabel.includes('OLB')) {
+                                return `OLB Principal: ₱ ${amt}`;
+                            } else {
+                                const count = parCounts[idx].toLocaleString();
+                                const ratio = glpAmounts[idx] > 0 ? ((context.raw / glpAmounts[idx]) * 100).toFixed(2) + '%' : '0.00%';
+                                return [
+                                    `PAR Amount: ₱ ${amt}`,
+                                    `PAR Accounts: ${count}`,
+                                    `PAR Ratio: ${ratio}`
+                                ];
+                            }
                         }
                     }
                 }
@@ -898,6 +986,7 @@ function renderParAgingBarChart(b1, b2, b3, b4, b5, b6, c1, c2, c3, c4, c5, c6) 
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
+                datalabels: { display: false },
                 legend: {
                     position: 'right',
                     labels: {
@@ -1032,6 +1121,7 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
+                datalabels: { display: false },
                 legend: { position: 'bottom', labels: { boxWidth: 10, color: '#475569', font: { size: 9, weight: 'bold' } } },
                 tooltip: {
                     backgroundColor: '#071a12',
@@ -1107,6 +1197,7 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
                 }
             },
             plugins: {
+                datalabels: { display: false },
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: '#071a12',
@@ -1181,7 +1272,7 @@ function renderCbsPivotMatrix(data) {
         return;
     }
 
-    let html = `<thead><tr class="bg-slate-100 text-slate-800 border-b border-slate-300"><th class="p-2.5 pl-3 font-bold">Loan Type(${selectedBranch !== 'ALL' ? 'Credit Officer' : 'Branch'})</th>`;
+    let html = `<thead><tr class="bg-slate-100 text-slate-800 border-b border-slate-300"><th class="p-2.5 pl-3 font-bold">Row Labels (${selectedBranch !== 'ALL' ? 'Credit Officer' : 'Branch'})</th>`;
     allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
     html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
 
@@ -1264,8 +1355,8 @@ function renderBranchCards(branchMap) {
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs font-mono font-bold">${totalOfficersCount} Trust Staff</span>
-                        <span class="text-[10px] block font-mono">Active Manpower</span>
+                        <span class="text-xs font-mono font-bold">${totalOfficersCount} Officers / TS</span>
+                        <span class="text-[10px] block font-mono">Active Roster</span>
                     </div>
                 </div>
 
