@@ -66,6 +66,13 @@ function getCustomWeekOfMonth(date) {
     return 5;
 }
 
+function getOfficerFirstName(fullName) {
+    if (!fullName) return 'Unknown';
+    const trimmed = fullName.toString().trim();
+    const parts = trimmed.split(/\s+/);
+    return parts[0];
+}
+
 function openBranchModal(branchName) {
     const bData = globalBranchMap[branchName];
     if (!bData) return;
@@ -121,7 +128,7 @@ function openBranchModal(branchName) {
                     <div class="flex items-center justify-between pt-1 border-t border-emerald-100/60">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-slate-900">${oStats.disbursedCount} Folders</span>
+                            <span class="font-bold text-slate-900">${oStats.disbursedCount} loans</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                         </div>
                     </div>
@@ -138,7 +145,7 @@ function openBranchModal(branchName) {
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
                         <span class="text-emerald-700 font-bold">New Loans (Month):</span>
-                        <span class="font-bold text-slate-900 font-mono">${oStats.newLoanSet.size} Folders</span>
+                        <span class="font-bold text-slate-900 font-mono">${oStats.newLoanSet.size} clients</span>
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
                         <span class="text-emerald-900 font-bold">New Inclusions:</span>
@@ -416,7 +423,7 @@ function renderDashboard(data) {
 
         if (!globalBranchMap[branch]) {
             globalBranchMap[branch] = { 
-                totalGLP: 0, glp: 0, parAmount: 0, newInclusionsCount: 0, newInclusionsOlb: 0,
+                totalGLP: 0, glp: 0, parAmount: 0, newInclusionsCount: 0, newInclusionsAccountsCount: 0, newInclusionsOlb: 0,
                 disbursedCount: 0, disbursedAmount: 0, newLoanSet: new Set(), borrowerSet: new Set(), activeClients: 0,
                 disbursedBorrowerSet: new Set(), disbursedLoanAmount: 0, newLoanAmount: 0,
                 disbursedWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
@@ -433,6 +440,7 @@ function renderDashboard(data) {
         if (days > 0) globalBranchMap[branch].parAmount += olb;
         if (isNewInclusion) {
             globalBranchMap[branch].newInclusionsCount += 1;
+            globalBranchMap[branch].newInclusionsAccountsCount += 1;
             globalBranchMap[branch].newInclusionsOlb += olb;
         }
         if (isCurrentMonthDisbursement) {
@@ -529,9 +537,8 @@ function renderDashboard(data) {
             portfolioParentTile.appendChild(portfolioHoverOverlay);
         }
         portfolioHoverOverlay.innerHTML = `
-            <span class="text-[10px] uppercase font-extrabold text-emerald-200">Portfolio Loan Size</span>
-            <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <span class="text-[9px] text-emerald-300 mt-1">GLP / Active Borrowers</span>
+            <span class="text-[10px] uppercase font-extrabold text-emerald-200">OLB Principal</span>
+            <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
         `;
     }
 
@@ -553,6 +560,25 @@ function renderDashboard(data) {
     if (kpiBorrowers) kpiBorrowers.innerText = filteredEligibleClients.size.toLocaleString();
     if (kpiBorrowersSub) kpiBorrowersSub.innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
     
+    const borrowersParentTile = kpiBorrowers ? kpiBorrowers.parentElement : null;
+    if (borrowersParentTile) {
+        if (!borrowersParentTile.classList.contains('group')) {
+            borrowersParentTile.classList.add('relative', 'group', 'cursor-pointer');
+        }
+        let borrowersHoverOverlay = document.getElementById('kpiBorrowersHoverOverlay');
+        if (!borrowersHoverOverlay) {
+            borrowersHoverOverlay = document.createElement('div');
+            borrowersHoverOverlay.id = 'kpiBorrowersHoverOverlay';
+            borrowersHoverOverlay.className = "absolute inset-0 bg-[#071a12]/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none z-10 text-center shadow-xl border-2 border-emerald-400";
+            borrowersParentTile.appendChild(borrowersHoverOverlay);
+        }
+        borrowersHoverOverlay.innerHTML = `
+            <span class="text-[10px] uppercase font-extrabold text-emerald-200">Portfolio Loan Size</span>
+            <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            <span class="text-[9px] text-emerald-300 mt-1">GLP / Active Borrowers</span>
+        `;
+    }
+
     if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} loans`;
     if (kpiDisbursedTotalLoanHover) kpiDisbursedTotalLoanHover.innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
@@ -664,12 +690,14 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
     const titleEl = document.getElementById('newInclusionsChartTitle');
     let labels = [];
     let counts = [];
+    let accountsCounts = [];
     let olbTotals = [];
+    let fullNames = [];
 
     const maxDays = maxDaysForNewInclusion || new Date().getDate();
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-700"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
 
         const officerMap = {};
         data.forEach(item => {
@@ -680,20 +708,23 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
                 const clientName = item['Client name'] || 'UNKNOWN';
 
                 if (days > 0 && days <= maxDays) {
-                    if (!officerMap[officer]) officerMap[officer] = { clients: new Set(), olb: 0 };
+                    if (!officerMap[officer]) officerMap[officer] = { clients: new Set(), accounts: 0, olb: 0 };
                     officerMap[officer].clients.add(clientName);
+                    officerMap[officer].accounts += 1;
                     officerMap[officer].olb += olb;
                 }
             }
         });
 
         const sortedOfficers = Object.keys(officerMap).sort();
-        labels = sortedOfficers;
+        fullNames = sortedOfficers;
+        labels = sortedOfficers.map(o => getOfficerFirstName(o));
         counts = sortedOfficers.map(o => officerMap[o].clients.size);
+        accountsCounts = sortedOfficers.map(o => officerMap[o].accounts);
         olbTotals = sortedOfficers.map(o => officerMap[o].olb);
 
     } else {
-        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i> New Inclusions`;
+        if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-700"></i> New Inclusions`;
 
         const branchMap = {};
         data.forEach(item => {
@@ -703,15 +734,18 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
             const clientName = item['Client name'] || 'UNKNOWN';
 
             if (days > 0 && days <= maxDays) {
-                if (!branchMap[branch]) branchMap[branch] = { clients: new Set(), olb: 0 };
+                if (!branchMap[branch]) branchMap[branch] = { clients: new Set(), accounts: 0, olb: 0 };
                 branchMap[branch].clients.add(clientName);
+                branchMap[branch].accounts += 1;
                 branchMap[branch].olb += olb;
             }
         });
 
         const sortedBranches = Object.keys(branchMap).sort();
+        fullNames = sortedBranches;
         labels = sortedBranches;
         counts = sortedBranches.map(b => branchMap[b].clients.size);
+        accountsCounts = sortedBranches.map(b => branchMap[b].accounts);
         olbTotals = sortedBranches.map(b => branchMap[b].olb);
     }
 
@@ -722,13 +756,13 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
             datasets: [{
                 label: 'New Inclusions Count',
                 data: counts,
-                borderColor: '#2d6a4f',
-                backgroundColor: 'rgba(45, 106, 79, 0.12)',
+                borderColor: '#16422d',
+                backgroundColor: 'rgba(22, 66, 45, 0.1)',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.35,
                 pointRadius: 5,
-                pointBackgroundColor: '#1b4332',
+                pointBackgroundColor: '#16422d',
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2
             }]
@@ -737,7 +771,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
             responsive: true,
             maintainAspectRatio: false,
             layout: {
-                padding: { top: 20 }
+                padding: { top: 25 }
             },
             plugins: {
                 legend: { display: false },
@@ -745,10 +779,12 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
                     display: true,
                     align: 'top',
                     anchor: 'end',
-                    color: '#1b4332',
-                    font: { weight: 'bold', size: 11 },
-                    formatter: function(value) {
-                        return value > 0 ? value : '';
+                    color: '#16422d',
+                    font: { weight: 'bold', size: 10 },
+                    formatter: function(value, context) {
+                        if (value <= 0) return '';
+                        const accCount = accountsCounts[context.dataIndex];
+                        return [`${value} borrowers`, `(${accCount} accounts)`];
                     }
                 },
                 tooltip: {
@@ -760,14 +796,18 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
                     padding: 10,
                     callbacks: {
                         title: function(context) {
-                            return (branchFilterValue && branchFilterValue !== 'ALL' ? 'Officer: ' : 'Branch: ') + context[0].label;
+                            const idx = context[0].dataIndex;
+                            const targetName = fullNames[idx] || context[0].label;
+                            return (branchFilterValue && branchFilterValue !== 'ALL' ? 'Officer: ' : 'Branch: ') + targetName;
                         },
                         label: function(context) {
                             const idx = context.dataIndex;
                             const count = context.raw;
+                            const accCount = accountsCounts[idx];
                             const olbAmt = olbTotals[idx].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             return [
-                                `New Inclusions: ${count} clients`,
+                                `New Inclusions: ${count} borrowers`,
+                                `Total Accounts: ${accCount} accounts`,
                                 `Total OLB: ₱ ${olbAmt}`
                             ];
                         }
@@ -775,8 +815,8 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
                 }
             },
             scales: {
-                x: { ticks: { color: '#64748b', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 }, grid: { display: false } },
-                y: { ticks: { color: '#64748b', font: { size: 10 }, precision: 0 }, grid: { color: '#f1f5f9' } }
+                x: { ticks: { color: '#475569', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 }, grid: { display: false } },
+                y: { ticks: { color: '#475569', font: { size: 10 }, precision: 0 }, grid: { color: '#f1f5f9' } }
             }
         }
     });
@@ -794,6 +834,7 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
     let parAmounts = [];
     let glpAmounts = [];
     let parCounts = [];
+    let fullNames = [];
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
         if (subtitleEl) subtitleEl.innerText = `Branch: ${branchFilterValue} (By Credit Officer)`;
@@ -815,7 +856,8 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
         });
 
         const sortedOfficers = Object.keys(officerMap).sort();
-        labels = sortedOfficers;
+        fullNames = sortedOfficers;
+        labels = sortedOfficers.map(o => getOfficerFirstName(o));
         parAmounts = sortedOfficers.map(o => officerMap[o].parAmount);
         glpAmounts = sortedOfficers.map(o => officerMap[o].glpAmount);
         parCounts = sortedOfficers.map(o => officerMap[o].count);
@@ -838,6 +880,7 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
         });
 
         const sortedBranches = Object.keys(branchMap).sort();
+        fullNames = sortedBranches;
         labels = sortedBranches;
         parAmounts = sortedBranches.map(b => branchMap[b].parAmount);
         glpAmounts = sortedBranches.map(b => branchMap[b].glpAmount);
@@ -906,7 +949,6 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                         else if (value >= 1000) formattedVal = (value / 1000).toFixed(0) + 'k';
                         else formattedVal = value.toLocaleString();
 
-                        // If it's the PAR Amount dataset (index 1), return an array so the percentage appears below the amount
                         if (context.datasetIndex === 1) {
                             const glpVal = glpAmounts[context.dataIndex];
                             const ratio = glpVal > 0 ? `(${((value / glpVal) * 100).toFixed(1)}%)` : '(0.0%)';
@@ -928,7 +970,9 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                     padding: 10,
                     callbacks: {
                         title: function(context) {
-                            return (branchFilterValue && branchFilterValue !== 'ALL' ? 'Officer: ' : 'Branch: ') + context[0].label;
+                            const idx = context[0].dataIndex;
+                            const targetName = fullNames[idx] || context[0].label;
+                            return (branchFilterValue && branchFilterValue !== 'ALL' ? 'Officer: ' : 'Branch: ') + targetName;
                         },
                         label: function(context) {
                             const idx = context.dataIndex;
@@ -950,8 +994,8 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                 }
             },
             scales: {
-                x: { ticks: { color: '#64748b', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 }, grid: { display: false } },
-                y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#f1f5f9', borderDash: [4, 4] } }
+                x: { ticks: { color: '#475569', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 }, grid: { display: false } },
+                y: { ticks: { color: '#475569', font: { size: 10 } }, grid: { color: '#f1f5f9', borderDash: [4, 4] } }
             }
         }
     });
@@ -1086,7 +1130,7 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
 
     const groupKeys = Object.keys(groupMap).sort();
     const weekLabels = ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'];
-    const professionalColors = ['#2d6a4f', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#10b981', '#f97316', '#6366f1', '#14b8a6'];
+    const professionalColors = ['#16422d', '#2563eb', '#d97706', '#db2777', '#7c3aed', '#0891b2', '#059669', '#ea580c', '#4f46e5', '#0d9488'];
 
     const datasets = groupKeys.map((key, idx) => {
         const weekData = [
@@ -1097,8 +1141,9 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
             groupMap[key][5].size
         ];
         const color = professionalColors[idx % professionalColors.length];
+        const displayKey = (branchFilterValue && branchFilterValue !== 'ALL') ? getOfficerFirstName(key) : key;
         return {
-            label: key,
+            label: displayKey,
             data: weekData,
             borderColor: color,
             backgroundColor: color,
@@ -1137,8 +1182,8 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
                 }
             },
             scales: {
-                x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { display: false } },
-                y: { ticks: { color: '#64748b', font: { size: 10 }, precision: 0 }, grid: { color: '#f1f5f9' } }
+                x: { ticks: { color: '#475569', font: { size: 10 } }, grid: { display: false } },
+                y: { ticks: { color: '#475569', font: { size: 10 }, precision: 0 }, grid: { color: '#f1f5f9' } }
             }
         }
     });
@@ -1156,7 +1201,7 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
     const totalPortfolio = totals.reduce((acc, val) => acc + val, 0);
 
     const radialGradient = ctx.createRadialGradient(140, 110, 10, 140, 110, 110);
-    radialGradient.addColorStop(0, 'rgba(45, 106, 79, 0.45)');
+    radialGradient.addColorStop(0, 'rgba(22, 66, 45, 0.4)');
     radialGradient.addColorStop(1, 'rgba(82, 183, 136, 0.15)');
 
     productChart = new Chart(ctx, {
@@ -1169,7 +1214,7 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
                 backgroundColor: radialGradient,
                 borderColor: '#16422d',
                 borderWidth: 2.5,
-                pointBackgroundColor: '#52b788',
+                pointBackgroundColor: '#16422d',
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2,
                 pointRadius: 5,
@@ -1187,7 +1232,7 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
                     ticks: {
                         backdropColor: 'transparent',
                         font: { size: 9 },
-                        color: '#64748b',
+                        color: '#475569',
                         callback: function(value) {
                             if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
                             if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
