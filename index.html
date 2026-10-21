@@ -117,11 +117,17 @@
             <!-- TOP EXECUTIVE KPI TILES -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
                 
-                <!-- Loan Portfolio -->
-                <div class="kpi-card p-4 bg-[#071a12] border-2 border-[#113626] border-t-4 border-t-emerald-400 flex flex-col justify-between shadow-xl rounded-xl">
+                <!-- Loan Portfolio (with hover portfolio loan size) -->
+                <div class="kpi-card p-4 bg-[#071a12] border-2 border-[#113626] border-t-4 border-t-emerald-400 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-emerald-200/90 tracking-wider">Loan Portfolio</span>
                     <div id="kpiLoanPortfolio" class="text-base sm:text-lg font-black text-white font-mono mt-1 truncate">0.00</div>
                     <span id="kpiLoanPortfolioSub" class="text-[10px] text-emerald-300/80 font-medium truncate mt-1">For the Month</span>
+
+                    <div class="absolute inset-0 bg-[#071a12]/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none z-10 text-center shadow-xl border-2 border-emerald-400">
+                        <span class="text-[10px] uppercase font-extrabold text-emerald-200">Portfolio Loan Size</span>
+                        <div id="kpiPortfolioLoanSizeHover" class="text-xs font-black font-mono text-white mt-0.5">₱ 0.00</div>
+                        <span class="text-[9px] text-emerald-300 mt-1">GLP / Active Borrowers</span>
+                    </div>
                 </div>
 
                 <!-- PAR Amount -->
@@ -187,7 +193,7 @@
 
             <!-- MULTI-SECTION PERFORMANCE DASHBOARDS -->
             <div class="space-y-5">
-                <!-- Section 1: Portfolio & Risk Distribution (3 Horizontal Side-by-Side Frames with White Background & Dark Borders) -->
+                <!-- Section 1: Portfolio & Risk Distribution -->
                 <div class="kpi-card">
                     <div class="section-header-bamboo px-4 py-2.5 flex items-center justify-between border-b-2 border-[#092015]">
                         <div class="flex items-center gap-2 font-bold text-xs uppercase tracking-wide">
@@ -197,7 +203,6 @@
                         <span id="newInclusionsBadge" class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-mono">Infographic Analysis</span>
                     </div>
                     <div class="p-4 grid grid-cols-1 lg:grid-cols-3 gap-5">
-                        <!-- New Inclusions -->
                         <div class="bg-white border-2 border-[#16422d] p-4 rounded-xl flex flex-col justify-between shadow-sm">
                             <div class="mb-2">
                                 <h4 id="newInclusionsChartTitle" class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -209,7 +214,6 @@
                             </div>
                         </div>
 
-                        <!-- PAR Breakdown -->
                         <div class="bg-white border-2 border-[#16422d] p-4 rounded-xl flex flex-col justify-between shadow-sm">
                             <div class="flex items-center justify-between mb-2">
                                 <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -222,7 +226,6 @@
                             </div>
                         </div>
 
-                        <!-- PAR Risk Aging Brackets -->
                         <div class="bg-white border-2 border-[#16422d] p-4 rounded-xl flex flex-col justify-between shadow-sm">
                             <div class="mb-2">
                                 <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -385,7 +388,7 @@
 
     <!-- CBS CLIENT LIST DRILL-DOWN MODAL -->
     <div id="cbsClientModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm hidden">
-        <div class="kpi-card w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col m-4 shadow-2xl border-2 border-[#0a2318]">
+        <div class="kpi-card w-full max-w-6xl max-h-[85vh] overflow-hidden flex flex-col m-4 shadow-2xl border-2 border-[#0a2318]">
             <div class="px-6 py-4 border-b-2 border-slate-200 flex items-center justify-between bg-slate-50">
                 <div>
                     <h3 id="cbsModalTitle" class="font-black text-slate-900 text-base uppercase">Client List Breakdown</h3>
@@ -393,15 +396,18 @@
                 </div>
                 <button id="closeCbsModalBtn" class="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                <table class="w-full text-left border-collapse text-xs">
+            <div class="p-4 sm:p-6 overflow-x-auto overflow-y-auto flex-1 custom-scrollbar">
+                <table class="w-full text-left border-collapse text-xs table-auto">
                     <thead>
-                        <tr class="bg-emerald-950 text-white border-b border-emerald-900">
+                        <tr class="bg-emerald-950 text-white border-b border-emerald-900 whitespace-nowrap">
                             <th class="p-2.5 pl-3 font-bold">Client Name</th>
                             <th class="p-2.5 font-bold">Branch</th>
                             <th class="p-2.5 font-bold">Credit Officer</th>
+                            <th class="p-2.5 font-bold">Centre</th>
+                            <th class="p-2.5 font-bold text-center">App Date</th>
                             <th class="p-2.5 font-bold">Product ID</th>
-                            <th class="p-2.5 font-bold">Status</th>
+                            <th class="p-2.5 font-bold text-right pr-4">Loan Amount</th>
+                            <th class="p-2.5 font-bold text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody id="cbsClientTableBody" class="divide-y divide-slate-200 bg-white"></tbody>
