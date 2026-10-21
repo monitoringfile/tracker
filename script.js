@@ -128,7 +128,7 @@ function openBranchModal(branchName) {
                     <div class="flex items-center justify-between pt-1 border-t border-emerald-100/60">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-slate-900">${oStats.disbursedCount} loans</span>
+                            <span class="font-bold text-slate-900">${oStats.disbursedCount} Folders</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                         </div>
                     </div>
