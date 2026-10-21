@@ -881,7 +881,7 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
             responsive: true,
             maintainAspectRatio: false,
             layout: {
-                padding: { top: 25 }
+                padding: { top: 30 }
             },
             plugins: {
                 legend: {
@@ -906,11 +906,11 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                         else if (value >= 1000) formattedVal = (value / 1000).toFixed(0) + 'k';
                         else formattedVal = value.toLocaleString();
 
-                        // If it's the PAR Amount dataset (index 1), append PAR ratio percentage
+                        // If it's the PAR Amount dataset (index 1), return an array so the percentage appears below the amount
                         if (context.datasetIndex === 1) {
                             const glpVal = glpAmounts[context.dataIndex];
-                            const ratio = glpVal > 0 ? ((value / glpVal) * 100).toFixed(1) + '%' : '0.0%';
-                            return `${formattedVal} (${ratio})`;
+                            const ratio = glpVal > 0 ? `(${((value / glpVal) * 100).toFixed(1)}%)` : '(0.0%)';
+                            return [formattedVal, ratio];
                         }
 
                         return formattedVal;
