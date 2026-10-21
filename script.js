@@ -204,7 +204,7 @@ function openBranchModal(branchName) {
                     <div class="flex items-center justify-between pt-1 border-t border-emerald-100/60">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-slate-900">${oStats.disbursedCount} Folders</span>
+                            <span class="font-bold text-slate-900">${oStats.disbursedCount} loans</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                         </div>
                     </div>
@@ -632,7 +632,7 @@ function renderDashboard(data) {
     if (kpiBorrowers) kpiBorrowers.innerText = filteredEligibleClients.size.toLocaleString();
     if (kpiBorrowersSub) kpiBorrowersSub.innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
 
-    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} Folders`;
+    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} loans`;
     if (kpiDisbursedTotalLoanHover) kpiDisbursedTotalLoanHover.innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
     const disbursedHoverContainer = kpiDisbursedCount ? kpiDisbursedCount.parentElement.querySelector('.absolute') : null;
@@ -725,7 +725,6 @@ function renderDailyDisbursementTable(data) {
         sortedColumns.forEach(col => {
             const records = dailyMap[dateStr] && dailyMap[dateStr][col] ? dailyMap[dateStr][col] : [];
             
-            // Get unique borrowers for this column on this date
             const colUniqueMap = new Map();
             records.forEach(r => {
                 const cName = r['Client name'] || 'UNKNOWN';
@@ -868,7 +867,7 @@ function renderNewInclusionsLineChart(data, branchFilterValue) {
                     formatter: function(value, context) {
                         if (value <= 0) return '';
                         const accCount = accountsCounts[context.dataIndex];
-                        return [`${value} borrowers`, `(${accCount} accounts)`];
+                        return [`${value} Bor.`, `(${accCount} acc)`];
                     }
                 },
                 tooltip: {
@@ -918,6 +917,7 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
     let parAmounts = [];
     let glpAmounts = [];
     let parCounts = [];
+    let borrowerCounts = [];
     let fullNames = [];
 
     if (branchFilterValue && branchFilterValue !== 'ALL') {
@@ -929,9 +929,16 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                 const officer = item['Credit officer'] || 'Unknown Officer';
                 const days = item['Days in arrears'] || 0;
                 const olb = item['OLB principal'] || 0;
+                const clientName = item['Client name'] || 'UNKNOWN';
+                const status = (item['Status'] || '').trim().toLowerCase();
 
-                if (!officerMap[officer]) officerMap[officer] = { parAmount: 0, glpAmount: 0, count: 0 };
+                if (!officerMap[officer]) {
+                    officerMap[officer] = { parAmount: 0, glpAmount: 0, count: 0, borrowerSet: new Set() };
+                }
                 officerMap[officer].glpAmount += olb;
+                if (status === 'active' || status === 'in arrears') {
+                    officerMap[officer].borrowerSet.add(clientName);
+                }
                 if (days > 0) {
                     officerMap[officer].parAmount += olb;
                     officerMap[officer].count += 1;
@@ -945,6 +952,7 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
         parAmounts = sortedOfficers.map(o => officerMap[o].parAmount);
         glpAmounts = sortedOfficers.map(o => officerMap[o].glpAmount);
         parCounts = sortedOfficers.map(o => officerMap[o].count);
+        borrowerCounts = sortedOfficers.map(o => officerMap[o].borrowerSet.size);
 
     } else {
         if (subtitleEl) subtitleEl.innerText = `All Branches (By Branch)`;
@@ -954,9 +962,16 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
             const branch = item.Branch || 'Unknown Branch';
             const days = item['Days in arrears'] || 0;
             const olb = item['OLB principal'] || 0;
+            const clientName = item['Client name'] || 'UNKNOWN';
+            const status = (item['Status'] || '').trim().toLowerCase();
 
-            if (!branchMap[branch]) branchMap[branch] = { parAmount: 0, glpAmount: 0, count: 0 };
+            if (!branchMap[branch]) {
+                branchMap[branch] = { parAmount: 0, glpAmount: 0, count: 0, borrowerSet: new Set() };
+            }
             branchMap[branch].glpAmount += olb;
+            if (status === 'active' || status === 'in arrears') {
+                branchMap[branch].borrowerSet.add(clientName);
+            }
             if (days > 0) {
                 branchMap[branch].parAmount += olb;
                 branchMap[branch].count += 1;
@@ -969,6 +984,7 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
         parAmounts = sortedBranches.map(b => branchMap[b].parAmount);
         glpAmounts = sortedBranches.map(b => branchMap[b].glpAmount);
         parCounts = sortedBranches.map(b => branchMap[b].count);
+        borrowerCounts = sortedBranches.map(b => branchMap[b].borrowerSet.size);
     }
 
     const parGradient = ctx.createLinearGradient(0, 0, 0, 200);
@@ -1008,7 +1024,7 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
             responsive: true,
             maintainAspectRatio: false,
             layout: {
-                padding: { top: 30 }
+                padding: { top: 38 }
             },
             plugins: {
                 legend: {
@@ -1033,6 +1049,11 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                         else if (value >= 1000) formattedVal = (value / 1000).toFixed(0) + 'k';
                         else formattedVal = value.toLocaleString();
 
+                        if (context.datasetIndex === 0) {
+                            const borrowers = borrowerCounts[context.dataIndex];
+                            return [formattedVal, `[${borrowers} Bor.]`];
+                        }
+
                         if (context.datasetIndex === 1) {
                             const glpVal = glpAmounts[context.dataIndex];
                             const ratio = glpVal > 0 ? `(${((value / glpVal) * 100).toFixed(1)}%)` : '(0.0%)';
@@ -1042,7 +1063,8 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                         return formattedVal;
                     },
                     color: function(context) {
-                        return context.datasetIndex === 0 ? '#065f46' : '#991b1b';
+                        if (context.datasetIndex === 0) return '#000000'; // Solid black for GLP amount and borrower count
+                        return '#991b1b'; // Red for PAR amount
                     }
                 },
                 tooltip: {
@@ -1063,7 +1085,11 @@ function renderParBreakdownBarChart(data, branchFilterValue) {
                             const datasetLabel = context.dataset.label;
                             const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             if (datasetLabel.includes('OLB')) {
-                                return `OLB Principal: ₱ ${amt}`;
+                                const borrowers = borrowerCounts[idx].toLocaleString();
+                                return [
+                                    `OLB Principal: ₱ ${amt}`,
+                                    `Total Borrowers: ${borrowers} clients`
+                                ];
                             } else {
                                 const count = parCounts[idx].toLocaleString();
                                 const ratio = glpAmounts[idx] > 0 ? ((context.raw / glpAmounts[idx]) * 100).toFixed(2) + '%' : '0.00%';
@@ -1536,7 +1562,7 @@ function renderBranchCards(branchMap) {
                     <div class="flex items-center justify-between pt-1 border-t border-[#16422d]">
                         <span class="font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold">${branchDisbursedCount} Folders</span>
+                            <span class="font-bold">${branchDisbursedCount} loans</span>
                             <span class="text-[10px] block">₱ ${b.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                     </div>
