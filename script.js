@@ -24,6 +24,23 @@ cbsClientModal.addEventListener('click', (e) => { if (e.target === cbsClientModa
 
 function closeCbsModal() { cbsClientModal.classList.add('hidden'); }
 
+// Helper function to copy text and give visual feedback
+function copyClientName(textToCopy, btnElement) {
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalHTML = btnElement.innerHTML;
+        btnElement.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i>`;
+        btnElement.title = "Copied!";
+        lucide.createIcons();
+        setTimeout(() => {
+            btnElement.innerHTML = originalHTML;
+            btnElement.title = "Copy Client Name";
+            lucide.createIcons();
+        }, 1500);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+}
+
 function openCbsClientModal(title, subtitle, clientsArray) {
     document.getElementById('cbsModalTitle').innerText = title;
     document.getElementById('cbsModalSubtitle').innerText = subtitle;
@@ -36,11 +53,17 @@ function openCbsClientModal(title, subtitle, clientsArray) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 italic">No client records found.</td></tr>`;
     } else {
         // Alphabetical sorting of the client rows
-        clientsArray.sort((a, b) => a['Client name'].localeCompare(b['Client name'])).forEach(c => {
+        clientsArray.sort((a, b) => a['Client name'].localeCompare(b['Client name'])).forEach((c, index) => {
+            const clientName = c['Client name'];
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-slate-50 transition-colors';
             tr.innerHTML = `
-                <td class="p-2.5 pl-3 font-bold text-slate-900">${c['Client name']}</td>
+                <td class="p-2.5 pl-3 font-bold text-slate-900 flex items-center justify-between gap-2">
+                    <span>${clientName}</span>
+                    <button type="button" onclick='copyClientName(${JSON.stringify(clientName)}, this)' class="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-all border border-slate-200 shadow-sm" title="Copy Client Name">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    </button>
+                </td>
                 <td class="p-2.5 text-slate-700">${c.Branch}</td>
                 <td class="p-2.5 text-slate-700">${c['Credit officer']}</td>
                 <td class="p-2.5 font-mono text-emerald-800">${c['Product ID']}</td>
