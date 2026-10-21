@@ -138,7 +138,7 @@ function openBranchModal(branchName) {
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
                         <span class="text-emerald-700 font-bold">New Loans (Month):</span>
-                        <span class="font-bold text-slate-900 font-mono">${oStats.newLoanSet.size} clients</span>
+                        <span class="font-bold text-slate-900 font-mono">${oStats.newLoanSet.size} Folders</span>
                     </div>
                     <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
                         <span class="text-emerald-900 font-bold">New Inclusions:</span>
