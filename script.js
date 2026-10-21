@@ -50,24 +50,39 @@ function openCbsClientModal(title, subtitle, clientsArray) {
     tbody.innerHTML = '';
 
     if (clientsArray.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 italic">No client records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400 italic">No client records found.</td></tr>`;
     } else {
-        // Alphabetical sorting of the client rows
-        clientsArray.sort((a, b) => a['Client name'].localeCompare(b['Client name'])).forEach((c, index) => {
+        // Alphabetical sorting primarily by Credit Officer, secondarily by Client Name
+        clientsArray.sort((a, b) => {
+            const officerA = (a['Credit officer'] || '').trim();
+            const officerB = (b['Credit officer'] || '').trim();
+            const officerCompare = officerA.localeCompare(officerB);
+            if (officerCompare !== 0) return officerCompare;
+            return (a['Client name'] || '').trim().localeCompare((b['Client name'] || '').trim());
+        }).forEach(c => {
             const clientName = c['Client name'];
+            const appDate = c['Application date'] || '-';
+            const centre = c['Centre'] || '-';
+            const loanAmt = (c['Loan Amount'] || c['Loan amount'] || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-slate-50 transition-colors';
             tr.innerHTML = `
-                <td class="p-2.5 pl-3 font-bold text-slate-900 flex items-center justify-between gap-2">
-                    <span>${clientName}</span>
-                    <button type="button" onclick='copyClientName(${JSON.stringify(clientName)}, this)' class="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-all border border-slate-200 shadow-sm" title="Copy Client Name">
-                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    </button>
+                <td class="p-2 pl-3 font-bold text-slate-900">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="truncate">${clientName}</span>
+                        <button type="button" onclick='copyClientName(${JSON.stringify(clientName)}, this)' class="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-all border border-slate-200 shadow-sm flex-shrink-0" title="Copy Client Name">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
                 </td>
-                <td class="p-2.5 text-slate-700">${c.Branch}</td>
-                <td class="p-2.5 text-slate-700">${c['Credit officer']}</td>
-                <td class="p-2.5 font-mono text-emerald-800">${c['Product ID']}</td>
-                <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">${c.Status}</span></td>
+                <td class="p-2 text-slate-700 whitespace-nowrap">${c.Branch}</td>
+                <td class="p-2 font-semibold text-emerald-900">${c['Credit officer']}</td>
+                <td class="p-2 text-slate-700">${centre}</td>
+                <td class="p-2 font-mono text-slate-600 whitespace-nowrap text-center">${appDate}</td>
+                <td class="p-2 font-mono text-emerald-800 whitespace-nowrap">${c['Product ID']}</td>
+                <td class="p-2 font-mono text-right font-bold text-slate-900 whitespace-nowrap pr-4">${loanAmt}</td>
+                <td class="p-2 text-center whitespace-nowrap"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">${c.Status}</span></td>
             `;
             tbody.appendChild(tr);
         });
@@ -579,14 +594,12 @@ function renderDashboard(data) {
     const globalNewLoanSize = globalNewLoanBorrowersSet.size > 0 ? (globalNewLoanAmountTotal / globalNewLoanBorrowersSet.size) : 0;
 
     const kpiLoanPortfolio = document.getElementById('kpiLoanPortfolio');
+    const kpiPortfolioLoanSizeHover = document.getElementById('kpiPortfolioLoanSizeHover');
     if (kpiLoanPortfolio) kpiLoanPortfolio.innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (kpiPortfolioLoanSizeHover) kpiPortfolioLoanSizeHover.innerText = '₱ ' + globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
     const portfolioParentTile = kpiLoanPortfolio ? kpiLoanPortfolio.parentElement : null;
     if (portfolioParentTile) {
-        if (!portfolioParentTile.classList.contains('group')) {
-            portfolioParentTile.classList.add('relative', 'group', 'cursor-pointer');
-        }
-        
         let targetSub = portfolioParentTile.querySelector('#kpiPortfolioLineItemsCount');
         if (!targetSub) {
             targetSub = document.createElement('div');
@@ -595,18 +608,6 @@ function renderDashboard(data) {
             portfolioParentTile.appendChild(targetSub);
         }
         targetSub.innerText = `${totalActiveAndArrearsRows.toLocaleString()} Total Accounts`;
-
-        let portfolioHoverOverlay = document.getElementById('kpiLoanPortfolioHoverOverlay');
-        if (!portfolioHoverOverlay) {
-            portfolioHoverOverlay = document.createElement('div');
-            portfolioHoverOverlay.id = 'kpiLoanPortfolioHoverOverlay';
-            portfolioHoverOverlay.className = "absolute inset-0 bg-[#071a12]/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none z-10 text-center shadow-xl border-2 border-emerald-400";
-            portfolioParentTile.appendChild(portfolioHoverOverlay);
-        }
-        portfolioHoverOverlay.innerHTML = `
-            <span class="text-[10px] uppercase font-extrabold text-emerald-200">OLB Principal</span>
-            <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-        `;
     }
 
     const kpiParAmount = document.getElementById('kpiParAmount');
@@ -630,25 +631,6 @@ function renderDashboard(data) {
     if (kpiParRatio) kpiParRatio.innerText = parRatio.toFixed(2) + '%';
     if (kpiBorrowers) kpiBorrowers.innerText = filteredEligibleClients.size.toLocaleString();
     if (kpiBorrowersSub) kpiBorrowersSub.innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
-    
-    const borrowersParentTile = kpiBorrowers ? kpiBorrowers.parentElement : null;
-    if (borrowersParentTile) {
-        if (!borrowersParentTile.classList.contains('group')) {
-            borrowersParentTile.classList.add('relative', 'group', 'cursor-pointer');
-        }
-        let borrowersHoverOverlay = document.getElementById('kpiBorrowersHoverOverlay');
-        if (!borrowersHoverOverlay) {
-            borrowersHoverOverlay = document.createElement('div');
-            borrowersHoverOverlay.id = 'kpiBorrowersHoverOverlay';
-            borrowersHoverOverlay.className = "absolute inset-0 bg-[#071a12]/95 text-white p-3 flex flex-col justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl pointer-events-none z-10 text-center shadow-xl border-2 border-emerald-400";
-            borrowersParentTile.appendChild(borrowersHoverOverlay);
-        }
-        borrowersHoverOverlay.innerHTML = `
-            <span class="text-[10px] uppercase font-extrabold text-emerald-200">Portfolio Loan Size</span>
-            <div class="text-sm font-black font-mono text-white mt-0.5">₱ ${globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-            <span class="text-[9px] text-emerald-300 mt-1">GLP / Active Borrowers</span>
-        `;
-    }
 
     if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} loans`;
     if (kpiDisbursedTotalLoanHover) kpiDisbursedTotalLoanHover.innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -711,15 +693,14 @@ function renderDailyDisbursementTable(data) {
         if (selectedBranch !== 'ALL' && branch !== selectedBranch) return;
 
         const colKey = (selectedBranch !== 'ALL') ? officer : branch;
-        const clientName = item['Client name'] || 'UNKNOWN';
 
         datesSet.add(dateKey);
         columnsSet.add(colKey);
 
         if (!dailyMap[dateKey]) dailyMap[dateKey] = {};
-        if (!dailyMap[dateKey][colKey]) dailyMap[dateKey][colKey] = new Set();
+        if (!dailyMap[dateKey][colKey]) dailyMap[dateKey][colKey] = [];
 
-        dailyMap[dateKey][colKey].add(clientName);
+        dailyMap[dateKey][colKey].push(item);
     });
 
     const sortedDates = Array.from(datesSet).sort();
@@ -737,18 +718,47 @@ function renderDailyDisbursementTable(data) {
     html += `<th class="p-2.5 text-center font-bold text-yellow-400">Daily Unique Total</th></tr></thead><tbody>`;
 
     sortedDates.forEach(dateStr => {
-        html += `<tr class="border-b border-emerald-900/60 hover:bg-emerald-900/30 transition-colors"><td class="p-2 pl-3 font-bold text-white">${dateStr}</td>`;
-        const dayUniqueClients = new Set();
+        html += `<tr class="border-b border-emerald-900/60 hover:bg-emerald-900/30 transition-colors"><td class="p-2 pl-3 font-bold text-white whitespace-nowrap">${dateStr}</td>`;
+        
+        const dayUniqueClientsMap = new Map();
 
         sortedColumns.forEach(col => {
-            const clientSet = dailyMap[dateStr] && dailyMap[dateStr][col] ? dailyMap[dateStr][col] : new Set();
-            clientSet.forEach(c => dayUniqueClients.add(c));
-            const count = clientSet.size;
+            const records = dailyMap[dateStr] && dailyMap[dateStr][col] ? dailyMap[dateStr][col] : [];
+            
+            // Get unique borrowers for this column on this date
+            const colUniqueMap = new Map();
+            records.forEach(r => {
+                const cName = r['Client name'] || 'UNKNOWN';
+                if (!colUniqueMap.has(cName)) {
+                    colUniqueMap.set(cName, r);
+                }
+                if (!dayUniqueClientsMap.has(cName)) {
+                    dayUniqueClientsMap.set(cName, r);
+                }
+            });
 
-            html += `<td class="p-2 text-center font-mono text-emerald-100 font-bold">${count > 0 ? count : '-'}</td>`;
+            const uniqueRecords = Array.from(colUniqueMap.values());
+            const count = uniqueRecords.length;
+
+            if (count > 0) {
+                html += `<td class="p-2 text-center font-mono font-bold">
+                    <button onclick='openCbsClientModal("Disbursed - ${col} (${dateStr})", "Disbursement Date: ${dateStr}", ${JSON.stringify(uniqueRecords)})' class="hover:underline text-emerald-200 hover:text-white px-2 py-1 rounded bg-emerald-900/40 hover:bg-emerald-800/80 border border-emerald-700/60 transition-all">${count}</button>
+                </td>`;
+            } else {
+                html += `<td class="p-2 text-center font-mono text-emerald-500/50">-</td>`;
+            }
         });
 
-        html += `<td class="p-2 text-center font-mono font-black text-yellow-400 bg-amber-500/10">${dayUniqueClients.size}</td></tr>`;
+        const dayUniqueRecords = Array.from(dayUniqueClientsMap.values());
+        const totalUniqueCount = dayUniqueRecords.length;
+
+        if (totalUniqueCount > 0) {
+            html += `<td class="p-2 text-center font-mono font-black bg-amber-500/10">
+                <button onclick='openCbsClientModal("Daily Disbursed Total (${dateStr})", "All Branches/Officers on ${dateStr}", ${JSON.stringify(dayUniqueRecords)})' class="hover:underline text-yellow-300 hover:text-yellow-200 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-all">${totalUniqueCount}</button>
+            </td></tr>`;
+        } else {
+            html += `<td class="p-2 text-center font-mono text-amber-500/50 bg-amber-500/10">-</td></tr>`;
+        }
     });
 
     html += `</tbody>`;
@@ -1364,7 +1374,6 @@ function renderCbsPivotMatrix(data) {
 
     const matrix = { Newloan: {}, Reloan: {} };
     const rowKeysSet = new Set();
-    const lookupMap = {};
 
     filteredData.forEach(d => {
         const category = getProductCategory(d['Product ID']) === 'Newloan' ? 'Newloan' : 'Reloan';
@@ -1380,10 +1389,6 @@ function renderCbsPivotMatrix(data) {
         if (!matrix[category][rowKey]) matrix[category][rowKey] = {};
         if (!matrix[category][rowKey][status]) matrix[category][rowKey][status] = [];
         matrix[category][rowKey][status].push(d);
-
-        const lookupKey = `${category}_${rowKey}_${status}`;
-        if (!lookupMap[lookupKey]) lookupMap[lookupKey] = [];
-        lookupMap[lookupKey].push(d);
     });
 
     const sortedRowKeys = Array.from(rowKeysSet).sort();
@@ -1405,7 +1410,12 @@ function renderCbsPivotMatrix(data) {
     let grandTotalOverallList = [];
 
     ['Newloan', 'Reloan'].forEach(cat => {
+        // Category Header Row
         html += `<tr class="bg-emerald-50/80 text-emerald-900 font-extrabold"><td class="p-2 pl-3" colspan="${allStatuses.length + 2}">${cat}</td></tr>`;
+
+        const catColLists = {};
+        allStatuses.forEach(st => catColLists[st] = []);
+        let catOverallList = [];
 
         sortedRowKeys.forEach(rowKey => {
             if (matrix[cat][rowKey]) {
@@ -1419,6 +1429,8 @@ function renderCbsPivotMatrix(data) {
                     rowClients = rowClients.concat(clientList);
 
                     clientList.forEach(c => {
+                        catColLists[st].push(c);
+                        catOverallList.push(c);
                         grandTotalColLists[st].push(c);
                         grandTotalOverallList.push(c);
                     });
@@ -1432,6 +1444,19 @@ function renderCbsPivotMatrix(data) {
                 html += `<td class="p-2 text-center font-mono font-black text-slate-950"><button onclick='openCbsClientModal("${cat} - ${rowKey} (Total)", "All Statuses", ${JSON.stringify(rowClients)})' class="hover:underline px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300">${rowTot}</button></td></tr>`;
             }
         });
+
+        // Category Subtotal Row
+        html += `<tr class="bg-emerald-900/10 text-emerald-950 font-black border-t-2 border-b-2 border-emerald-900/30"><td class="p-2.5 pl-4 uppercase">Total ${cat}</td>`;
+        allStatuses.forEach(st => {
+            const colList = catColLists[st];
+            const count = colList.length;
+            if (count > 0) {
+                html += `<td class="p-2.5 text-center font-mono"><button onclick='openCbsClientModal("Total ${cat} (${st})", "Category: ${cat} - Status: ${st}", ${JSON.stringify(colList)})' class="hover:underline text-emerald-900 px-2 py-1 rounded bg-emerald-200/60 border border-emerald-300">${count}</button></td>`;
+            } else {
+                html += `<td class="p-2.5 text-center font-mono text-slate-400">-</td>`;
+            }
+        });
+        html += `<td class="p-2.5 text-center font-mono text-emerald-950"><button onclick='openCbsClientModal("Total ${cat} (Overall)", "Category: ${cat} - All Statuses", ${JSON.stringify(catOverallList)})' class="hover:underline px-2 py-1 rounded bg-emerald-200/80 border border-emerald-400">${catOverallList.length}</button></td></tr>`;
     });
 
     // Grand Total Row
