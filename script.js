@@ -1595,7 +1595,7 @@ function renderBranchCards(branchMap) {
                 </div>
             </div>
             <div class="text-[11px] font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2">
-                <span>View TS Officer Breakdown</span>
+                <span>View Trust Staff Performance</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
