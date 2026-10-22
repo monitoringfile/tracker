@@ -204,7 +204,7 @@ function openBranchModal(branchName) {
                     <div class="flex items-center justify-between pt-1 border-t border-emerald-100/60">
                         <span class="text-blue-700 font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold text-slate-900">${oStats.disbursedCount} Folders</span>
+                            <span class="font-bold text-slate-900">${oStats.disbursedCount} loans</span>
                             <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
                         </div>
                     </div>
@@ -632,7 +632,7 @@ function renderDashboard(data) {
     if (kpiBorrowers) kpiBorrowers.innerText = filteredEligibleClients.size.toLocaleString();
     if (kpiBorrowersSub) kpiBorrowersSub.innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
 
-    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} Folders`;
+    if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} loans`;
     if (kpiDisbursedTotalLoanHover) kpiDisbursedTotalLoanHover.innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
     
     const disbursedHoverContainer = kpiDisbursedCount ? kpiDisbursedCount.parentElement.querySelector('.absolute') : null;
@@ -711,11 +711,11 @@ function renderDailyDisbursementTable(data) {
         return;
     }
 
-    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Trust Staffs' : 'Branch';
+    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
 
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
     sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
-    html += `<th class="p-2.5 text-center font-bold text-yellow-400">Daily Total</th></tr></thead><tbody>`;
+    html += `<th class="p-2.5 text-center font-bold text-yellow-400">Daily Unique Total</th></tr></thead><tbody>`;
 
     sortedDates.forEach(dateStr => {
         html += `<tr class="border-b border-emerald-900/60 hover:bg-emerald-900/30 transition-colors"><td class="p-2 pl-3 font-bold text-white whitespace-nowrap">${dateStr}</td>`;
@@ -740,8 +740,11 @@ function renderDailyDisbursementTable(data) {
             const count = uniqueRecords.length;
 
             if (count > 0) {
+                const totalLoanAmt = uniqueRecords.reduce((sum, r) => sum + (parseFloat(r['Loan Amount'] || r['Loan amount'] || 0) || 0), 0);
+                const formattedLoanAmt = '₱ ' + totalLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                
                 html += `<td class="p-2 text-center font-mono font-bold">
-                    <button onclick='openCbsClientModal("Disbursed - ${col} (${dateStr})", "Disbursement Date: ${dateStr}", ${JSON.stringify(uniqueRecords)})' class="hover:underline text-emerald-200 hover:text-white px-2 py-1 rounded bg-emerald-900/40 hover:bg-emerald-800/80 border border-emerald-700/60 transition-all">${count}</button>
+                    <button title="Total Loan Amount: ${formattedLoanAmt}" onclick='openCbsClientModal("Disbursed - ${col} (${dateStr})", "Disbursement Date: ${dateStr}", ${JSON.stringify(uniqueRecords)})' class="hover:underline text-emerald-200 hover:text-white px-2 py-1 rounded bg-emerald-900/40 hover:bg-emerald-800/80 border border-emerald-700/60 transition-all">${count}</button>
                 </td>`;
             } else {
                 html += `<td class="p-2 text-center font-mono text-emerald-500/50">-</td>`;
@@ -752,8 +755,11 @@ function renderDailyDisbursementTable(data) {
         const totalUniqueCount = dayUniqueRecords.length;
 
         if (totalUniqueCount > 0) {
+            const dayTotalLoanAmt = dayUniqueRecords.reduce((sum, r) => sum + (parseFloat(r['Loan Amount'] || r['Loan amount'] || 0) || 0), 0);
+            const formattedDayLoanAmt = '₱ ' + dayTotalLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
             html += `<td class="p-2 text-center font-mono font-black bg-amber-500/10">
-                <button onclick='openCbsClientModal("Daily Disbursed Total (${dateStr})", "All Branches/Officers on ${dateStr}", ${JSON.stringify(dayUniqueRecords)})' class="hover:underline text-yellow-300 hover:text-yellow-200 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-all">${totalUniqueCount}</button>
+                <button title="Total Loan Amount: ${formattedDayLoanAmt}" onclick='openCbsClientModal("Daily Disbursed Total (${dateStr})", "All Branches/Officers on ${dateStr}", ${JSON.stringify(dayUniqueRecords)})' class="hover:underline text-yellow-300 hover:text-yellow-200 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-all">${totalUniqueCount}</button>
             </td></tr>`;
         } else {
             html += `<td class="p-2 text-center font-mono text-amber-500/50 bg-amber-500/10">-</td></tr>`;
@@ -1462,12 +1468,16 @@ function renderCbsPivotMatrix(data) {
                     });
 
                     if (count > 0) {
-                        html += `<td class="p-2 text-center font-mono font-bold text-emerald-800"><button onclick='openCbsClientModal("${cat} - ${rowKey} (${st})", "Status: ${st}", ${JSON.stringify(clientList)})' class="hover:underline hover:text-emerald-900 px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200">${count}</button></td>`;
+                        const cellLoanAmt = clientList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+                        const cellLoanAmtFormatted = '₱ ' + cellLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        html += `<td class="p-2 text-center font-mono font-bold text-emerald-800"><button title="Total Loan Amount: ${cellLoanAmtFormatted}" onclick='openCbsClientModal("${cat} - ${rowKey} (${st})", "Status: ${st}", ${JSON.stringify(clientList)})' class="hover:underline hover:text-emerald-900 px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200">${count}</button></td>`;
                     } else {
                         html += `<td class="p-2 text-center text-slate-300 font-mono">-</td>`;
                     }
                 });
-                html += `<td class="p-2 text-center font-mono font-black text-slate-950"><button onclick='openCbsClientModal("${cat} - ${rowKey} (Total)", "All Statuses", ${JSON.stringify(rowClients)})' class="hover:underline px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300">${rowTot}</button></td></tr>`;
+                const rowTotLoanAmt = rowClients.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+                const rowTotLoanAmtFormatted = '₱ ' + rowTotLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                html += `<td class="p-2 text-center font-mono font-black text-slate-950"><button title="Total Loan Amount: ${rowTotLoanAmtFormatted}" onclick='openCbsClientModal("${cat} - ${rowKey} (Total)", "All Statuses", ${JSON.stringify(rowClients)})' class="hover:underline px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300">${rowTot}</button></td></tr>`;
             }
         });
 
@@ -1477,12 +1487,16 @@ function renderCbsPivotMatrix(data) {
             const colList = catColLists[st];
             const count = colList.length;
             if (count > 0) {
-                html += `<td class="p-2.5 text-center font-mono"><button onclick='openCbsClientModal("Total ${cat} (${st})", "Category: ${cat} - Status: ${st}", ${JSON.stringify(colList)})' class="hover:underline text-emerald-900 px-2 py-1 rounded bg-emerald-200/60 border border-emerald-300">${count}</button></td>`;
+                const subColLoanAmt = colList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+                const subColLoanAmtFormatted = '₱ ' + subColLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                html += `<td class="p-2.5 text-center font-mono"><button title="Total Loan Amount: ${subColLoanAmtFormatted}" onclick='openCbsClientModal("Total ${cat} (${st})", "Category: ${cat} - Status: ${st}", ${JSON.stringify(colList)})' class="hover:underline text-emerald-900 px-2 py-1 rounded bg-emerald-200/60 border border-emerald-300">${count}</button></td>`;
             } else {
                 html += `<td class="p-2.5 text-center font-mono text-slate-400">-</td>`;
             }
         });
-        html += `<td class="p-2.5 text-center font-mono text-emerald-950"><button onclick='openCbsClientModal("Total ${cat} (Overall)", "Category: ${cat} - All Statuses", ${JSON.stringify(catOverallList)})' class="hover:underline px-2 py-1 rounded bg-emerald-200/80 border border-emerald-400">${catOverallList.length}</button></td></tr>`;
+        const catOverallLoanAmt = catOverallList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+        const catOverallLoanAmtFormatted = '₱ ' + catOverallLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        html += `<td class="p-2.5 text-center font-mono text-emerald-950"><button title="Total Loan Amount: ${catOverallLoanAmtFormatted}" onclick='openCbsClientModal("Total ${cat} (Overall)", "Category: ${cat} - All Statuses", ${JSON.stringify(catOverallList)})' class="hover:underline px-2 py-1 rounded bg-emerald-200/80 border border-emerald-400">${catOverallList.length}</button></td></tr>`;
     });
 
     // Grand Total Row
@@ -1491,12 +1505,16 @@ function renderCbsPivotMatrix(data) {
         const colList = grandTotalColLists[st];
         const count = colList.length;
         if (count > 0) {
-            html += `<td class="p-3 text-center font-mono"><button onclick='openCbsClientModal("Grand Total (${st})", "All Branches / Officers - Status: ${st}", ${JSON.stringify(colList)})' class="hover:underline text-yellow-300 px-2 py-1 rounded bg-black/20 border border-white/20">${count}</button></td>`;
+            const grandColLoanAmt = colList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+            const grandColLoanAmtFormatted = '₱ ' + grandColLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            html += `<td class="p-3 text-center font-mono"><button title="Total Loan Amount: ${grandColLoanAmtFormatted}" onclick='openCbsClientModal("Grand Total (${st})", "All Branches / Officers - Status: ${st}", ${JSON.stringify(colList)})' class="hover:underline text-yellow-300 px-2 py-1 rounded bg-black/20 border border-white/20">${count}</button></td>`;
         } else {
             html += `<td class="p-3 text-center font-mono text-white/50">-</td>`;
         }
     });
-    html += `<td class="p-3 text-center font-mono text-yellow-300"><button onclick='openCbsClientModal("Grand Total (Overall)", "All Statuses & Categories", ${JSON.stringify(grandTotalOverallList)})' class="hover:underline px-2 py-1 rounded bg-black/20 border border-white/20">${grandTotalOverallList.length}</button></td></tr>`;
+    const grandOverallLoanAmt = grandTotalOverallList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+    const grandOverallLoanAmtFormatted = '₱ ' + grandOverallLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    html += `<td class="p-3 text-center font-mono text-yellow-300"><button title="Total Loan Amount: ${grandOverallLoanAmtFormatted}" onclick='openCbsClientModal("Grand Total (Overall)", "All Statuses & Categories", ${JSON.stringify(grandTotalOverallList)})' class="hover:underline px-2 py-1 rounded bg-black/20 border border-white/20">${grandTotalOverallList.length}</button></td></tr>`;
 
     html += `</tbody>`;
     table.innerHTML = html;
@@ -1530,8 +1548,8 @@ function renderBranchCards(branchMap) {
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs font-mono font-bold">${totalOfficersCount} Trust Staffs</span>
-                        <span class="text-[10px] block font-mono">Active Manpower</span>
+                        <span class="text-xs font-mono font-bold">${totalOfficersCount} Officers / TS</span>
+                        <span class="text-[10px] block font-mono">Active Roster</span>
                     </div>
                 </div>
 
@@ -1562,7 +1580,7 @@ function renderBranchCards(branchMap) {
                     <div class="flex items-center justify-between pt-1 border-t border-[#16422d]">
                         <span class="font-bold">Disbursed (Month):</span>
                         <div class="font-mono text-right">
-                            <span class="font-bold">${branchDisbursedCount} Folders</span>
+                            <span class="font-bold">${branchDisbursedCount} loans</span>
                             <span class="text-[10px] block">₱ ${b.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
                     </div>
@@ -1595,7 +1613,7 @@ function renderBranchCards(branchMap) {
                 </div>
             </div>
             <div class="text-[11px] font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2">
-                <span>View Trust Staff Performance</span>
+                <span>View TS Officer Breakdown</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
