@@ -1231,11 +1231,29 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
 
         const groupKey = (branchFilterValue && branchFilterValue !== 'ALL') ? officer : branch;
         const weekNum = getCustomWeekOfMonth(dDate);
+        const categoryProd = getProductCategory(item['Product ID']);
+        const clientName = item['Client name'] || 'UNKNOWN';
+        const loanAmt = parseFloat(item['Loan Amount'] || item['Loan amount'] || 0) || 0;
 
         if (!groupMap[groupKey]) {
-            groupMap[groupKey] = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
+            groupMap[groupKey] = {
+                1: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 },
+                2: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 },
+                3: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 },
+                4: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 },
+                5: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 }
+            };
         }
-        groupMap[groupKey][weekNum].add(item['Client name'] || 'UNKNOWN');
+
+        const weekObj = groupMap[groupKey][weekNum];
+        weekObj.allClients.add(clientName);
+        weekObj.totalAmt += loanAmt;
+
+        if (categoryProd === 'Newloan') {
+            weekObj.newLoan.add(clientName);
+        } else {
+            weekObj.reloan.add(clientName);
+        }
     });
 
     if (subtitleEl) {
@@ -1250,16 +1268,17 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
 
     const datasets = groupKeys.map((key, idx) => {
         const weekData = [
-            groupMap[key][1].size,
-            groupMap[key][2].size,
-            groupMap[key][3].size,
-            groupMap[key][4].size,
-            groupMap[key][5].size
+            groupMap[key][1].allClients.size,
+            groupMap[key][2].allClients.size,
+            groupMap[key][3].allClients.size,
+            groupMap[key][4].allClients.size,
+            groupMap[key][5].allClients.size
         ];
         const color = professionalColors[idx % professionalColors.length];
         const displayKey = (branchFilterValue && branchFilterValue !== 'ALL') ? getOfficerFirstName(key) : key;
         return {
             label: displayKey,
+            fullKey: key,
             data: weekData,
             borderColor: color,
             backgroundColor: color,
@@ -1292,8 +1311,31 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
                     borderWidth: 1,
                     padding: 10,
                     callbacks: {
-                        title: function(context) { return `${context[0].label}`; },
-                        label: function(context) { return `${context.dataset.label}: ${context.raw} disbursed borrowers`; }
+                        title: function(context) { 
+                            const targetName = context[0].dataset.fullKey || context[0].dataset.label;
+                            return `${targetName} - ${context[0].label}`; 
+                        },
+                        label: function(context) {
+                            const groupKey = context.dataset.fullKey || context.dataset.label;
+                            const weekIndex = context.dataIndex + 1;
+                            const weekData = groupMap[groupKey] ? groupMap[groupKey][weekIndex] : null;
+
+                            if (!weekData) {
+                                return `Total Disbursed: ${context.raw} borrowers`;
+                            }
+
+                            const newLoanCount = weekData.newLoan.size;
+                            const reloanCount = weekData.reloan.size;
+                            const totalBorrowers = weekData.allClients.size;
+                            const totalAmtFormatted = '₱ ' + weekData.totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                            return [
+                                `New Loan: ${newLoanCount} borrowers`,
+                                `Reloan: ${reloanCount} borrowers`,
+                                `Total Borrowers: ${totalBorrowers} clients`,
+                                `Total Loan Amount: ${totalAmtFormatted}`
+                            ];
+                        }
                     }
                 }
             },
