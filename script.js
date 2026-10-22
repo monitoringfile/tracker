@@ -1263,7 +1263,7 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
     }
 
     const groupKeys = Object.keys(groupMap).sort();
-    const weekLabels = ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'];
+    const weekLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
     const professionalColors = ['#16422d', '#2563eb', '#d97706', '#db2777', '#7c3aed', '#0891b2', '#059669', '#ea580c', '#4f46e5', '#0d9488'];
 
     const datasets = groupKeys.map((key, idx) => {
