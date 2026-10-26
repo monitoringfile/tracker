@@ -753,7 +753,7 @@ function renderDailyDisbursementTable(data) {
         return;
     }
 
-    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
+    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Trust Staff' : 'Branch';
 
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
     sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
@@ -1632,7 +1632,7 @@ function renderBranchCards(branchMap) {
                     </h4>
                     <div class="text-right">
                         <span class="text-xs font-mono font-bold">${totalOfficersCount} Officers / TS</span>
-                        <span class="text-[10px] block font-mono">Active Roster</span>
+                        <span class="text-[10px] block font-mono">Active Manpower</span>
                     </div>
                 </div>
 
@@ -1696,7 +1696,7 @@ function renderBranchCards(branchMap) {
                 </div>
             </div>
             <div class="text-[11px] font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2">
-                <span>View TS Officer Breakdown</span>
+                <span>View Trust Staff Breakdown</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
