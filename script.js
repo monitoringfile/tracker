@@ -1590,8 +1590,8 @@ function renderBranchCards(branchMap) {
                         <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
                     </h4>
                     <div class="text-right">
-                        <span class="text-xs font-mono font-bold">${totalOfficersCount} Officers / TS</span>
-                        <span class="text-[10px] block font-mono">Active Roster</span>
+                        <span class="text-xs font-mono font-bold">${totalOfficersCount} Trust Staff</span>
+                        <span class="text-[10px] block font-mono">Active Manpower</span>
                     </div>
                 </div>
 
@@ -1655,7 +1655,7 @@ function renderBranchCards(branchMap) {
                 </div>
             </div>
             <div class="text-[11px] font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2">
-                <span>View TS Officer Breakdown</span>
+                <span>View TS Performance Breakdown</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
