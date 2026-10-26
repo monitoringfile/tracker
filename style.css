@@ -25,17 +25,17 @@ body {
     overflow: hidden;
 }
 .section-header-bamboo {
-    background: linear-gradient(135deg, #804000 0%, #16422d 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #008040 0%, #ffff00 100%);
+    color: #000000;
 }
 .section-header-alt {
-    background: linear-gradient(135deg, #113626 0%, #25cde0 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #95ff2b 0%, #137c88 100%);
+    color: #000000;
 }
 
 /* Dark background styling and distinct separation border for each branch summary card */
 #branchCardsGrid .kpi-card {
-    background: #004040 !important;
+    background: #162c2c !important;
     border: 2px solid #ffff80 !important;
     box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.6);
     color: #ffffff !important;
