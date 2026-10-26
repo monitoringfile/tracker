@@ -753,7 +753,7 @@ function renderDailyDisbursementTable(data) {
         return;
     }
 
-    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Trust Staff' : 'Branch';
+    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
 
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
     sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
@@ -1305,7 +1305,7 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
     }
 
     const groupKeys = Object.keys(groupMap).sort();
-    const weekLabels = ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'];
+    const weekLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
     const professionalColors = ['#16422d', '#2563eb', '#d97706', '#db2777', '#7c3aed', '#0891b2', '#059669', '#ea580c', '#4f46e5', '#0d9488'];
 
     const datasets = groupKeys.map((key, idx) => {
@@ -1632,7 +1632,7 @@ function renderBranchCards(branchMap) {
                     </h4>
                     <div class="text-right">
                         <span class="text-xs font-mono font-bold">${totalOfficersCount} Officers / TS</span>
-                        <span class="text-[10px] block font-mono">Active Manpower</span>
+                        <span class="text-[10px] block font-mono">Active Roster</span>
                     </div>
                 </div>
 
@@ -1696,7 +1696,7 @@ function renderBranchCards(branchMap) {
                 </div>
             </div>
             <div class="text-[11px] font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2">
-                <span>View Trust Staff Breakdown</span>
+                <span>View TS Officer Breakdown</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
