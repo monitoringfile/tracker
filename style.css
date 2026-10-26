@@ -1,5 +1,5 @@
 body {
-    background: linear-gradient(135deg, #ffff80 0%, #008040 50%, #fcb103 100%);
+    background: linear-gradient(135deg, #80ffff 0%, #000040 50%, #00ff00 100%);
     min-height: 100vh;
 }
 .custom-scrollbar::-webkit-scrollbar {
