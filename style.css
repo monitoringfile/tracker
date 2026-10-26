@@ -1,5 +1,5 @@
 body {
-    background: linear-gradient(135deg, #80ffff 0%, #000040 50%, #00ff00 100%);
+    background: linear-gradient(135deg, #008888 0%, #808080 50%, #8aabb3 100%);
     min-height: 100vh;
 }
 .custom-scrollbar::-webkit-scrollbar {
@@ -29,14 +29,14 @@ body {
     color: #000000;
 }
 .section-header-alt {
-    background: linear-gradient(135deg, #95ff2b 0%, #137c88 100%);
+    background: linear-gradient(135deg, #95ff2b 0%, #ff8040 100%);
     color: #000000;
 }
 
 /* Dark background styling and distinct separation border for each branch summary card */
 #branchCardsGrid .kpi-card {
-    background: #162c2c !important;
-    border: 2px solid #ffff80 !important;
+    background: #3a3a3a !important;
+    border: 2px solid #808000 !important;
     box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.6);
     color: #ffffff !important;
 }
