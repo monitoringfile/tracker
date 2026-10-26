@@ -37,8 +37,91 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Custom CSS File -->
-    <link rel="stylesheet" href="style.css">
+    <!-- Combined Custom CSS -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #ffff80 0%, #008040 50%, #fcb103 100%);
+            min-height: 100vh;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(10, 35, 24, 0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ffff80;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #52b788;
+        }
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border-radius: 0.9rem;
+            box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.3);
+            border: 1px solid #ffff80;
+            overflow: hidden;
+        }
+        .section-header-bamboo {
+            background: linear-gradient(135deg, #804000 0%, #16422d 100%);
+            color: #ffffff;
+        }
+        .section-header-alt {
+            background: linear-gradient(135deg, #113626 0%, #25cde0 100%);
+            color: #ffffff;
+        }
+
+        /* Dark background styling and distinct separation border for each branch summary card */
+        #branchCardsGrid .kpi-card {
+            background: #004040 !important;
+            border: 2px solid #ffff80 !important;
+            box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.6);
+            color: #ffffff !important;
+        }
+
+        /* Invert inner sub-boxes and text colors inside the dark branch summary cards for maximum contrast */
+        #branchCardsGrid .kpi-card h4 {
+            color: #ffff0d !important;
+        }
+        #branchCardsGrid .kpi-card .border-b,
+        #branchCardsGrid .kpi-card .border-t,
+        #branchCardsGrid .kpi-card .border {
+            border-color: #808000 !important;
+        }
+        #branchCardsGrid .kpi-card .bg-slate-50,
+        #branchCardsGrid .kpi-card .bg-emerald-50\/40 {
+            background-color: rgba(17, 54, 38, 0.6) !important;
+        }
+        #branchCardsGrid .kpi-card .text-slate-900,
+        #branchCardsGrid .kpi-card .text-slate-800,
+        #branchCardsGrid .kpi-card .text-slate-700 {
+            color: #ffffff !important;
+        }
+        #branchCardsGrid .kpi-card .text-slate-500,
+        #branchCardsGrid .kpi-card .text-slate-400 {
+            color: #94a3b8 !important;
+        }
+        #branchCardsGrid .kpi-card .text-emerald-700 {
+            color: #6ee7b7 !important;
+        }
+        #branchCardsGrid .kpi-card .text-blue-700,
+        #branchCardsGrid .kpi-card .text-blue-800,
+        #branchCardsGrid .kpi-card .text-blue-950 {
+            color: #93c5fd !important;
+        }
+        #branchCardsGrid .kpi-card .text-bambooDark {
+            color: #004000 !important;
+        }
+
+        /* Required CSS rule to trigger the hover tooltip when mousing over the New Loans row */
+        .group-new-loan:hover .new-loan-hover-card {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+    </style>
 </head>
 <body class="text-slate-800 min-h-screen font-sans antialiased selection:bg-emerald-500/30">
 
@@ -102,6 +185,9 @@
                     <span>Portfolio Filter Scope</span>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
+                    <select id="areaFilter" class="bg-[#113626] border-2 border-[#2d6a4f] text-white text-xs font-semibold rounded-xl px-3.5 py-2 outline-none focus:border-emerald-400 transition-all cursor-pointer">
+                        <option value="ALL">All Areas</option>
+                    </select>
                     <select id="branchFilter" class="bg-[#113626] border-2 border-[#2d6a4f] text-white text-xs font-semibold rounded-xl px-3.5 py-2 outline-none focus:border-emerald-400 transition-all cursor-pointer">
                         <option value="ALL">All Branches</option>
                     </select>
@@ -117,7 +203,7 @@
             <!-- TOP EXECUTIVE KPI TILES -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
                 
-                <!-- Loan Portfolio (with hover portfolio loan size) -->
+                <!-- Loan Portfolio -->
                 <div class="kpi-card p-4 bg-[#071a12] border-2 border-[#113626] border-t-4 border-t-emerald-400 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-emerald-200/90 tracking-wider">Loan Portfolio</span>
                     <div id="kpiLoanPortfolio" class="text-base sm:text-lg font-black text-white font-mono mt-1 truncate">0.00</div>
@@ -151,7 +237,7 @@
                     <span id="kpiBorrowersSub" class="text-[10px] text-emerald-200 font-bold truncate mt-1">Active / In Arrears</span>
                 </div>
 
-                <!-- Disbursed (Mo) with Hover Tooltip -->
+                <!-- Disbursed (Mo) -->
                 <div class="kpi-card p-4 bg-[#071a12] border-2 border-[#113626] border-t-4 border-t-blue-400 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-emerald-200/90 tracking-wider">Disbursed FTM</span>
                     <div id="kpiDisbursedCount" class="text-base sm:text-lg font-black text-blue-400 font-mono mt-1">0</div>
@@ -164,7 +250,7 @@
                     </div>
                 </div>
 
-                <!-- New Loans with Hover Tooltip -->
+                <!-- New Loans -->
                 <div class="kpi-card p-4 bg-[#071a12] border-2 border-[#113626] border-t-4 border-t-teal-400 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-emerald-200/90 tracking-wider">New Loans</span>
                     <div id="kpiNewLoanCount" class="text-base sm:text-lg font-black text-teal-300 font-mono mt-1">0</div>
@@ -177,7 +263,7 @@
                     </div>
                 </div>
 
-                <!-- New Inclusions with Hover Tooltip -->
+                <!-- New Inclusions -->
                 <div class="kpi-card p-4 bg-[#071a12] border-2 border-[#113626] border-t-4 border-t-indigo-400 flex flex-col justify-between relative group cursor-pointer shadow-xl rounded-xl">
                     <span class="text-[11px] font-extrabold uppercase text-emerald-200/90 tracking-wider">New Inclusions</span>
                     <div id="kpiNewInclusionsCount" class="text-base sm:text-lg font-black text-indigo-300 font-mono mt-1">0</div>
@@ -275,7 +361,7 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-2 bg-[#071a12] p-1.5 rounded-xl border border-[#16422d]">
                         <span class="text-xs text-yellow-300 font-bold px-1 flex items-center gap-1">
-                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-yellow-400"></i> Disbursed Date From:
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-yellow-400"></i> From:
                         </span>
                         <input type="date" id="disbStartDate" class="bg-[#113626] border border-amber-500/60 text-white text-xs font-bold rounded px-2 py-1 outline-none focus:border-yellow-400">
                         <span class="text-xs text-yellow-300 font-bold px-1">To:</span>
@@ -420,8 +506,2028 @@
         </div>
     </div>
 
-    <!-- Application Script -->
-    <script src="script.js"></script>
-    <script src="gemini.js"></script>
+    <!-- Combined Scripts (script.js + gemini.js) -->
+    <script>
+        /* Register Chart.js DataLabels Plugin globally */
+        if (typeof ChartDataLabels !== 'undefined') {
+            Chart.register(ChartDataLabels);
+        }
+
+        let rawData = [];
+        let globalBranchMap = {};
+        let borrowerChart = null, parAgingChart = null, parBreakdownChart = null, weeklyChart = null, productChart = null;
+
+        lucide.createIcons();
+
+        const modal = document.getElementById('branchModal');
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+        document.getElementById('closeModalFooterBtn').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+        function closeModal() { modal.classList.add('hidden'); }
+
+        // CBS Drilldown Modal Setup
+        const cbsClientModal = document.getElementById('cbsClientModal');
+        document.getElementById('closeCbsModalBtn').addEventListener('click', closeCbsModal);
+        document.getElementById('closeCbsModalFooterBtn').addEventListener('click', closeCbsModal);
+        cbsClientModal.addEventListener('click', (e) => { if (e.target === cbsClientModal) closeCbsModal(); });
+
+        function closeCbsModal() { cbsClientModal.classList.add('hidden'); }
+
+        // Helper function to copy text and give visual feedback
+        function copyClientName(textToCopy, btnElement) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalHTML = btnElement.innerHTML;
+                btnElement.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i>`;
+                btnElement.title = "Copied!";
+                lucide.createIcons();
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHTML;
+                    btnElement.title = "Copy Client Name";
+                    lucide.createIcons();
+                }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        function openCbsClientModal(title, subtitle, clientsArray) {
+            document.getElementById('cbsModalTitle').innerText = title;
+            document.getElementById('cbsModalSubtitle').innerText = subtitle;
+            document.getElementById('cbsModalCount').innerText = `Total Clients: ${clientsArray.length}`;
+
+            const tbody = document.getElementById('cbsClientTableBody');
+            tbody.innerHTML = '';
+
+            if (clientsArray.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400 italic">No client records found.</td></tr>`;
+            } else {
+                clientsArray.sort((a, b) => {
+                    const officerA = (a['Credit officer'] || '').trim();
+                    const officerB = (b['Credit officer'] || '').trim();
+                    const officerCompare = officerA.localeCompare(officerB);
+                    if (officerCompare !== 0) return officerCompare;
+                    return (a['Client name'] || '').trim().localeCompare((b['Client name'] || '').trim());
+                }).forEach(c => {
+                    const clientName = c['Client name'];
+                    const appDate = c['Application date'] || '-';
+                    const centre = c['Centre'] || '-';
+                    const loanAmt = (c['Loan Amount'] || c['Loan amount'] || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition-colors';
+                    tr.innerHTML = `
+                        <td class="p-2 pl-3 font-bold text-slate-900">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="truncate">${clientName}</span>
+                                <button type="button" onclick='copyClientName(${JSON.stringify(clientName)}, this)' class="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-all border border-slate-200 shadow-sm flex-shrink-0" title="Copy Client Name">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="p-2 text-slate-700 whitespace-nowrap">${c.Branch}</td>
+                        <td class="p-2 font-semibold text-emerald-900">${c['Credit officer']}</td>
+                        <td class="p-2 text-slate-700">${centre}</td>
+                        <td class="p-2 font-mono text-slate-600 whitespace-nowrap text-center">${appDate}</td>
+                        <td class="p-2 font-mono text-emerald-800 whitespace-nowrap">${c['Product ID']}</td>
+                        <td class="p-2 font-mono text-right font-bold text-slate-900 whitespace-nowrap pr-4">${loanAmt}</td>
+                        <td class="p-2 text-center whitespace-nowrap"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">${c.Status}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            cbsClientModal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function getProductCategory(productId) {
+            if (!productId) return 'Other';
+            const clean = productId.toString().trim().replaceAll(' ', '').toUpperCase();
+            if (clean.endsWith('-NL')) return 'Newloan';
+            if (clean.startsWith('EL-')) return 'Educ';
+            if (clean.startsWith('HIL-')) return 'HIL';
+            if (clean.startsWith('MLD-')) return 'MLD';
+            if (clean.startsWith('MLP')) return 'MPlus';
+            if (clean.startsWith('M-') && clean.endsWith('-RL')) return 'Mauswagon';
+            return 'Other';
+        }
+
+        function parseLocalDateString(rawStr) {
+            if (!rawStr) return null;
+            const str = rawStr.toString().trim();
+            const parts = str.split(/[-/]/);
+            if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                    const y = parseInt(parts[0], 10);
+                    const m = parseInt(parts[1], 10) - 1;
+                    const d = parseInt(parts[2], 10);
+                    return new Date(y, m, d);
+                } else if (parts[2].length === 4) {
+                    const m = parseInt(parts[0], 10) - 1;
+                    const d = parseInt(parts[1], 10);
+                    const y = parseInt(parts[2], 10);
+                    return new Date(y, m, d);
+                }
+            }
+            const dt = new Date(str);
+            return isNaN(dt.getTime()) ? null : dt;
+        }
+
+        function formatYYYYMMDD(dateObj) {
+            if (!dateObj) return '';
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function getCustomWeekOfMonth(date) {
+            const day = date.getDate();
+            if (day <= 3) return 1;
+            if (day <= 10) return 2;
+            if (day <= 17) return 3;
+            if (day <= 24) return 4;
+            return 5;
+        }
+
+        function getOfficerFirstName(fullName) {
+            if (!fullName) return 'Unknown';
+            const trimmed = fullName.toString().trim();
+            const parts = trimmed.split(/\s+/);
+            return parts[0];
+        }
+
+        function openBranchModal(branchName) {
+            const bData = globalBranchMap[branchName];
+            if (!bData) return;
+
+            document.getElementById('modalBranchTitle').innerText = `${branchName} - TS Officer Summary`;
+            const container = document.getElementById('modalOfficerList');
+            container.innerHTML = '';
+
+            const officerEntries = Object.entries(bData.officers);
+            const validOfficers = officerEntries.filter(([officerName, oStats]) => {
+                const cleanName = (officerName || '').trim().toLowerCase();
+                if (cleanName === 'unknown officer' || cleanName === 'unknown' || cleanName === '') return false;
+                return oStats.glp > 0 || oStats.parAmount > 0 || oStats.borrowerSet.size > 0 || oStats.disbursedCount > 0 || oStats.newInclusionsCount > 0;
+            });
+
+            if (validOfficers.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">No valid officer records found.</div>`;
+            } else {
+                validOfficers.forEach(([officerName, oStats]) => {
+                    const officerParRatio = oStats.glp > 0 ? (oStats.parAmount / oStats.glp) * 100 : 0;
+                    const officerPortfolioLoanSize = oStats.borrowerSet.size > 0 ? (oStats.glp / oStats.borrowerSet.size) : 0;
+                    const officerDisbLoanSize = oStats.disbursedCount > 0 ? (oStats.disbursedLoanAmount / oStats.disbursedCount) : 0;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'bg-white border border-slate-300 border-l-4 border-l-emerald-700 p-4 rounded-xl space-y-3 text-xs shadow-sm';
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-200 font-bold text-slate-800">
+                            <span class="text-sm font-black text-emerald-800"><i data-lucide="user-check" class="w-4 h-4 inline mr-1"></i> ${officerName}</span>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
+                            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                                <span class="text-slate-400 text-[10px] block font-sans uppercase font-bold">Loan Portfolio</span>
+                                <span class="text-slate-900 font-bold">${oStats.glp.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                                <span class="text-slate-400 text-[10px] block font-sans uppercase font-bold">PAR Amount</span>
+                                <span class="text-rose-600 font-bold">${oStats.parAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                                <span class="text-slate-400 text-[10px] block font-sans uppercase font-bold">PAR Ratio</span>
+                                <span class="text-amber-600 font-bold">${officerParRatio.toFixed(2)}%</span>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                                <span class="text-slate-400 text-[10px] block font-sans uppercase font-bold">Active Borrowers</span>
+                                <span class="text-emerald-700 font-bold">${oStats.borrowerSet.size}</span>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-50/50 border border-emerald-100 p-2.5 rounded-lg space-y-1.5 text-xs">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="text-slate-700 font-bold font-sans text-[10px] uppercase">Portfolio Loan Size:</span>
+                                <span class="font-bold text-slate-900">₱ ${officerPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-emerald-100/60">
+                                <span class="text-blue-700 font-bold">Disbursed (Month):</span>
+                                <div class="font-mono text-right">
+                                    <span class="font-bold text-slate-900">${oStats.disbursedCount} loans</span>
+                                    <span class="text-[10px] text-slate-500 block">₱ ${oStats.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between font-mono pt-1 border-t border-emerald-100/60">
+                                <span class="text-blue-800 font-bold font-sans text-[10px] uppercase">Disbursement Loan Size:</span>
+                                <span class="font-bold text-blue-900">₱ ${officerDisbLoanSize.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] font-mono text-slate-600 pl-2 border-l-2 border-blue-400 pt-1">
+                                <span>W1: <strong class="text-slate-900">${oStats.disbursedWeeks[1].size}</strong></span>
+                                <span>W2: <strong class="text-slate-900">${oStats.disbursedWeeks[2].size}</strong></span>
+                                <span>W3: <strong class="text-slate-900">${oStats.disbursedWeeks[3].size}</strong></span>
+                                <span>W4: <strong class="text-slate-900">${oStats.disbursedWeeks[4].size}</strong></span>
+                                <span>W5: <strong class="text-slate-900">${oStats.disbursedWeeks[5].size}</strong></span>
+                            </div>
+                            <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
+                                <span class="text-emerald-700 font-bold">New Loans (Month):</span>
+                                <span class="font-bold text-slate-900 font-mono">${oStats.newLoanSet.size} clients</span>
+                            </div>
+                            <div class="flex items-center justify-between border-t border-emerald-100/60 pt-1">
+                                <span class="text-emerald-900 font-bold">New Inclusions:</span>
+                                <div class="font-mono text-right">
+                                    <span class="font-bold text-emerald-900">${oStats.newInclusionsCount} clients</span>
+                                    <span class="text-[10px] text-slate-500 block">₱ ${oStats.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+            lucide.createIcons();
+            modal.classList.remove('hidden');
+        }
+
+        const maxDaysForNewInclusion = new Date().getDate();
+        const badgeEl = document.getElementById('newInclusionsBadge');
+        if (badgeEl) badgeEl.innerText = `New Inclusions: Arrears ≤ ${maxDaysForNewInclusion} days`;
+
+        const currentDateObj = new Date();
+        const currentDateStr = formatYYYYMMDD(currentDateObj);
+        const disbStartEl = document.getElementById('disbStartDate');
+        const disbEndEl = document.getElementById('disbEndDate');
+        if (disbStartEl) disbStartEl.value = currentDateStr;
+        if (disbEndEl) disbEndEl.value = currentDateStr;
+
+        const csvInput = document.getElementById('csvFileInput');
+        if (csvInput) {
+            csvInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                Papa.parse(file, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        rawData = results.data.map(row => ({
+                            Area: (row['Area'] || 'Unknown Area').toString().trim(),
+                            Branch: (row['Branch'] || 'Unknown Branch').toString().trim(),
+                            'Credit officer': (row['Credit officer'] || 'Unknown Officer').toString().trim(),
+                            Centre: (row['Centre'] || 'Unknown Centre').toString().trim(),
+                            'Product ID': (row['Product ID'] || 'Unknown Product').toString().trim(),
+                            'Client name': (row['Client name'] || 'Unknown Client').toString().trim().toUpperCase(),
+                            'Disbursement date': row['Disbursement date'] || '',
+                            'Days in arrears': parseFloat(row['Days in arrears']) || 0,
+                            Status: (row['Status'] || 'Unspecified').toString().trim(),
+                            'Loan Amount': parseFloat(row['Loan Amount'] || row['Loan amount'] || 0) || 0,
+                            'OLB principal': parseFloat(row['OLB principal']) || 0,
+                            'Application date': row['Application date'] || ''
+                        }));
+
+                        const welcomeBanner = document.getElementById('welcomeBanner');
+                        const dashboardContent = document.getElementById('dashboardContent');
+                        if (welcomeBanner) welcomeBanner.classList.add('hidden');
+                        if (dashboardContent) dashboardContent.classList.remove('hidden');
+
+                        populateFilters(rawData);
+                        
+                        const disbDates = rawData.map(d => parseLocalDateString(d['Disbursement date'])).filter(Boolean);
+                        if (disbDates.length > 0) {
+                            disbDates.sort((a,b) => b - a);
+                            const maxDateStr = formatYYYYMMDD(disbDates[0]);
+                            if (disbStartEl) disbStartEl.value = maxDateStr;
+                            if (disbEndEl) disbEndEl.value = maxDateStr;
+                        }
+
+                        renderDashboard(getFilteredData());
+                    }
+                });
+            });
+        }
+
+        const areaFilterEl = document.getElementById('areaFilter');
+        const branchFilterEl = document.getElementById('branchFilter');
+        const officerFilterEl = document.getElementById('officerFilter');
+        const cbsStartFilterEl = document.getElementById('cbsStartMonthFilter');
+        const cbsEndFilterEl = document.getElementById('cbsEndMonthFilter');
+        const resetFiltersEl = document.getElementById('resetFilters');
+
+        if (areaFilterEl) {
+            areaFilterEl.addEventListener('change', () => {
+                updateBranchDropdown();
+                applyFilters();
+            });
+        }
+
+        if (branchFilterEl) {
+            branchFilterEl.addEventListener('change', () => {
+                applyFilters();
+            });
+        }
+        if (officerFilterEl) officerFilterEl.addEventListener('change', applyFilters);
+        if (cbsStartFilterEl) cbsStartFilterEl.addEventListener('change', () => applyFilters());
+        if (cbsEndFilterEl) cbsEndFilterEl.addEventListener('change', () => applyFilters());
+        if (disbStartEl) disbStartEl.addEventListener('change', () => {
+            const filtered = getFilteredData();
+            renderDailyDisbursementTable(filtered);
+        });
+        if (disbEndEl) disbEndEl.addEventListener('change', () => {
+            const filtered = getFilteredData();
+            renderDailyDisbursementTable(filtered);
+        });
+
+        if (resetFiltersEl) {
+            resetFiltersEl.addEventListener('click', () => {
+                if (areaFilterEl) areaFilterEl.value = 'ALL';
+                updateBranchDropdown();
+                if (branchFilterEl) branchFilterEl.value = 'ALL';
+                if (officerFilterEl) officerFilterEl.value = 'ALL';
+                if (disbStartEl) disbStartEl.value = currentDateStr;
+                if (disbEndEl) disbEndEl.value = currentDateStr;
+                renderDashboard(getFilteredData());
+            });
+        }
+
+        function populateFilters(data) {
+            const areas = [...new Set(data.map(d => d.Area))].sort();
+
+            if (areaFilterEl) {
+                areaFilterEl.innerHTML = '<option value="ALL">All Areas</option>';
+                areas.forEach(a => areaFilterEl.innerHTML += `<option value="${a}">${a}</option>`);
+            }
+
+            updateBranchDropdown();
+
+            const scopeSelect = document.getElementById('promptTargetScope');
+            if (scopeSelect) {
+                scopeSelect.innerHTML = '<option value="OVERALL">Overall District Operations</option>';
+                const branches = [...new Set(data.map(d => d.Branch))].sort();
+                branches.forEach(b => scopeSelect.innerHTML += `<option value="${b}">${b} Branch</option>`);
+            }
+
+            const monthMap = new Map();
+            data.forEach(d => {
+                if (d['Application date']) {
+                    const dt = parseLocalDateString(d['Application date']);
+                    if (dt) {
+                        const sortKey = dt.getFullYear() * 12 + dt.getMonth();
+                        const monthName = dt.toLocaleString('default', { month: 'short' });
+                        monthMap.set(sortKey, { label: `${monthName} ${dt.getFullYear()}`, sortKey });
+                    }
+                }
+            });
+
+            const sortedMonths = Array.from(monthMap.values()).sort((a, b) => a.sortKey - b.sortKey);
+            if (cbsStartFilterEl && cbsEndFilterEl) {
+                cbsStartFilterEl.innerHTML = '';
+                cbsEndFilterEl.innerHTML = '';
+
+                sortedMonths.forEach(m => {
+                    cbsStartFilterEl.innerHTML += `<option value="${m.sortKey}">${m.label}</option>`;
+                    cbsEndFilterEl.innerHTML += `<option value="${m.sortKey}">${m.label}</option>`;
+                });
+
+                const currentDt = new Date();
+                const currentSortKey = currentDt.getFullYear() * 12 + currentDt.getMonth();
+                const hasCurrentMonth = sortedMonths.some(m => m.sortKey === currentSortKey);
+
+                if (hasCurrentMonth) {
+                    cbsStartFilterEl.value = currentSortKey;
+                    cbsEndFilterEl.value = currentSortKey;
+                } else if (sortedMonths.length > 0) {
+                    cbsStartFilterEl.value = sortedMonths[0].sortKey;
+                    cbsEndFilterEl.value = sortedMonths[sortedMonths.length - 1].sortKey;
+                }
+            }
+        }
+
+        function updateBranchDropdown() {
+            if (!branchFilterEl) return;
+            const selectedArea = areaFilterEl ? areaFilterEl.value : 'ALL';
+            
+            let filteredRows = rawData;
+            if (selectedArea !== 'ALL') {
+                filteredRows = rawData.filter(d => d.Area === selectedArea);
+            }
+
+            const branches = [...new Set(filteredRows.map(d => d.Branch))].sort();
+            branchFilterEl.innerHTML = '<option value="ALL">All Branches</option>';
+            branches.forEach(b => branchFilterEl.innerHTML += `<option value="${b}">${b}</option>`);
+
+            updateOfficerDropdown();
+        }
+
+        function updateOfficerDropdown() {
+            if (!officerFilterEl) return;
+            const selectedArea = areaFilterEl ? areaFilterEl.value : 'ALL';
+            const selectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
+
+            let filteredRows = rawData;
+            if (selectedArea !== 'ALL') {
+                filteredRows = filteredRows.filter(d => d.Area === selectedArea);
+            }
+            if (selectedBranch !== 'ALL') {
+                filteredRows = filteredRows.filter(d => d.Branch === selectedBranch);
+            }
+
+            const officers = [...new Set(filteredRows.map(d => d['Credit officer']))].sort();
+            officerFilterEl.innerHTML = '<option value="ALL">All Credit Officers / TS</option>';
+            officers.forEach(o => officerFilterEl.innerHTML += `<option value="${o}">${o}</option>`);
+        }
+
+        function getFilteredData() {
+            const selectedArea = areaFilterEl ? areaFilterEl.value : 'ALL';
+            const selectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
+            const selectedOfficer = officerFilterEl ? officerFilterEl.value : 'ALL';
+
+            return rawData.filter(d => {
+                const matchArea = selectedArea === 'ALL' || d.Area === selectedArea;
+                const matchBranch = selectedBranch === 'ALL' || d.Branch === selectedBranch;
+                const matchOfficer = selectedOfficer === 'ALL' || d['Credit officer'] === selectedOfficer;
+                return matchArea && matchBranch && matchOfficer;
+            });
+        }
+
+        function applyFilters() {
+            updateOfficerDropdown();
+            const filtered = getFilteredData();
+            renderDashboard(filtered);
+        }
+
+        function renderDashboard(data) {
+            let totalGLP = 0;
+            let bracket1_30 = 0, bracket31_60 = 0, bracket61_90 = 0, bracket91_180 = 0, bracket181_365 = 0, bracket365Plus = 0;
+            let count1_30 = 0, count31_60 = 0, count61_90 = 0, count91_180 = 0, count181_365 = 0, count365Plus = 0;
+            
+            const productSummary = {};
+            const productBorrowerSets = {};
+            const clientMap = {};
+            globalBranchMap = {};
+
+            let referenceDate = new Date();
+            const validDisbDates = data.map(d => parseLocalDateString(d['Disbursement date'])).filter(Boolean);
+            if (validDisbDates.length > 0) {
+                validDisbDates.sort((a,b) => b - a);
+                referenceDate = validDisbDates[0];
+            }
+            const currentYear = referenceDate.getFullYear();
+            const currentMonth = referenceDate.getMonth();
+
+            const globalDisbursedWeeks = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
+            const globalNewLoanWeeks = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
+            
+            const globalNewInclusionsBorrowersSet = new Set();
+            const globalNewLoanBorrowersSet = new Set();
+            
+            let globalDisbursedCountTotal = 0;
+            let globalNewInclusionsOlbTotal = 0;
+            let globalNewInclusionsAccountsTotal = 0;
+            let globalDisbursedLoanAmountTotal = 0;
+            let globalNewLoanAmountTotal = 0;
+            let totalActiveAndArrearsRows = 0;
+
+            data.forEach(item => {
+                const olb = item['OLB principal'] || 0;
+                const loanAmount = item['Loan Amount'] || 0;
+                const days = item['Days in arrears'] || 0;
+                const rawProd = item['Product ID'] || '';
+                const categoryProd = getProductCategory(rawProd);
+                const clientName = item['Client name'] || 'UNKNOWN';
+                const branch = item.Branch;
+                const officer = item['Credit officer'];
+                const status = (item['Status'] || '').trim().toLowerCase();
+                const disbDateStr = item['Disbursement date'];
+
+                totalGLP += olb;
+
+                if (status === 'active' || status === 'in arrears') {
+                    totalActiveAndArrearsRows++;
+                }
+
+                if (days >= 1 && days <= 30) { bracket1_30 += olb; count1_30++; }
+                else if (days >= 31 && days <= 60) { bracket31_60 += olb; count31_60++; }
+                else if (days >= 61 && days <= 90) { bracket61_90 += olb; count61_90++; }
+                else if (days >= 91 && days <= 180) { bracket91_180 += olb; count91_180++; }
+                else if (days >= 181 && days <= 365) { bracket181_365 += olb; count181_365++; }
+                else if (days > 365) { bracket365Plus += olb; count365Plus++; }
+
+                productSummary[categoryProd] = (productSummary[categoryProd] || 0) + olb;
+
+                if (!productBorrowerSets[categoryProd]) productBorrowerSets[categoryProd] = new Set();
+                productBorrowerSets[categoryProd].add(clientName);
+
+                const isNewInclusion = (days > 0 && days <= maxDaysForNewInclusion);
+                if (isNewInclusion) {
+                    globalNewInclusionsBorrowersSet.add(clientName);
+                    globalNewInclusionsOlbTotal += olb;
+                    globalNewInclusionsAccountsTotal += 1;
+                }
+
+                let isCurrentMonthDisbursement = false;
+                let isMonthlyNewLoan = false;
+                let disbWeek = 1;
+
+                if (disbDateStr) {
+                    const dDate = parseLocalDateString(disbDateStr);
+                    if (dDate && dDate.getFullYear() === currentYear && dDate.getMonth() === currentMonth) {
+                        isCurrentMonthDisbursement = true;
+                        disbWeek = getCustomWeekOfMonth(dDate);
+                        globalDisbursedWeeks[disbWeek].add(clientName);
+                        globalDisbursedLoanAmountTotal += loanAmount;
+                        globalDisbursedCountTotal += 1;
+
+                        if (categoryProd === 'Newloan') {
+                            isMonthlyNewLoan = true;
+                            globalNewLoanBorrowersSet.add(clientName);
+                            globalNewLoanWeeks[disbWeek].add(clientName);
+                            globalNewLoanAmountTotal += loanAmount;
+                        }
+                    }
+                }
+
+                if (!clientMap[clientName]) {
+                    clientMap[clientName] = { maxArrears: days, totalOlb: olb, status, isCurrentMonthDisbursement, isMonthlyNewLoan };
+                } else {
+                    clientMap[clientName].totalOlb += olb;
+                    if (days > clientMap[clientName].maxArrears) clientMap[clientName].maxArrears = days;
+                    if (status === 'active' || status === 'in arrears') clientMap[clientName].status = status;
+                }
+
+                if (!globalBranchMap[branch]) {
+                    globalBranchMap[branch] = { 
+                        totalGLP: 0, glp: 0, parAmount: 0, newInclusionsCount: 0, newInclusionsAccountsCount: 0, newInclusionsOlb: 0,
+                        disbursedCount: 0, disbursedAmount: 0, newLoanSet: new Set(), borrowerSet: new Set(), activeClients: 0,
+                        disbursedBorrowerSet: new Set(), disbursedLoanAmount: 0, newLoanAmount: 0,
+                        disbursedWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
+                        newLoanWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
+                        officers: {} 
+                    };
+                }
+                globalBranchMap[branch].totalGLP += olb;
+                globalBranchMap[branch].glp = globalBranchMap[branch].totalGLP;
+                if (status === 'active' || status === 'in arrears') {
+                    globalBranchMap[branch].borrowerSet.add(clientName);
+                }
+                globalBranchMap[branch].activeClients = globalBranchMap[branch].borrowerSet.size;
+                if (days > 0) globalBranchMap[branch].parAmount += olb;
+                if (isNewInclusion) {
+                    globalBranchMap[branch].newInclusionsCount += 1;
+                    globalBranchMap[branch].newInclusionsAccountsCount += 1;
+                    globalBranchMap[branch].newInclusionsOlb += olb;
+                }
+                if (isCurrentMonthDisbursement) {
+                    globalBranchMap[branch].disbursedCount += 1;
+                    globalBranchMap[branch].disbursedBorrowerSet.add(clientName);
+                    globalBranchMap[branch].disbursedLoanAmount += loanAmount;
+                    globalBranchMap[branch].disbursedAmount = globalBranchMap[branch].disbursedLoanAmount;
+                    globalBranchMap[branch].disbursedWeeks[disbWeek].add(clientName);
+                }
+                if (isMonthlyNewLoan) {
+                    globalBranchMap[branch].newLoanSet.add(clientName);
+                    globalBranchMap[branch].newLoanAmount += loanAmount;
+                    globalBranchMap[branch].newLoanWeeks[disbWeek].add(clientName);
+                }
+
+                if (!globalBranchMap[branch].officers[officer]) {
+                    globalBranchMap[branch].officers[officer] = { 
+                        glp: 0, parAmount: 0, newInclusionsCount: 0, newInclusionsOlb: 0,
+                        disbursedCount: 0, borrowerSet: new Set(), disbursedBorrowerSet: new Set(),
+                        disbursedLoanAmount: 0,
+                        disbursedWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
+                        newLoanWeeks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() },
+                        newLoanSet: new Set()
+                    };
+                }
+                globalBranchMap[branch].officers[officer].glp += olb;
+                if (status === 'active' || status === 'in arrears') globalBranchMap[branch].officers[officer].borrowerSet.add(clientName);
+                if (days > 0) globalBranchMap[branch].officers[officer].parAmount += olb;
+                if (isNewInclusion) {
+                    globalBranchMap[branch].officers[officer].newInclusionsCount += 1;
+                    globalBranchMap[branch].officers[officer].newInclusionsOlb += olb;
+                }
+                if (isCurrentMonthDisbursement) {
+                    globalBranchMap[branch].officers[officer].disbursedCount += 1;
+                    globalBranchMap[branch].officers[officer].disbursedBorrowerSet.add(clientName);
+                    globalBranchMap[branch].officers[officer].disbursedLoanAmount += loanAmount;
+                    globalBranchMap[branch].officers[officer].disbursedWeeks[disbWeek].add(clientName);
+                }
+                if (isMonthlyNewLoan) {
+                    globalBranchMap[branch].officers[officer].newLoanSet.add(clientName);
+                    globalBranchMap[branch].officers[officer].newLoanWeeks[disbWeek].add(clientName);
+                }
+            });
+
+            const filteredEligibleClients = new Set();
+            data.forEach(item => {
+                const cName = item['Client name'] || 'UNKNOWN';
+                const st = (item['Status'] || '').trim().toLowerCase();
+                if (st === 'active' || st === 'in arrears') filteredEligibleClients.add(cName);
+            });
+
+            let activeBorrowersCount = 0, parBorrowersCount = 0;
+            const globalDisbursedSet = new Set(), globalNewLoanSet = new Set();
+
+            filteredEligibleClients.forEach(cName => {
+                const client = clientMap[cName];
+                if (client) {
+                    if (client.maxArrears === 0) activeBorrowersCount++;
+                    else parBorrowersCount++;
+                    if (client.isCurrentMonthDisbursement) globalDisbursedSet.add(cName);
+                    if (client.isMonthlyNewLoan) globalNewLoanSet.add(cName);
+                }
+            });
+
+            const totalPARAmount = bracket1_30 + bracket31_60 + bracket61_90 + bracket91_180 + bracket181_365 + bracket365Plus;
+            const parRatio = totalGLP > 0 ? (totalPARAmount / totalGLP) * 100 : 0;
+            
+            const globalPortfolioLoanSize = filteredEligibleClients.size > 0 ? (totalGLP / filteredEligibleClients.size) : 0;
+            const globalDisbursedLoanSize = globalDisbursedCountTotal > 0 ? (globalDisbursedLoanAmountTotal / globalDisbursedCountTotal) : 0;
+            const globalNewLoanSize = globalNewLoanBorrowersSet.size > 0 ? (globalNewLoanAmountTotal / globalNewLoanBorrowersSet.size) : 0;
+
+            const kpiLoanPortfolio = document.getElementById('kpiLoanPortfolio');
+            const kpiPortfolioLoanSizeHover = document.getElementById('kpiPortfolioLoanSizeHover');
+            if (kpiLoanPortfolio) kpiLoanPortfolio.innerText = totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (kpiPortfolioLoanSizeHover) kpiPortfolioLoanSizeHover.innerText = '₱ ' + globalPortfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            const portfolioParentTile = kpiLoanPortfolio ? kpiLoanPortfolio.parentElement : null;
+            if (portfolioParentTile) {
+                let targetSub = portfolioParentTile.querySelector('#kpiPortfolioLineItemsCount');
+                if (!targetSub) {
+                    targetSub = document.createElement('div');
+                    targetSub.id = 'kpiPortfolioLineItemsCount';
+                    targetSub.className = 'text-xs text-emerald-300 font-mono mt-1 font-bold';
+                    portfolioParentTile.appendChild(targetSub);
+                }
+                targetSub.innerText = `${totalActiveAndArrearsRows.toLocaleString()} Total Accounts`;
+            }
+
+            const kpiParAmount = document.getElementById('kpiParAmount');
+            const kpiParAmountSub = document.getElementById('kpiParAmountSub');
+            const kpiParRatio = document.getElementById('kpiParRatio');
+            const kpiBorrowers = document.getElementById('kpiBorrowers');
+            const kpiBorrowersSub = document.getElementById('kpiBorrowersSub');
+            const kpiDisbursedCount = document.getElementById('kpiDisbursedCount');
+            const kpiDisbursedTotalLoanHover = document.getElementById('kpiDisbursedTotalLoanHover');
+            
+            const kpiNewLoanCount = document.getElementById('kpiNewLoanCount');
+            const kpiNewLoanTotalLoanHover = document.getElementById('kpiNewLoanTotalLoanHover');
+            const kpiNewLoanSizeHover = document.getElementById('kpiNewLoanSizeHover');
+            
+            const kpiNewInclusionsCount = document.getElementById('kpiNewInclusionsCount');
+            const kpiNewInclusionsOlbHover = document.getElementById('kpiNewInclusionsOlbHover');
+            const kpiNewInclusionsAccountsHover = document.getElementById('kpiNewInclusionsAccountsHover');
+
+            if (kpiParAmount) kpiParAmount.innerText = totalPARAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (kpiParAmountSub) kpiParAmountSub.innerText = `${parBorrowersCount.toLocaleString()} In Arrears`;
+            if (kpiParRatio) kpiParRatio.innerText = parRatio.toFixed(2) + '%';
+            if (kpiBorrowers) kpiBorrowers.innerText = filteredEligibleClients.size.toLocaleString();
+            if (kpiBorrowersSub) kpiBorrowersSub.innerText = `${activeBorrowersCount} Act / ${parBorrowersCount} PAR`;
+
+            if (kpiDisbursedCount) kpiDisbursedCount.innerText = `${globalDisbursedCountTotal} loans`;
+            if (kpiDisbursedTotalLoanHover) kpiDisbursedTotalLoanHover.innerText = '₱ ' + globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            const disbursedHoverContainer = kpiDisbursedCount ? kpiDisbursedCount.parentElement.querySelector('.absolute') : null;
+            if (disbursedHoverContainer) {
+                disbursedHoverContainer.innerHTML = `
+                    <span class="text-[10px] uppercase font-extrabold text-blue-200">Disbursed Metrics</span>
+                    <div class="text-xs font-black font-mono text-white mt-0.5">Total Amt: ₱ ${globalDisbursedLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div class="text-xs font-black font-mono text-blue-200 mt-0.5">Loan Size: ₱ ${globalDisbursedLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <span class="text-[9px] text-blue-300 mt-0.5">Current Month Disbursement</span>
+                `;
+            }
+
+            if (kpiNewLoanCount) kpiNewLoanCount.innerText = globalNewLoanBorrowersSet.size.toLocaleString();
+            if (kpiNewLoanTotalLoanHover) kpiNewLoanTotalLoanHover.innerText = '₱ ' + globalNewLoanAmountTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (kpiNewLoanSizeHover) kpiNewLoanSizeHover.innerText = 'Size: ₱ ' + globalNewLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            if (kpiNewInclusionsCount) kpiNewInclusionsCount.innerText = globalNewInclusionsBorrowersSet.size.toLocaleString();
+            if (kpiNewInclusionsOlbHover) kpiNewInclusionsOlbHover.innerText = '₱ ' + globalNewInclusionsOlbTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (kpiNewInclusionsAccountsHover) kpiNewInclusionsAccountsHover.innerText = `${globalNewInclusionsAccountsTotal} Total Accounts`;
+
+            const currentSelectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
+            renderNewInclusionsLineChart(data, currentSelectedBranch);
+            renderParBreakdownBarChart(data, currentSelectedBranch);
+            renderParAgingBarChart(bracket1_30, bracket31_60, bracket61_90, bracket91_180, bracket181_365, bracket365Plus, count1_30, count31_60, count61_90, count91_180, count181_365, count365Plus);
+            renderWeeklyPacingLineChart(data, currentSelectedBranch);
+            renderProductBarChart(productSummary, productBorrowerSets);
+            renderDailyDisbursementTable(data);
+            renderCbsPivotMatrix(rawData);
+            renderBranchCards(globalBranchMap);
+
+            lucide.createIcons();
+        }
+
+        function renderDailyDisbursementTable(data) {
+            const table = document.getElementById('dailyDisbursementTable');
+            if (!table) return;
+            const startDateStr = disbStartEl ? disbStartEl.value : '';
+            const endDateStr = disbEndEl ? disbEndEl.value : '';
+            const selectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
+
+            const dailyMap = {};
+            const datesSet = new Set();
+            const columnsSet = new Set();
+
+            data.forEach(item => {
+                const disbDate = item['Disbursement date'];
+                if (!disbDate) return;
+                const dt = parseLocalDateString(disbDate);
+                if (!dt) return;
+
+                const dateKey = formatYYYYMMDD(dt);
+                if (startDateStr && dateKey < startDateStr) return;
+                if (endDateStr && dateKey > endDateStr) return;
+
+                const branch = item.Branch;
+                const officer = item['Credit officer'] || 'Unknown Officer';
+
+                if (selectedBranch !== 'ALL' && branch !== selectedBranch) return;
+
+                const colKey = (selectedBranch !== 'ALL') ? officer : branch;
+
+                datesSet.add(dateKey);
+                columnsSet.add(colKey);
+
+                if (!dailyMap[dateKey]) dailyMap[dateKey] = {};
+                if (!dailyMap[dateKey][colKey]) dailyMap[dateKey][colKey] = [];
+
+                dailyMap[dateKey][colKey].push(item);
+            });
+
+            const sortedDates = Array.from(datesSet).sort();
+            const sortedColumns = Array.from(columnsSet).sort();
+
+            if (sortedDates.length === 0) {
+                table.innerHTML = `<tbody><tr><td class="p-6 text-center text-amber-100/60 italic">No disbursement records match the selected date range and filters.</td></tr></tbody>`;
+                return;
+            }
+
+            const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
+
+            let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
+            sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
+            html += `<th class="p-2.5 text-center font-bold text-yellow-400">Daily Unique Total</th></tr></thead><tbody>`;
+
+            sortedDates.forEach(dateStr => {
+                html += `<tr class="border-b border-emerald-900/60 hover:bg-emerald-900/30 transition-colors"><td class="p-2 pl-3 font-bold text-white whitespace-nowrap">${dateStr}</td>`;
+                
+                const dayUniqueClientsMap = new Map();
+
+                sortedColumns.forEach(col => {
+                    const records = dailyMap[dateStr] && dailyMap[dateStr][col] ? dailyMap[dateStr][col] : [];
+                    
+                    const colUniqueMap = new Map();
+                    records.forEach(r => {
+                        const cName = r['Client name'] || 'UNKNOWN';
+                        if (!colUniqueMap.has(cName)) {
+                            colUniqueMap.set(cName, r);
+                        }
+                        if (!dayUniqueClientsMap.has(cName)) {
+                            dayUniqueClientsMap.set(cName, r);
+                        }
+                    });
+
+                    const uniqueRecords = Array.from(colUniqueMap.values());
+                    const count = uniqueRecords.length;
+
+                    if (count > 0) {
+                        const totalLoanAmt = uniqueRecords.reduce((sum, r) => sum + (parseFloat(r['Loan Amount'] || r['Loan amount'] || 0) || 0), 0);
+                        const formattedLoanAmt = '₱ ' + totalLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        
+                        html += `<td class="p-2 text-center font-mono font-bold">
+                            <button title="Total Loan Amount: ${formattedLoanAmt}" onclick='openCbsClientModal("Disbursed - ${col} (${dateStr})", "Disbursement Date: ${dateStr}", ${JSON.stringify(uniqueRecords)})' class="hover:underline text-emerald-200 hover:text-white px-2 py-1 rounded bg-emerald-900/40 hover:bg-emerald-800/80 border border-emerald-700/60 transition-all">${count}</button>
+                        </td>`;
+                    } else {
+                        html += `<td class="p-2 text-center font-mono text-emerald-500/50">-</td>`;
+                    }
+                });
+
+                const dayUniqueRecords = Array.from(dayUniqueClientsMap.values());
+                const totalUniqueCount = dayUniqueRecords.length;
+
+                if (totalUniqueCount > 0) {
+                    const dayTotalLoanAmt = dayUniqueRecords.reduce((sum, r) => sum + (parseFloat(r['Loan Amount'] || r['Loan amount'] || 0) || 0), 0);
+                    const formattedDayLoanAmt = '₱ ' + dayTotalLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                    html += `<td class="p-2 text-center font-mono font-black bg-amber-500/10">
+                        <button title="Total Loan Amount: ${formattedDayLoanAmt}" onclick='openCbsClientModal("Daily Disbursed Total (${dateStr})", "All Branches/Officers on ${dateStr}", ${JSON.stringify(dayUniqueRecords)})' class="hover:underline text-yellow-300 hover:text-yellow-200 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-all">${totalUniqueCount}</button>
+                    </td></tr>`;
+                } else {
+                    html += `<td class="p-2 text-center font-mono text-amber-500/50 bg-amber-500/10">-</td></tr>`;
+                }
+            });
+
+            html += `</tbody>`;
+            table.innerHTML = html;
+        }
+
+        function renderNewInclusionsLineChart(data, branchFilterValue) {
+            const canvas = document.getElementById('borrowerDoughnutChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (borrowerChart) borrowerChart.destroy();
+
+            const titleEl = document.getElementById('newInclusionsChartTitle');
+            let labels = [];
+            let counts = [];
+            let accountsCounts = [];
+            let olbTotals = [];
+            let fullNames = [];
+
+            const maxDays = maxDaysForNewInclusion || new Date().getDate();
+
+            if (branchFilterValue && branchFilterValue !== 'ALL') {
+                if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-700"></i> New Inclusions: ${branchFilterValue} (By Officer)`;
+
+                const officerMap = {};
+                data.forEach(item => {
+                    if (item.Branch === branchFilterValue) {
+                        const officer = item['Credit officer'] || 'Unknown Officer';
+                        const days = item['Days in arrears'] || 0;
+                        const olb = item['OLB principal'] || 0;
+                        const clientName = item['Client name'] || 'UNKNOWN';
+
+                        if (days > 0 && days <= maxDays) {
+                            if (!officerMap[officer]) officerMap[officer] = { clients: new Set(), accounts: 0, olb: 0 };
+                            officerMap[officer].clients.add(clientName);
+                            officerMap[officer].accounts += 1;
+                            officerMap[officer].olb += olb;
+                        }
+                    }
+                });
+
+                const sortedOfficers = Object.keys(officerMap).sort();
+                fullNames = sortedOfficers;
+                labels = sortedOfficers.map(o => getOfficerFirstName(o));
+                counts = sortedOfficers.map(o => officerMap[o].clients.size);
+                accountsCounts = sortedOfficers.map(o => officerMap[o].accounts);
+                olbTotals = sortedOfficers.map(o => officerMap[o].olb);
+
+            } else {
+                if (titleEl) titleEl.innerHTML = `<i data-lucide="trending-up" class="w-4 h-4 text-emerald-700"></i> New Inclusions`;
+
+                const branchMap = {};
+                data.forEach(item => {
+                    const branch = item.Branch || 'Unknown Branch';
+                    const days = item['Days in arrears'] || 0;
+                    const olb = item['OLB principal'] || 0;
+                    const clientName = item['Client name'] || 'UNKNOWN';
+
+                    if (days > 0 && days <= maxDays) {
+                        if (!branchMap[branch]) branchMap[branch] = { clients: new Set(), accounts: 0, olb: 0 };
+                        branchMap[branch].clients.add(clientName);
+                        branchMap[branch].accounts += 1;
+                        branchMap[branch].olb += olb;
+                    }
+                });
+
+                const sortedBranches = Object.keys(branchMap).sort();
+                fullNames = sortedBranches;
+                labels = sortedBranches;
+                counts = sortedBranches.map(b => branchMap[b].clients.size);
+                accountsCounts = sortedBranches.map(b => branchMap[b].accounts);
+                olbTotals = sortedBranches.map(b => branchMap[b].olb);
+            }
+
+            borrowerChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'New Inclusions Count',
+                        data: counts,
+                        borderColor: '#16422d',
+                        backgroundColor: 'rgba(22, 66, 45, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#16422d',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 25 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            display: true,
+                            align: 'top',
+                            anchor: 'end',
+                            color: '#16422d',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: function(value, context) {
+                                if (value <= 0) return '';
+                                const accCount = accountsCounts[context.dataIndex];
+                                return [`${value} Bor.`, `(${accCount} acc)`];
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#071a12',
+                            titleColor: '#52b788',
+                            bodyColor: '#ffffff',
+                            borderColor: '#52b788',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                title: function(context) {
+                                    const idx = context[0].dataIndex;
+                                    const targetName = fullNames[idx] || context[0].label;
+                                    return (branchFilterValue && branchFilterValue !== 'ALL' ? 'Officer: ' : 'Branch: ') + targetName;
+                                },
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const count = context.raw;
+                                    const accCount = accountsCounts[idx];
+                                    const olbAmt = olbTotals[idx].toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                    return [
+                                        `New Inclusions: ${count} borrowers`,
+                                        `Total Accounts: ${accCount} accounts`,
+                                        `Total OLB: ₱ ${olbAmt}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#475569', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 }, grid: { display: false } },
+                        y: { ticks: { color: '#475569', font: { size: 10 }, precision: 0 }, grid: { color: '#f1f5f9' } }
+                    }
+                }
+            });
+            lucide.createIcons();
+        }
+
+        function renderParBreakdownBarChart(data, branchFilterValue) {
+            const canvas = document.getElementById('parBreakdownBarChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (parBreakdownChart) parBreakdownChart.destroy();
+
+            const subtitleEl = document.getElementById('parBarChartSubtitle');
+            let labels = [];
+            let parAmounts = [];
+            let glpAmounts = [];
+            let parCounts = [];
+            let borrowerCounts = [];
+            let fullNames = [];
+
+            if (branchFilterValue && branchFilterValue !== 'ALL') {
+                if (subtitleEl) subtitleEl.innerText = `Branch: ${branchFilterValue} (By Credit Officer)`;
+
+                const officerMap = {};
+                data.forEach(item => {
+                    if (item.Branch === branchFilterValue) {
+                        const officer = item['Credit officer'] || 'Unknown Officer';
+                        const days = item['Days in arrears'] || 0;
+                        const olb = item['OLB principal'] || 0;
+                        const clientName = item['Client name'] || 'UNKNOWN';
+                        const status = (item['Status'] || '').trim().toLowerCase();
+
+                        if (!officerMap[officer]) {
+                            officerMap[officer] = { parAmount: 0, glpAmount: 0, count: 0, borrowerSet: new Set() };
+                        }
+                        officerMap[officer].glpAmount += olb;
+                        if (status === 'active' || status === 'in arrears') {
+                            officerMap[officer].borrowerSet.add(clientName);
+                        }
+                        if (days > 0) {
+                            officerMap[officer].parAmount += olb;
+                            officerMap[officer].count += 1;
+                        }
+                    }
+                });
+
+                const sortedOfficers = Object.keys(officerMap).sort();
+                fullNames = sortedOfficers;
+                labels = sortedOfficers.map(o => getOfficerFirstName(o));
+                parAmounts = sortedOfficers.map(o => officerMap[o].parAmount);
+                glpAmounts = sortedOfficers.map(o => officerMap[o].glpAmount);
+                parCounts = sortedOfficers.map(o => officerMap[o].count);
+                borrowerCounts = sortedOfficers.map(o => officerMap[o].borrowerSet.size);
+
+            } else {
+                if (subtitleEl) subtitleEl.innerText = `Filtered Branches (By Branch)`;
+
+                const branchMap = {};
+                data.forEach(item => {
+                    const branch = item.Branch || 'Unknown Branch';
+                    const days = item['Days in arrears'] || 0;
+                    const olb = item['OLB principal'] || 0;
+                    const clientName = item['Client name'] || 'UNKNOWN';
+                    const status = (item['Status'] || '').trim().toLowerCase();
+
+                    if (!branchMap[branch]) {
+                        branchMap[branch] = { parAmount: 0, glpAmount: 0, count: 0, borrowerSet: new Set() };
+                    }
+                    branchMap[branch].glpAmount += olb;
+                    if (status === 'active' || status === 'in arrears') {
+                        branchMap[branch].borrowerSet.add(clientName);
+                    }
+                    if (days > 0) {
+                        branchMap[branch].parAmount += olb;
+                        branchMap[branch].count += 1;
+                    }
+                });
+
+                const sortedBranches = Object.keys(branchMap).sort();
+                fullNames = sortedBranches;
+                labels = sortedBranches;
+                parAmounts = sortedBranches.map(b => branchMap[b].parAmount);
+                glpAmounts = sortedBranches.map(b => branchMap[b].glpAmount);
+                parCounts = sortedBranches.map(b => branchMap[b].count);
+                borrowerCounts = sortedBranches.map(b => branchMap[b].borrowerSet.size);
+            }
+
+            const parGradient = ctx.createLinearGradient(0, 0, 0, 200);
+            parGradient.addColorStop(0, '#f87171');
+            parGradient.addColorStop(1, '#991b1b');
+
+            const glpGradient = ctx.createLinearGradient(0, 0, 0, 200);
+            glpGradient.addColorStop(0, '#34d399');
+            glpGradient.addColorStop(1, '#065f46');
+
+            parBreakdownChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'OLB Principal (GLP)',
+                            data: glpAmounts,
+                            backgroundColor: glpGradient,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            barThickness: 'flex',
+                            maxBarThickness: 24
+                        },
+                        {
+                            label: 'PAR Amount',
+                            data: parAmounts,
+                            backgroundColor: parGradient,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            barThickness: 'flex',
+                            maxBarThickness: 24
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 38 }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                color: '#475569',
+                                font: { size: 10, weight: 'bold' }
+                            }
+                        },
+                        datalabels: {
+                            display: true,
+                            align: 'top',
+                            anchor: 'end',
+                            font: { weight: 'bold', size: 9 },
+                            formatter: function(value, context) {
+                                if (!value || value === 0) return '';
+                                
+                                let formattedVal = '';
+                                if (value >= 1000000) formattedVal = (value / 1000000).toFixed(1) + 'M';
+                                else if (value >= 1000) formattedVal = (value / 1000).toFixed(0) + 'k';
+                                else formattedVal = value.toLocaleString();
+
+                                if (context.datasetIndex === 0) {
+                                    const borrowers = borrowerCounts[context.dataIndex];
+                                    return [formattedVal, `[${borrowers} Bor.]`];
+                                }
+
+                                if (context.datasetIndex === 1) {
+                                    const glpVal = glpAmounts[context.dataIndex];
+                                    const ratio = glpVal > 0 ? `(${((value / glpVal) * 100).toFixed(1)}%)` : '(0.0%)';
+                                    return [formattedVal, ratio];
+                                }
+
+                                return formattedVal;
+                            },
+                            color: function(context) {
+                                if (context.datasetIndex === 0) return '#000000';
+                                return '#991b1b';
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#071a12',
+                            titleColor: '#52b788',
+                            bodyColor: '#ffffff',
+                            borderColor: '#52b788',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                title: function(context) {
+                                    const idx = context[0].dataIndex;
+                                    const targetName = fullNames[idx] || context[0].label;
+                                    return (branchFilterValue && branchFilterValue !== 'ALL' ? 'Officer: ' : 'Branch: ') + targetName;
+                                },
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const datasetLabel = context.dataset.label;
+                                    const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                    if (datasetLabel.includes('OLB')) {
+                                        const borrowers = borrowerCounts[idx].toLocaleString();
+                                        return [
+                                            `OLB Principal: ₱ ${amt}`,
+                                            `Total Borrowers: ${borrowers} clients`
+                                        ];
+                                    } else {
+                                        const count = parCounts[idx].toLocaleString();
+                                        const ratio = glpAmounts[idx] > 0 ? ((context.raw / glpAmounts[idx]) * 100).toFixed(2) + '%' : '0.00%';
+                                        return [
+                                            `PAR Amount: ₱ ${amt}`,
+                                            `PAR Accounts: ${count}`,
+                                            `PAR Ratio: ${ratio}`
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#475569', font: { size: 10, weight: 'bold' }, maxRotation: 25, minRotation: 25 }, grid: { display: false } },
+                        y: { ticks: { color: '#475569', font: { size: 10 } }, grid: { color: '#f1f5f9', borderDash: [4, 4] } }
+                    }
+                }
+            });
+            lucide.createIcons();
+        }
+
+        function renderParAgingBarChart(b1, b2, b3, b4, b5, b6, c1, c2, c3, c4, c5, c6) {
+            const canvas = document.getElementById('parAgingBarChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (parAgingChart) parAgingChart.destroy();
+
+            const amounts = [b1, b2, b3, b4, b5, b6];
+            const counts = [c1, c2, c3, c4, c5, c6];
+            const totalPAR = amounts.reduce((acc, val) => acc + val, 0);
+
+            const professionalRiskColors = ['#52b788', '#f59e0b', '#ef4444', '#991b1b', '#7f1d1d', '#0a2318'];
+
+            parAgingChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['1-30 Days', '31-60 Days', '61-90 Days', '91-180 Days', '181-365 Days', '>365 Days'],
+                    datasets: [{
+                        data: amounts,
+                        backgroundColor: professionalRiskColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: { display: false },
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                color: '#475569',
+                                font: { size: 10, weight: 'bold' },
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const value = data.datasets[0].data[i];
+                                            const percentage = totalPAR > 0 ? ((value / totalPAR) * 100).toFixed(1) + '%' : '0%';
+                                            return {
+                                                text: `${label} (${percentage})`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#071a12',
+                            titleColor: '#52b788',
+                            bodyColor: '#ffffff',
+                            borderColor: '#52b788',
+                            borderWidth: 1,
+                            padding: 10,
+                            boxPadding: 4,
+                            callbacks: {
+                                title: function(context) { return `PAR Bracket: ${context[0].label}`; },
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                    const percentage = totalPAR > 0 ? ((context.raw / totalPAR) * 100).toFixed(2) + '%' : '0%';
+                                    const accCount = counts[idx].toLocaleString();
+                                    return [
+                                        `PAR Principal: ₱ ${amt}`,
+                                        `Portfolio Share: ${percentage}`,
+                                        `Account Count: ${accCount} accounts`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    cutout: '55%'
+                }
+            });
+        }
+
+        function renderWeeklyPacingLineChart(data, branchFilterValue) {
+            const canvas = document.getElementById('weeklyPacingBarChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (weeklyChart) weeklyChart.destroy();
+
+            const subtitleEl = document.getElementById('weeklyTrendSubtitle');
+            let referenceDate = new Date();
+            const validDisbDates = data.map(d => parseLocalDateString(d['Disbursement date'])).filter(Boolean);
+            if (validDisbDates.length > 0) {
+                validDisbDates.sort((a,b) => b - a);
+                referenceDate = validDisbDates[0];
+            }
+            const currentYear = referenceDate.getFullYear();
+            const currentMonth = referenceDate.getMonth();
+
+            const groupMap = {};
+
+            data.forEach(item => {
+                const disbDateStr = item['Disbursement date'];
+                if (!disbDateStr) return;
+                const dDate = parseLocalDateString(disbDateStr);
+                if (!dDate || dDate.getFullYear() !== currentYear || dDate.getMonth() !== currentMonth) return;
+
+                const branch = item.Branch || 'Unknown Branch';
+                const officer = item['Credit officer'] || 'Unknown Officer';
+
+                if (branchFilterValue && branchFilterValue !== 'ALL' && branch !== branchFilterValue) return;
+
+                const groupKey = (branchFilterValue && branchFilterValue !== 'ALL') ? officer : branch;
+                const weekNum = getCustomWeekOfMonth(dDate);
+                const categoryProd = getProductCategory(item['Product ID']);
+                const clientName = item['Client name'] || 'UNKNOWN';
+                const loanAmt = parseFloat(item['Loan Amount'] || item['Loan amount'] || 0) || 0;
+
+                if (!groupMap[groupKey]) {
+                    groupMap[groupKey] = {
+                        1: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 },
+                        2: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 },
+                        3: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 },
+                        4: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 },
+                        5: { newLoan: new Set(), reloan: new Set(), allClients: new Set(), totalAmt: 0 }
+                    };
+                }
+
+                const weekObj = groupMap[groupKey][weekNum];
+                weekObj.allClients.add(clientName);
+                weekObj.totalAmt += loanAmt;
+
+                if (categoryProd === 'Newloan') {
+                    weekObj.newLoan.add(clientName);
+                } else {
+                    weekObj.reloan.add(clientName);
+                }
+            });
+
+            if (subtitleEl) {
+                subtitleEl.innerText = (branchFilterValue && branchFilterValue !== 'ALL') 
+                    ? `Weekly Trend: ${branchFilterValue} (By Officer)` 
+                    : `Weekly Trend (By Branch)`;
+            }
+
+            const groupKeys = Object.keys(groupMap).sort();
+            const weekLabels = ['Week 1 (1-3)', 'Week 2 (4-10)', 'Week 3 (11-17)', 'Week 4 (18-24)', 'Week 5 (25+)'];
+            const professionalColors = ['#16422d', '#2563eb', '#d97706', '#db2777', '#7c3aed', '#0891b2', '#059669', '#ea580c', '#4f46e5', '#0d9488'];
+
+            const datasets = groupKeys.map((key, idx) => {
+                const weekData = [
+                    groupMap[key][1].allClients.size,
+                    groupMap[key][2].allClients.size,
+                    groupMap[key][3].allClients.size,
+                    groupMap[key][4].allClients.size,
+                    groupMap[key][5].allClients.size
+                ];
+                const color = professionalColors[idx % professionalColors.length];
+                const displayKey = (branchFilterValue && branchFilterValue !== 'ALL') ? getOfficerFirstName(key) : key;
+                return {
+                    label: displayKey,
+                    fullKey: key,
+                    data: weekData,
+                    borderColor: color,
+                    backgroundColor: color,
+                    borderWidth: 2.5,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: color,
+                    fill: false
+                };
+            });
+
+            if (datasets.length === 0) {
+                datasets.push({ label: 'No Data', data: [0, 0, 0, 0, 0], borderColor: '#94a3b8', backgroundColor: '#94a3b8' });
+            }
+
+            weeklyChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: weekLabels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: { display: false },
+                        legend: { position: 'bottom', labels: { boxWidth: 10, color: '#475569', font: { size: 9, weight: 'bold' } } },
+                        tooltip: {
+                            backgroundColor: '#071a12',
+                            titleColor: '#52b788',
+                            bodyColor: '#ffffff',
+                            borderColor: '#52b788',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                title: function(context) { 
+                                    const targetName = context[0].dataset.fullKey || context[0].dataset.label;
+                                    return `${targetName} - ${context[0].label}`; 
+                                },
+                                label: function(context) {
+                                    const groupKey = context.dataset.fullKey || context.dataset.label;
+                                    const weekIndex = context.dataIndex + 1;
+                                    const weekData = groupMap[groupKey] ? groupMap[groupKey][weekIndex] : null;
+
+                                    if (!weekData) {
+                                        return `Total Disbursed: ${context.raw} borrowers`;
+                                    }
+
+                                    const newLoanCount = weekData.newLoan.size;
+                                    const reloanCount = weekData.reloan.size;
+                                    const totalBorrowers = weekData.allClients.size;
+                                    const totalAmtFormatted = '₱ ' + weekData.totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                                    return [
+                                        `New Loan: ${newLoanCount} borrowers`,
+                                        `Reloan: ${reloanCount} borrowers`,
+                                        `Total Borrowers: ${totalBorrowers} clients`,
+                                        `Total Loan Amount: ${totalAmtFormatted}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#475569', font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { color: '#475569', font: { size: 10 }, precision: 0 }, grid: { color: '#f1f5f9' } }
+                    }
+                }
+            });
+        }
+
+        function renderProductBarChart(productSummary, productBorrowerSets) {
+            const canvas = document.getElementById('productBarChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (productChart) productChart.destroy();
+
+            const categories = Object.keys(productSummary);
+            const totals = categories.map(c => productSummary[c]);
+            const borrowerCounts = categories.map(c => productBorrowerSets[c] ? productBorrowerSets[c].size : 0);
+            const totalPortfolio = totals.reduce((acc, val) => acc + val, 0);
+
+            const radialGradient = ctx.createRadialGradient(140, 110, 10, 140, 110, 110);
+            radialGradient.addColorStop(0, 'rgba(22, 66, 45, 0.4)');
+            radialGradient.addColorStop(1, 'rgba(82, 183, 136, 0.15)');
+
+            productChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        label: 'OLB Principal (₱)',
+                        data: totals,
+                        backgroundColor: radialGradient,
+                        borderColor: '#16422d',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#16422d',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(100, 116, 139, 0.2)', lineWidth: 1 },
+                            grid: { color: 'rgba(100, 116, 139, 0.15)', circular: false },
+                            pointLabels: { font: { size: 10, weight: 'bold' }, color: '#334155' },
+                            ticks: {
+                                backdropColor: 'transparent',
+                                font: { size: 9 },
+                                color: '#475569',
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                    if (value >= 1000) return (value / 1000).toFixed(0) + 'k';
+                                    return value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        datalabels: { display: false },
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#071a12',
+                            titleColor: '#52b788',
+                            bodyColor: '#ffffff',
+                            borderColor: '#52b788',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                title: function(context) { return `Product Category: ${context[0].label}`; },
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                    const percentage = totalPortfolio > 0 ? ((context.raw / totalPortfolio) * 100).toFixed(2) + '%' : '0%';
+                                    const borrowers = borrowerCounts[idx].toLocaleString();
+                                    return [
+                                        `OLB Principal: ₱ ${amt}`,
+                                        `Portfolio Share: ${percentage}`,
+                                        `Active Borrowers: ${borrowers} clients`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCbsPivotMatrix(data) {
+            const startVal = cbsStartFilterEl ? parseInt(cbsStartFilterEl.value) || 0 : 0;
+            const endVal = cbsEndFilterEl ? parseInt(cbsEndFilterEl.value) || 999999 : 999999;
+            const selectedBranch = branchFilterEl ? branchFilterEl.value : 'ALL';
+            const selectedArea = areaFilterEl ? areaFilterEl.value : 'ALL';
+
+            const filteredData = data.filter(d => {
+                if (!d['Application date']) return false;
+                const dt = parseLocalDateString(d['Application date']);
+                if (!dt) return false;
+                const itemSortKey = dt.getFullYear() * 12 + dt.getMonth();
+                const matchArea = selectedArea === 'ALL' || d.Area === selectedArea;
+                return matchArea && itemSortKey >= startVal && itemSortKey <= endVal;
+            });
+
+            const statusSet = new Set();
+            filteredData.forEach(d => { if (d.Status) statusSet.add(d.Status); });
+            const allStatuses = Array.from(statusSet).sort();
+
+            const matrix = { Newloan: {}, Reloan: {} };
+            const rowKeysSet = new Set();
+
+            filteredData.forEach(d => {
+                const category = getProductCategory(d['Product ID']) === 'Newloan' ? 'Newloan' : 'Reloan';
+                const branch = d.Branch;
+                const officer = d['Credit officer'] || 'Unknown Officer';
+                const status = d.Status;
+
+                if (selectedBranch !== 'ALL' && branch !== selectedBranch) return;
+
+                const rowKey = (selectedBranch !== 'ALL') ? officer : branch;
+                rowKeysSet.add(rowKey);
+
+                if (!matrix[category][rowKey]) matrix[category][rowKey] = {};
+                if (!matrix[category][rowKey][status]) matrix[category][rowKey][status] = [];
+                matrix[category][rowKey][status].push(d);
+            });
+
+            const sortedRowKeys = Array.from(rowKeysSet).sort();
+            const table = document.getElementById('cbsMatrixTable');
+            if (!table) return;
+            table.innerHTML = '';
+
+            if (allStatuses.length === 0 || sortedRowKeys.length === 0) {
+                table.innerHTML = `<tbody><tr><td class="p-6 text-center text-slate-400 italic">No CBS records found for selected date range and filters.</td></tr></tbody>`;
+                return;
+            }
+
+            let html = `<thead><tr class="bg-slate-100 text-slate-800 border-b border-slate-300"><th class="p-2.5 pl-3 font-bold">Row Labels (${selectedBranch !== 'ALL' ? 'Credit Officer' : 'Branch'})</th>`;
+            allStatuses.forEach(st => html += `<th class="p-2.5 text-center font-bold">${st}</th>`);
+            html += `<th class="p-2.5 text-center font-bold">Grand Total</th></tr></thead><tbody>`;
+
+            const grandTotalColLists = {};
+            allStatuses.forEach(st => grandTotalColLists[st] = []);
+            let grandTotalOverallList = [];
+
+            ['Newloan', 'Reloan'].forEach(cat => {
+                html += `<tr class="bg-emerald-50/80 text-emerald-900 font-extrabold"><td class="p-2 pl-3" colspan="${allStatuses.length + 2}">${cat}</td></tr>`;
+
+                const catColLists = {};
+                allStatuses.forEach(st => catColLists[st] = []);
+                let catOverallList = [];
+
+                sortedRowKeys.forEach(rowKey => {
+                    if (matrix[cat][rowKey]) {
+                        let rowTot = 0;
+                        let rowClients = [];
+                        html += `<tr class="border-b border-slate-200 hover:bg-slate-50 bg-white"><td class="p-2 pl-6 text-slate-900 font-semibold">${rowKey}</td>`;
+                        allStatuses.forEach(st => {
+                            const clientList = matrix[cat][rowKey][st] || [];
+                            const count = clientList.length;
+                            rowTot += count;
+                            rowClients = rowClients.concat(clientList);
+
+                            clientList.forEach(c => {
+                                catColLists[st].push(c);
+                                catOverallList.push(c);
+                                grandTotalColLists[st].push(c);
+                                grandTotalOverallList.push(c);
+                            });
+
+                            if (count > 0) {
+                                const cellLoanAmt = clientList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+                                const cellLoanAmtFormatted = '₱ ' + cellLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                html += `<td class="p-2 text-center font-mono font-bold text-emerald-800"><button title="Total Loan Amount: ${cellLoanAmtFormatted}" onclick='openCbsClientModal("${cat} - ${rowKey} (${st})", "Status: ${st}", ${JSON.stringify(clientList)})' class="hover:underline hover:text-emerald-900 px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 border border-emerald-200">${count}</button></td>`;
+                            } else {
+                                html += `<td class="p-2 text-center text-slate-300 font-mono">-</td>`;
+                            }
+                        });
+                        const rowTotLoanAmt = rowClients.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+                        const rowTotLoanAmtFormatted = '₱ ' + rowTotLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        html += `<td class="p-2 text-center font-mono font-black text-slate-950"><button title="Total Loan Amount: ${rowTotLoanAmtFormatted}" onclick='openCbsClientModal("${cat} - ${rowKey} (Total)", "All Statuses", ${JSON.stringify(rowClients)})' class="hover:underline px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300">${rowTot}</button></td></tr>`;
+                    }
+                });
+
+                html += `<tr class="bg-emerald-900/10 text-emerald-950 font-black border-t-2 border-b-2 border-emerald-900/30"><td class="p-2.5 pl-4 uppercase">Total ${cat}</td>`;
+                allStatuses.forEach(st => {
+                    const colList = catColLists[st];
+                    const count = colList.length;
+                    if (count > 0) {
+                        const subColLoanAmt = colList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+                        const subColLoanAmtFormatted = '₱ ' + subColLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        html += `<td class="p-2.5 text-center font-mono"><button title="Total Loan Amount: ${subColLoanAmtFormatted}" onclick='openCbsClientModal("Total ${cat} (${st})", "Category: ${cat} - Status: ${st}", ${JSON.stringify(colList)})' class="hover:underline text-emerald-900 px-2 py-1 rounded bg-emerald-200/60 border border-emerald-300">${count}</button></td>`;
+                    } else {
+                        html += `<td class="p-2.5 text-center font-mono text-slate-400">-</td>`;
+                    }
+                });
+                const catOverallLoanAmt = catOverallList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+                const catOverallLoanAmtFormatted = '₱ ' + catOverallLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                html += `<td class="p-2.5 text-center font-mono text-emerald-950"><button title="Total Loan Amount: ${catOverallLoanAmtFormatted}" onclick='openCbsClientModal("Total ${cat} (Overall)", "Category: ${cat} - All Statuses", ${JSON.stringify(catOverallList)})' class="hover:underline px-2 py-1 rounded bg-emerald-200/80 border border-emerald-400">${catOverallList.length}</button></td></tr>`;
+            });
+
+            html += `<tr class="bg-[#004040] text-white font-black"><td class="p-3 pl-3 uppercase">Grand Total</td>`;
+            allStatuses.forEach(st => {
+                const colList = grandTotalColLists[st];
+                const count = colList.length;
+                if (count > 0) {
+                    const grandColLoanAmt = colList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+                    const grandColLoanAmtFormatted = '₱ ' + grandColLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    html += `<td class="p-3 text-center font-mono"><button title="Total Loan Amount: ${grandColLoanAmtFormatted}" onclick='openCbsClientModal("Grand Total (${st})", "All Branches / Officers - Status: ${st}", ${JSON.stringify(colList)})' class="hover:underline text-yellow-300 px-2 py-1 rounded bg-black/20 border border-white/20">${count}</button></td>`;
+                } else {
+                    html += `<td class="p-3 text-center font-mono text-white/50">-</td>`;
+                }
+            });
+            const grandOverallLoanAmt = grandTotalOverallList.reduce((sum, c) => sum + (parseFloat(c['Loan Amount'] || c['Loan amount'] || 0) || 0), 0);
+            const grandOverallLoanAmtFormatted = '₱ ' + grandOverallLoanAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            html += `<td class="p-3 text-center font-mono text-yellow-300"><button title="Total Loan Amount: ${grandOverallLoanAmtFormatted}" onclick='openCbsClientModal("Grand Total (Overall)", "All Statuses & Categories", ${JSON.stringify(grandTotalOverallList)})' class="hover:underline px-2 py-1 rounded bg-black/20 border border-white/20">${grandTotalOverallList.length}</button></td></tr>`;
+
+            html += `</tbody>`;
+            table.innerHTML = html;
+        }
+
+        function renderBranchCards(branchMap) {
+            const container = document.getElementById('branchCardsGrid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            Object.keys(branchMap).sort().forEach(branch => {
+                const b = branchMap[branch];
+                const ratio = b.totalGLP > 0 ? (b.parAmount / b.totalGLP) * 100 : 0;
+                const branchBorrowers = b.borrowerSet.size;
+                const branchDisbursedCount = b.disbursedCount;
+                const branchNewLoanCount = b.newLoanSet.size;
+                const totalOfficersCount = Object.keys(b.officers).length;
+
+                const portfolioLoanSize = branchBorrowers > 0 ? (b.totalGLP / branchBorrowers) : 0;
+                const disbursementLoanSize = branchDisbursedCount > 0 ? (b.disbursedLoanAmount / branchDisbursedCount) : 0;
+                const newLoanSize = branchNewLoanCount > 0 ? (b.newLoanAmount / branchNewLoanCount) : 0;
+
+                const card = document.createElement('div');
+                card.className = 'kpi-card p-4 hover:border-emerald-400 transition-all cursor-pointer flex flex-col justify-between group';
+                card.onclick = () => openBranchModal(branch);
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between pb-2 border-b border-[#16422d] mb-2">
+                            <h4 class="font-black text-sm uppercase flex items-center gap-1.5">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i> ${branch}
+                            </h4>
+                            <div class="text-right">
+                                <span class="text-xs font-mono font-bold">${totalOfficersCount} Officers / TS</span>
+                                <span class="text-[10px] block font-mono">Active Roster</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 mb-2.5 font-mono">
+                            <div class="p-2 rounded border border-[#16422d]">
+                                <span class="text-[10px] font-sans font-bold uppercase block">Loan Portfolio</span>
+                                <span class="text-xs font-bold">${b.totalGLP.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="p-2 rounded border border-[#16422d]">
+                                <span class="text-[10px] font-sans font-bold uppercase block">PAR Amount</span>
+                                <span class="text-xs font-bold text-rose-400">${b.parAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="p-2 rounded border border-[#16422d]">
+                                <span class="text-[10px] font-sans font-bold uppercase block">PAR Ratio</span>
+                                <span class="text-xs font-bold text-amber-400">${ratio.toFixed(2)}%</span>
+                            </div>
+                            <div class="p-2 rounded border border-[#16422d]">
+                                <span class="text-[10px] font-sans font-bold uppercase block">Borrowers</span>
+                                <span class="text-xs font-bold">${branchBorrowers.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div class="border border-[#16422d] p-2.5 rounded-lg space-y-1.5 text-xs">
+                            <div class="flex items-center justify-between font-mono">
+                                <span class="font-bold font-sans text-[10px] uppercase">Portfolio Loan Size:</span>
+                                <span class="font-bold">₱ ${portfolioLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-[#16422d]">
+                                <span class="font-bold">Disbursed (Month):</span>
+                                <div class="font-mono text-right">
+                                    <span class="font-bold">${branchDisbursedCount} loans</span>
+                                    <span class="text-[10px] block">₱ ${b.disbursedLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between font-mono pt-1 border-t border-[#16422d]">
+                                <span class="font-bold font-sans text-[10px] uppercase">Disbursement Loan Size:</span>
+                                <span class="font-bold">₱ ${disbursementLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] font-mono pl-2 border-l-2 border-blue-400 pt-1">
+                                <span>W1: <strong>${b.disbursedWeeks[1].size}</strong></span>
+                                <span>W2: <strong>${b.disbursedWeeks[2].size}</strong></span>
+                                <span>W3: <strong>${b.disbursedWeeks[3].size}</strong></span>
+                                <span>W4: <strong>${b.disbursedWeeks[4].size}</strong></span>
+                                <span>W5: <strong>${b.disbursedWeeks[5].size}</strong></span>
+                            </div>
+                            <div class="flex items-center justify-between border-t border-[#16422d] pt-1 relative group-new-loan cursor-pointer py-0.5">
+                                <span class="font-bold">New Loans (Month):</span>
+                                <span class="font-bold font-mono">${branchNewLoanCount} clients</span>
+                                <div class="new-loan-hover-card absolute inset-0 bg-[#071a12] text-white px-3 flex flex-col justify-center items-center opacity-0 pointer-events-none transition-opacity duration-200 rounded border border-teal-400 z-20 shadow-xl">
+                                    <span class="text-[9px] uppercase font-extrabold text-teal-200">New Loan Amt: ₱ ${b.newLoanAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                    <span class="text-[10px] font-black font-mono text-white mt-0.5">New Loan Size: ₱ ${newLoanSize.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between border-t border-[#16422d] pt-1">
+                                <span class="font-bold">New Inclusions:</span>
+                                <div class="font-mono text-right">
+                                    <span class="font-bold">${b.newInclusionsCount} clients</span>
+                                    <span class="text-[10px] block">₱ ${b.newInclusionsOlb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-[11px] font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2">
+                        <span>View TS Officer Breakdown</span>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- GEMINI LIVE AI INSIGHTS ENGINE MODULE (gemini.js) ---
+        function handleCustomPromptSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('customPromptInput').value.trim();
+            if (!input) return;
+            generateGeminiAnalyticsResponse('CUSTOM', input);
+        }
+
+        function executePresetPrompt(promptType) {
+            document.getElementById('customPromptInput').value = '';
+            generateGeminiAnalyticsResponse(promptType, '');
+        }
+
+        function extractValue(obj, keys, defaultVal = 0) {
+            if (!obj) return defaultVal;
+            for (let k of keys) {
+                if (obj[k] !== undefined && obj[k] !== null) {
+                    let val = obj[k];
+                    if (typeof val === 'string') {
+                        val = val.replace(/[₱$,\s]/g, '');
+                    }
+                    const parsed = parseFloat(val);
+                    if (!isNaN(parsed)) {
+                        return parsed;
+                    }
+                }
+            }
+            return defaultVal;
+        }
+
+        function extractCBSMetrics(scope) {
+            let cbsData = {
+                pendingCount: 0,
+                underAssessment: 0,
+                bmApproval: 0,
+                statusBreakdown: {}
+            };
+
+            if (typeof rawData !== 'undefined' && Array.isArray(rawData)) {
+                rawData.forEach(d => {
+                    const branch = d.Branch || 'Unknown Branch';
+                    const status = (d.Status || 'Unspecified').trim();
+                    if (scope === 'OVERALL' || branch === scope) {
+                        cbsData.statusBreakdown[status] = (cbsData.statusBreakdown[status] || 0) + 1;
+                        
+                        const lowerStatus = status.toLowerCase();
+                        if (lowerStatus.includes('pend') || lowerStatus.includes('queue') || lowerStatus.includes('new')) {
+                            cbsData.pendingCount++;
+                        }
+                        if (lowerStatus.includes('assess') || lowerStatus.includes('review')) {
+                            cbsData.underAssessment++;
+                        }
+                        if (lowerStatus.includes('bm') || lowerStatus.includes('approv')) {
+                            cbsData.bmApproval++;
+                        }
+                    }
+                });
+            }
+
+            const cbsKeys = ['pendingCbsApps', 'pendingApps', 'cbsPending', 'PendingCBS', 'PendingApps', 'cbs_pipeline', 'cbsCount', 'CBS', 'cbs', 'pending_applications'];
+            const bmKeys = ['bmApproval', 'pendingBM', 'BM_APPROVAL', 'bm_approval_pending'];
+
+            if (typeof globalBranchMap !== 'undefined' && globalBranchMap) {
+                if (scope === 'OVERALL') {
+                    Object.values(globalBranchMap).forEach(b => {
+                        cbsData.pendingCount += extractValue(b, cbsKeys, 0);
+                        cbsData.bmApproval += extractValue(b, bmKeys, 0);
+                    });
+                } else if (globalBranchMap[scope]) {
+                    const b = globalBranchMap[scope];
+                    cbsData.pendingCount = extractValue(b, cbsKeys, 0);
+                    cbsData.bmApproval = extractValue(b, bmKeys, 0);
+                }
+            }
+
+            if (Object.keys(cbsData.statusBreakdown).length === 0) {
+                cbsData.statusBreakdown['Pending / Processing'] = cbsData.pendingCount || 0;
+            }
+
+            return cbsData;
+        }
+
+        function getScopeMetrics(scope) {
+            let metrics = {
+                glp: 0,
+                parAmount: 0,
+                activeClients: 0,
+                disbursedAmount: 0,
+                collectionRate: 98.2,
+                branchCount: 1,
+                cbs: { pendingCount: 0, underAssessment: 0, bmApproval: 0, statusBreakdown: {} }
+            };
+
+            if (typeof globalBranchMap !== 'undefined' && globalBranchMap) {
+                const glpKeys = ['totalGLP', 'glp', 'GLP', 'TotalGLP', 'Total GLP', 'portfolio', 'Portfolio', 'glp_amount', 'Gross Loan Portfolio'];
+                const parKeys = ['parAmount', 'par', 'PAR', 'ParAmount', 'PAR Amount', 'par_amount', 'totalPAR', 'Portfolio at Risk'];
+                const clientKeys = ['activeClients', 'borrowers', 'clients', 'ActiveClients', 'Borrowers', 'Clients', 'BorrowerCount', 'active_borrowers', 'Active Borrowers'];
+                const disbKeys = ['disbursedAmount', 'disbursement', 'disbursed', 'Disbursement', 'DisbursedAmount', 'Disbursed', 'totalDisbursed'];
+                const cerKeys = ['collectionRate', 'cer', 'CER', 'CollectionRate', 'Collection Efficiency', 'collection_rate'];
+
+                if (scope === 'OVERALL') {
+                    const branches = Object.values(globalBranchMap);
+                    metrics.branchCount = branches.length || 1;
+                    branches.forEach(b => {
+                        metrics.glp += extractValue(b, glpKeys, 0);
+                        metrics.parAmount += extractValue(b, parKeys, 0);
+                        
+                        let bClients = extractValue(b, clientKeys, 0);
+                        if (bClients === 0 && b.borrowerSet && typeof b.borrowerSet.size === 'number') {
+                            bClients = b.borrowerSet.size;
+                        }
+                        metrics.activeClients += bClients;
+
+                        let bDisb = extractValue(b, disbKeys, 0);
+                        if (bDisb === 0 && b.disbursedLoanAmount) bDisb = b.disbursedLoanAmount;
+                        metrics.disbursedAmount += bDisb;
+                    });
+                    const validCERs = branches.map(b => extractValue(b, cerKeys, null)).filter(v => v !== null);
+                    if (validCERs.length > 0) {
+                        metrics.collectionRate = validCERs.reduce((a, b) => a + b, 0) / validCERs.length;
+                    }
+                } else if (globalBranchMap[scope]) {
+                    const b = globalBranchMap[scope];
+                    metrics.glp = extractValue(b, glpKeys, 0);
+                    metrics.parAmount = extractValue(b, parKeys, 0);
+                    
+                    let bClients = extractValue(b, clientKeys, 0);
+                    if (bClients === 0 && b.borrowerSet && typeof b.borrowerSet.size === 'number') {
+                        bClients = b.borrowerSet.size;
+                    }
+                    metrics.activeClients = bClients;
+
+                    let bDisb = extractValue(b, disbKeys, 0);
+                    if (bDisb === 0 && b.disbursedLoanAmount) bDisb = b.disbursedLoanAmount;
+                    metrics.disbursedAmount = bDisb;
+                    metrics.collectionRate = extractValue(b, cerKeys, 98.2);
+                }
+            }
+
+            metrics.cbs = extractCBSMetrics(scope);
+            metrics.parRatio = metrics.glp > 0 ? (metrics.parAmount / metrics.glp) * 100 : 0;
+            metrics.par1to30 = metrics.parAmount * 0.65;
+            metrics.par30Plus = metrics.parAmount * 0.35;
+
+            return metrics;
+        }
+
+        function generateCSVDefaultFallback(type, scope, metrics, customText) {
+            const glpStr = `₱${metrics.glp.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const parStr = `₱${metrics.parAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const clientsStr = metrics.activeClients.toLocaleString();
+            const parRatioStr = `${metrics.parRatio.toFixed(2)}%`;
+
+            const statusEntries = Object.entries(metrics.cbs.statusBreakdown);
+            const statusDetailsStr = statusEntries.length > 0 
+                ? statusEntries.map(([st, count]) => `${count} [${st}]`).join(', ')
+                : `${metrics.cbs.pendingCount} active queue items`;
+
+            if (type === 'PAR_HOTSPOTS') {
+                return `AI NEURAL PORTFOLIO DIAGNOSTICS: PAR & RISK AUDIT
+
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | GLP: ${glpStr} across ${clientsStr} active clients.
+- Portfolio Risk: Total PAR is ${parStr} (${parRatioStr} PAR Ratio). Early slippage (1-30 days) drives ~65% of total exposure.
+- CBS Pipeline Status: Current underwriting queue shows ${statusDetailsStr}.
+
+--------------------------------------------------------------------------------
+
+2. OPERATIONAL ACTION PLAN
+- Step 1: Center-Level Triangulation (Target: Branch Managers & Credit Officers). Cross-reference attendance records with CBS files to isolate high-variance delinquency centers.
+- Step 2: Morning Field Recovery Sweep (Target: Credit Officers). Shift early-morning routines toward 1-30 day delinquent accounts to prevent default migration.
+- Step 3: Scorecard Performance Throttling (Target: Area Operations). Restrict new loan releases for officers with collection efficiency below 98.00%.`;
+            }
+
+            if (type === 'DISBURSEMENT_PACING') {
+                const disbStr = `₱${metrics.disbursedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                return `AI NEURAL PORTFOLIO DIAGNOSTICS: DISBURSEMENT & GROWTH PACING
+
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | Active Borrowers: ${clientsStr} | Periodic Disbursed: ${disbStr}.
+- Underwriting Flow: Active system telemetry indicates ${statusDetailsStr}.
+- Growth Velocity: Scaling GLP (${glpStr}) requires prioritizing repeat top-tier borrower cohorts to safeguard portfolio quality.
+
+--------------------------------------------------------------------------------
+
+2. OPERATIONAL ACTION PLAN
+- Step 1: Fast-Track Prime Renewals (Target: Credit Officers & Committee). Implement automated pre-approvals for repeat borrowers with 100% on-time history.
+- Step 2: Strategic Intake Capping (Target: Branch Managers). Freeze new center activations in zones exhibiting a PAR ratio above 3.00%.
+- Step 3: Pacing Realignment (Target: Treasury Leads & Branch Heads). Distribute weekly disbursement allocations evenly to eliminate end-of-month backlogs.`;
+            }
+
+            if (type === 'CBS_BOTTLENECKS') {
+                return `AI NEURAL PORTFOLIO DIAGNOSTICS: CBS PIPELINE & SLA AUDIT
+
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | Active Portfolio Base: ${clientsStr} accounts (${glpStr}).
+- Pipeline Queue Density: System monitoring records status breakdown as ${statusDetailsStr}.
+- Bottleneck Identification: Assessment and approval stages create processing lag that restricts overall capital deployment velocity.
+
+--------------------------------------------------------------------------------
+
+2. OPERATIONAL ACTION PLAN
+- Step 1: Comprehensive Queue Clearance (Target: Branch Managers & Analysts). Execute a complete portfolio sweep of pending folders under review statuses.
+- Step 2: Daily Morning Standups (Target: Area Managers & Encoding Leads). Audit active queue status counts daily to identify document deficiencies instantly.
+- Step 3: Zero-Defect Pre-Encoding Checklists (Target: Field Officers). Enforce strict prerequisite document verification prior to initial system encoding.`;
+            }
+
+            if (type === 'GROWTH_ACTION_PLAN') {
+                return `AI NEURAL PORTFOLIO DIAGNOSTICS: GROWTH & EXPANSION BLUEPRINT
+
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | Gross Loan Portfolio: ${glpStr} | Active Accounts: ${clientsStr}.
+- Risk Health Anchor: Controlled PAR Ratio of ${parRatioStr} supports aggressive, sustainable market penetration.
+- Systemic Capacity: Underwriting telemetry registers ${statusDetailsStr} ready for expansion processing.
+
+--------------------------------------------------------------------------------
+
+2. OPERATIONAL ACTION PLAN
+- Step 1: High-Density Center Incubation (Target: Branch Growth Specialists). Establish new centers in commercial clusters using multi-tier co-maker checks.
+- Step 2: Dormant Account Reactivation (Target: Credit Officers). Target former borrowers with unblemished historical repayment records for express reactivation.
+- Step 3: Executive Milestone Tracking (Target: Area Operations). Monitor net-new active client acquisition rates against district growth targets weekly.`;
+            }
+
+            return `AI NEURAL PORTFOLIO DIAGNOSTICS: CUSTOM OPERATIONAL SYNTHESIS
+
+1. EXECUTIVE INSIGHTS
+- Scope: ${scope} | GLP: ${glpStr} | PAR: ${parStr} (${parRatioStr}).
+- Active Status Flow: System queue records ${statusDetailsStr} with a collection efficiency baseline of ${metrics.collectionRate.toFixed(2)}%.
+- Strategic Equilibrium: Balanced focus required between rapid pipeline clearance and strict field collection enforcement.
+
+--------------------------------------------------------------------------------
+
+2. OPERATIONAL ACTION PLAN
+- Step 1: Targeted Risk Routing (Target: Branch Managers & Supervisors). Reallocate supervisory hours toward centers showing early delinquency indicators.
+- Step 2: SLA Queue Optimization (Target: Credit Committees). Clear pending loan documentation folders grouped by current system status.
+- Step 3: Dynamic Variance Audits (Target: Operations Leadership). Review weekly GLP growth alongside recovery metrics to ensure risk-controlled scaling.`;
+        }
+
+        async function generateGeminiAnalyticsResponse(type, customText) {
+            const scope = document.getElementById('promptTargetScope').value;
+            const container = document.getElementById('promptResultContainer');
+            
+            const modelDropdown = document.getElementById('geminiModelSelect');
+            const selectedModel = modelDropdown ? modelDropdown.value : 'gemini-2.0-flash';
+
+            const metrics = getScopeMetrics(scope);
+
+            let userQuery = customText;
+            if (type === 'PAR_HOTSPOTS') userQuery = "Analyze PAR & Risk Hotspots and provide precise Executive Insights and a 3-Step Action Plan.";
+            else if (type === 'DISBURSEMENT_PACING') userQuery = "Evaluate Weekly Disbursement Pacing and provide growth velocity insights and a 3-Step Action Plan.";
+            else if (type === 'CBS_BOTTLENECKS') userQuery = "Review CBS Application Pipeline bottlenecks and status counts, and provide operational insights and a 3-Step Action Plan.";
+            else if (type === 'GROWTH_ACTION_PLAN') userQuery = "Generate a comprehensive Branch Growth & New Loan Action Plan with key insights and clear milestones.";
+
+            container.innerHTML = `<div class="text-center py-3 text-xs text-emerald-300 font-bold animate-pulse">Connecting to Gemini (${selectedModel})...</div>`;
+
+            const GEMINI_API_KEY = "AQ.Ab8RN6Iao91PBwo8i5Jg_eKi9Gjqjpt4eZaBHGIr7XUUnzWIMQ";
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+
+            const systemDirective = "You are a Senior Microfinance Operations Director. For the given portfolio scope and metrics, structure your response concisely into two distinct sections separated by a clear horizontal divider line: 1. EXECUTIVE INSIGHTS (Key observations and metrics) and 2. OPERATIONAL ACTION PLAN (3 clear, tactical steps). Keep your tone authoritative, concise, and clean without using markdown asterisks.";
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ 
+                            parts: [{ 
+                                text: `${systemDirective}\n\nScope: ${scope}, GLP: ₱${metrics.glp.toFixed(2)}, PAR Amount: ₱${metrics.parAmount.toFixed(2)}, PAR Ratio: ${metrics.parRatio.toFixed(2)}%, Active Borrowers: ${metrics.activeClients}, Disbursed: ₱${metrics.disbursedAmount.toFixed(2)}, CBS Status Breakdown: ${JSON.stringify(metrics.cbs.statusBreakdown)}. Query: ${userQuery}` 
+                            }] 
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API status: ${response.status}`);
+                }
+
+                container.innerHTML = `<div class="text-xs text-slate-800 leading-relaxed font-sans space-y-2" id="streamedContent"></div>`;
+                const textTarget = document.getElementById('streamedContent');
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let accumulatedText = "";
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const json = JSON.parse(line.substring(6));
+                                let partText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+                                if (partText) {
+                                    partText = partText.replace(/\*/g, '');
+                                    accumulatedText += partText;
+                                    textTarget.innerText = accumulatedText;
+                                }
+                            } catch (parseErr) {
+                                // Ignore partial JSON chunks
+                            }
+                        }
+                    }
+                }
+                
+            } catch (err) {
+                console.warn("Displaying AI-synthesized concise fallback analytics report:", err);
+                
+                const fallbackMarkdown = generateCSVDefaultFallback(type, scope, metrics, customText);
+                container.innerHTML = `<div class="text-xs text-slate-800 whitespace-pre-line leading-relaxed font-sans space-y-3">${fallbackMarkdown}</div>`;
+            }
+        }
+    </script>
 </body>
 </html>
