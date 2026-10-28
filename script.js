@@ -94,6 +94,7 @@ function openCbsClientModal(title, subtitle, clientsArray) {
 function getProductCategory(productId) {
     if (!productId) return 'Other';
     const clean = productId.toString().trim().replaceAll(' ', '').toUpperCase();
+    if (clean === 'M-PAR-F' || clean.includes('M-PAR-F')) return 'PAR Reloan';
     if (clean.endsWith('-NL')) return 'Newloan';
     if (clean.startsWith('EL-')) return 'Educ';
     if (clean.startsWith('HIL-')) return 'HIL';
@@ -452,6 +453,9 @@ function renderDashboard(data) {
     
     const productSummary = {};
     const productBorrowerSets = {};
+    const productParSummary = {};
+    const productParBorrowerSets = {};
+
     const clientMap = {};
     globalBranchMap = {};
 
@@ -506,6 +510,12 @@ function renderDashboard(data) {
 
         if (!productBorrowerSets[categoryProd]) productBorrowerSets[categoryProd] = new Set();
         productBorrowerSets[categoryProd].add(clientName);
+
+        if (days > 0) {
+            productParSummary[categoryProd] = (productParSummary[categoryProd] || 0) + olb;
+            if (!productParBorrowerSets[categoryProd]) productParBorrowerSets[categoryProd] = new Set();
+            productParBorrowerSets[categoryProd].add(clientName);
+        }
 
         const isNewInclusion = (days > 0 && days <= maxDaysForNewInclusion);
         if (isNewInclusion) {
@@ -700,7 +710,7 @@ function renderDashboard(data) {
     renderParBreakdownBarChart(data, currentSelectedBranch);
     renderParAgingBarChart(bracket1_30, bracket31_60, bracket61_90, bracket91_180, bracket181_365, bracket365Plus, count1_30, count31_60, count61_90, count91_180, count181_365, count365Plus);
     renderWeeklyPacingLineChart(data, currentSelectedBranch);
-    renderProductBarChart(productSummary, productBorrowerSets);
+    renderProductBarChart(productSummary, productBorrowerSets, productParSummary, productParBorrowerSets);
     renderDailyDisbursementTable(data);
     renderCbsPivotMatrix(rawData);
     renderBranchCards(globalBranchMap);
@@ -753,7 +763,7 @@ function renderDailyDisbursementTable(data) {
         return;
     }
 
-    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Trust Staff' : 'Branch';
+    const columnHeaderLabel = (selectedBranch !== 'ALL') ? 'Officer / TS' : 'Branch';
 
     let html = `<thead><tr class="bg-emerald-950/90 text-yellow-300 border-b border-amber-500/50"><th class="p-2.5 pl-3 font-bold">Disbursement Date</th>`;
     sortedColumns.forEach(col => html += `<th class="p-2.5 text-center font-bold">${col} (${columnHeaderLabel} Borrowers)</th>`);
@@ -1389,7 +1399,7 @@ function renderWeeklyPacingLineChart(data, branchFilterValue) {
     });
 }
 
-function renderProductBarChart(productSummary, productBorrowerSets) {
+function renderProductBarChart(productSummary, productBorrowerSets, productParSummary, productParBorrowerSets) {
     const canvas = document.getElementById('productBarChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -1398,7 +1408,8 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
     const categories = Object.keys(productSummary);
     const totals = categories.map(c => productSummary[c]);
     const borrowerCounts = categories.map(c => productBorrowerSets[c] ? productBorrowerSets[c].size : 0);
-    const totalPortfolio = totals.reduce((acc, val) => acc + val, 0);
+    const parTotals = categories.map(c => productParSummary[c] || 0);
+    const parBorrowerCounts = categories.map(c => productParBorrowerSets[c] ? productParBorrowerSets[c].size : 0);
 
     const radialGradient = ctx.createRadialGradient(140, 110, 10, 140, 110, 110);
     radialGradient.addColorStop(0, 'rgba(22, 66, 45, 0.4)');
@@ -1455,13 +1466,21 @@ function renderProductBarChart(productSummary, productBorrowerSets) {
                         title: function(context) { return `Product Category: ${context[0].label}`; },
                         label: function(context) {
                             const idx = context.dataIndex;
-                            const amt = context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                            const percentage = totalPortfolio > 0 ? ((context.raw / totalPortfolio) * 100).toFixed(2) + '%' : '0%';
-                            const borrowers = borrowerCounts[idx].toLocaleString();
+                            const totalOlb = context.raw;
+                            const formattedTotalOlb = totalOlb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            const clientsCount = borrowerCounts[idx].toLocaleString();
+                            
+                            const parOlb = parTotals[idx];
+                            const formattedParOlb = parOlb.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            const parClientsCount = parBorrowerCounts[idx].toLocaleString();
+                            const parRatioVal = totalOlb > 0 ? ((parOlb / totalOlb) * 100).toFixed(2) + '%' : '0.00%';
+
                             return [
-                                `OLB Principal: ₱ ${amt}`,
-                                `Portfolio Share: ${percentage}`,
-                                `Active Borrowers: ${borrowers} clients`
+                                `Total OLB Principal: ₱ ${formattedTotalOlb}`,
+                                `Total Clients: ${clientsCount} clients`,
+                                `PAR OLB Principal: ₱ ${formattedParOlb}`,
+                                `PAR Borrower: ${parClientsCount} clients`,
+                                `PAR Ratio: ${parRatioVal}`
                             ];
                         }
                     }
@@ -1632,7 +1651,7 @@ function renderBranchCards(branchMap) {
                     </h4>
                     <div class="text-right">
                         <span class="text-xs font-mono font-bold">${totalOfficersCount} Officers / TS</span>
-                        <span class="text-[10px] block font-mono">Active Manpower</span>
+                        <span class="text-[10px] block font-mono">Active Roster</span>
                     </div>
                 </div>
 
@@ -1696,7 +1715,7 @@ function renderBranchCards(branchMap) {
                 </div>
             </div>
             <div class="text-[11px] font-bold flex items-center justify-between pt-2 border-t border-[#16422d] mt-2">
-                <span>View Trust Staff Breakdown</span>
+                <span>View TS Officer Breakdown</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
             </div>
         `;
@@ -1704,7 +1723,7 @@ function renderBranchCards(branchMap) {
     });
 }
 
-// --- GEMINI LIVE AI INSIGHTS ENGINE MODULE (gemini.js) ---
+// --- GEMINI LIVE AI INSIGHTS ENGINE MODULE ---
 function handleCustomPromptSubmit(e) {
     e.preventDefault();
     const input = document.getElementById('customPromptInput').value.trim();
