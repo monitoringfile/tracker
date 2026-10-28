@@ -1,82 +1,79 @@
 body {
-    background: linear-gradient(135deg, #008888 0%, #808080 50%, #8aabb3 100%);
-    min-height: 100vh;
+background: linear-gradient(135deg, #008888 0%, #808080 50%, #8aabb3 100%);
+min-height: 100vh;
 }
 .custom-scrollbar::-webkit-scrollbar {
-    height: 6px;
-    width: 6px;
+height: 6px;
+width: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(10, 35, 24, 0.3);
+background: rgba(10, 35, 24, 0.3);
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #ffff80;
-    border-radius: 4px;
+background: #ffff80;
+border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #52b788;
+background: #52b788;
 }
 .kpi-card {
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(12px);
-    border-radius: 0.9rem;
-    box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.3);
-    border: 1px solid #ffff80;
-    overflow: hidden;
+background: rgba(255, 255, 255, 0.98);
+backdrop-filter: blur(12px);
+border-radius: 0.9rem;
+box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.3);
+border: 1px solid #ffff80;
+overflow: hidden;
 }
 .section-header-bamboo {
-    background: linear-gradient(135deg, #008040 0%, #ffff00 100%);
-    color: #000000;
+background: linear-gradient(135deg, #008040 0%, #ffff00 100%);
+color: #000000;
 }
 .section-header-alt {
-    background: linear-gradient(135deg, #95ff2b 0%, #ff8040 100%);
-    color: #000000;
+background: linear-gradient(135deg, #95ff2b 0%, #ff8040 100%);
+color: #000000;
 }
 
-/* Dark background styling and distinct separation border for each branch summary card */
 #branchCardsGrid .kpi-card {
-    background: #3a3a3a !important;
-    border: 2px solid #808000 !important;
-    box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.6);
-    color: #ffffff !important;
+background: #3a3a3a !important;
+border: 2px solid #808000 !important;
+box-shadow: 0 10px 30px -4px rgba(7, 26, 18, 0.6);
+color: #ffffff !important;
 }
 
-/* Invert inner sub-boxes and text colors inside the dark branch summary cards for maximum contrast */
 #branchCardsGrid .kpi-card h4 {
-    color: #ffff0d !important;
+color: #ffff0d !important;
 }
 #branchCardsGrid .kpi-card .border-b,
 #branchCardsGrid .kpi-card .border-t,
 #branchCardsGrid .kpi-card .border {
-    border-color: #808000 !important;
+border-color: #808000 !important;
 }
 #branchCardsGrid .kpi-card .bg-slate-50,
-#branchCardsGrid .kpi-card .bg-emerald-50\/40 {
-    background-color: rgba(17, 54, 38, 0.6) !important;
+#branchCardsGrid .kpi-card .bg-emerald-50/40 {
+background-color: rgba(17, 54, 38, 0.6) !important;
 }
 #branchCardsGrid .kpi-card .text-slate-900,
 #branchCardsGrid .kpi-card .text-slate-800,
 #branchCardsGrid .kpi-card .text-slate-700 {
-    color: #ffffff !important;
+color: #ffffff !important;
 }
 #branchCardsGrid .kpi-card .text-slate-500,
 #branchCardsGrid .kpi-card .text-slate-400 {
-    color: #94a3b8 !important;
+color: #94a3b8 !important;
 }
 #branchCardsGrid .kpi-card .text-emerald-700 {
-    color: #6ee7b7 !important;
+color: #6ee7b7 !important;
 }
 #branchCardsGrid .kpi-card .text-blue-700,
 #branchCardsGrid .kpi-card .text-blue-800,
 #branchCardsGrid .kpi-card .text-blue-950 {
-    color: #93c5fd !important;
+color: #93c5fd !important;
 }
 #branchCardsGrid .kpi-card .text-bambooDark {
-    color: #004000 !important;
+color: #004000 !important;
 }
 
-/* Required CSS rule to trigger the hover tooltip when mousing over the New Loans row */
 .group-new-loan:hover .new-loan-hover-card {
-    opacity: 1 !important;
-    pointer-events: auto !important;
+opacity: 1 !important;
+pointer-events: auto !important;
 }
