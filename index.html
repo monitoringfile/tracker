@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KPI Dashboard - Microfinance Operations</title>
+    <title>Area KPI Dashboard - Microfinance Operations</title>
     <!-- Favicon Links -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -11,6 +11,7 @@
     <link rel="manifest" href="/site.webmanifest">
     <!-- Inline fallback for local desktop testing -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232d6a4f'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -30,6 +31,10 @@
             }
         }
     </script>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+
     <!-- Chart.js and DataLabels Plugin -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
@@ -37,8 +42,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- External Custom CSS -->
-    <link rel="stylesheet" href="style.css">
 </head>
 <body class="text-slate-800 min-h-screen font-sans antialiased selection:bg-emerald-500/30">
 
@@ -51,7 +54,7 @@
                 </div>
                 <div>
                     <h1 class="font-extrabold text-base sm:text-lg tracking-tight text-white uppercase">
-                         KEY PERFORMANCE INDICATOR DASHBOARD
+                         AREA WIDE KPI DASHBOARD
                     </h1>
                     <p class="text-[11px] text-emerald-300 font-bold tracking-wide">PORTFOLIO & PAR RISK EXECUTIVE OVERVIEW</p>
                 </div>
@@ -77,8 +80,7 @@
                 <div class="w-20 h-20 rounded-2xl bg-[#0a2318] text-emerald-300 flex items-center justify-center shadow-inner border-2 border-[#16422d] mb-2">
                     <i data-lucide="sprout" class="w-10 h-10"></i>
                 </div>
-                <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">"Another Day, Another Progress"</h2>
-                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">“You can’t navigate a ship with a broken compass, and you can’t manage a goal without a metric.”</h2>
+                <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">“Opinion inspires debate, but measurements spark progress. You can only lead forward when you know exactly where you stand.”</h2>
                 <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
                     MINDANAO REGION
                 </p>
@@ -424,7 +426,7 @@
         </div>
     </div>
 
-    <!-- Script File Linking -->
+    <!-- External Script File -->
     <script src="script.js"></script>
 </body>
 </html>
