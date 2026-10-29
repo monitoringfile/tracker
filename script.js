@@ -153,7 +153,7 @@ function openBranchModal(branchName) {
     const bData = globalBranchMap[branchName];
     if (!bData) return;
 
-    document.getElementById('modalBranchTitle').innerText = `${branchName} - TS Officer Summary`;
+    document.getElementById('modalBranchTitle').innerText = `${branchName} - Trust Staff Summary`;
     const container = document.getElementById('modalOfficerList');
     container.innerHTML = '';
 
